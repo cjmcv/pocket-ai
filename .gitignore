@@ -1,3 +1,7 @@
+# Folder
+tests/bin
+tests/build-win-x86
+
 # Prerequisites
 *.d
 
