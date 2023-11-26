@@ -1,6 +1,8 @@
 # Folder
+.vscode/
 tests/bin
 tests/build-win-x86
+tests/build-x86/
 
 # Prerequisites
 *.d
@@ -34,3 +36,6 @@ tests/build-win-x86
 *.exe
 *.out
 *.app
+
+# Debug
+tests/valgrind.log

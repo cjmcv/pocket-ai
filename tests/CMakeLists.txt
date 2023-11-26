@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.22)
+
 # Define project name
 project(unit_tests)
 set(PROJECT_NAME unit_tests)
@@ -46,6 +48,7 @@ include_directories(${INCLUDE_LIST})
 file(GLOB TESTS_SRC_LIST 
     "${CMAKE_CURRENT_LIST_DIR}/tests_main.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/*/*.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/*/*/*.cpp"
 )
 message(STATUS "tests src: ${TESTS_SRC_LIST}")
 

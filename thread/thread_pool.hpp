@@ -107,14 +107,14 @@ public:
     // Note: The entire thread pool will serve this task 
     //       and no other tasks should be inserted.
     void ParallelFor(std::function<void(const uint32_t, const uint32_t)> func, 
-                     const uint32_t start_idx, const uint32_t end_idx, const uint32_t number) {
+                     const uint32_t start_idx, const uint32_t end_idx, 
+                     const uint32_t threads_num) {
         if (start_idx > end_idx) {
             printf("[ ThreadPool::ParallelFor ]: start_idx > end_idx\n");
             return;
         }
 
-        const uint32_t threads_num = workers_.size();
-        if (threads_num <= 1 || number <= 1) {
+        if (workers_.size() <= 1 || threads_num <= 1) {
             func(start_idx, end_idx);
         }
         else {

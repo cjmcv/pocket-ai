@@ -5,9 +5,10 @@
 #ifndef PTK_UTIL_RINGBUFFER_HPP_
 #define PTK_UTIL_RINGBUFFER_HPP_
 
-#include <pthread.h>
+#include <thread>
 #include <chrono>
 #include <condition_variable>
+#include <string.h>
 
 #include "util/logger.hpp"
 

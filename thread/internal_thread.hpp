@@ -6,7 +6,9 @@
 #ifndef PTK_INTERNAL_THREAD_HPP_
 #define PTK_INTERNAL_THREAD_HPP_
 
+#include <stdio.h>
 #include <thread>
+#include <memory>
 
 namespace ptk {
 namespace thread {
