@@ -31,10 +31,12 @@ public:
         }
         nodes_.clear();
 
-        for (int i=0; i<bq_pairs_.size(); i++) {
+        for (uint32_t i=0; i<bq_pairs_.size(); i++) {
             BlockingQueuePair *bqp = bq_pairs_[i];
             bqp->full.exit();
             bqp->free.exit();
+
+            // TODO: 删除BlockingQueuePair和里面的所有Tensor
         }
     }
 
@@ -50,14 +52,14 @@ public:
     }
 
     void BuildTopology(std::vector<std::vector<std::string>> &&relation) {
-        // for (int i=0; i<relation.size(); i++) {
-        //     for (int j=1; j<relation[i].size(); j++) {
+        // for (uint32_t i=0; i<relation.size(); i++) {
+        //     for (uint32_t j=1; j<relation[i].size(); j++) {
         //         printf("%s->%s.\n", relation[i][j-1].c_str(), relation[i][j].c_str());    
         //     }
         // }
 
-        for (int i=0; i<relation.size(); i++) {
-            for (int j=1; j<relation[i].size(); j++) {
+        for (uint32_t i=0; i<relation.size(); i++) {
+            for (uint32_t j=1; j<relation[i].size(); j++) {
                 std::map<std::string, Node*>::iterator nodes_iter;
                 std::map<Node*, std::vector<Node*>>::iterator io_iter;
 
@@ -168,12 +170,12 @@ public:
         std::map<std::string, Node*>::iterator iter;
         for(iter = nodes_.begin(); iter != nodes_.end(); iter++) {
             Node *n = iter->second;
-            std::vector<Node *> *ins = n->input_nodes();
-            std::vector<Node *> *outs = n->output_nodes();
-            PTK_LOGS("node: %s (%d) -> in: [", n->name().c_str(), n);
-            for (int i = 0; i<n->input_dims().size(); i++) {
+            // std::vector<Node *> *ins = n->input_nodes();
+            // std::vector<Node *> *outs = n->output_nodes();
+            PTK_LOGS("node: %s (%p) -> in: [", n->name().c_str(), n);
+            for (uint32_t i = 0; i<n->input_dims().size(); i++) {
                 PTK_LOGS("%d(", n->input_dims()[i][0]);
-                for (int j=1; j<n->input_dims()[i].size(); j++) {
+                for (uint32_t j=1; j<n->input_dims()[i].size(); j++) {
                     PTK_LOGS("%d", n->input_dims()[i][j]);
                     if (j != n->input_dims()[i].size() - 1) PTK_LOGS(",");
                 }
@@ -181,9 +183,9 @@ public:
                 if (i != n->input_dims().size() - 1) PTK_LOGS(",");
             }
             PTK_LOGS("], out: [");
-            for (int i = 0; i<n->output_dims().size(); i++) {
+            for (uint32_t i = 0; i<n->output_dims().size(); i++) {
                 PTK_LOGS("%d(", n->output_dims()[i][0]);
-                for (int j=1; j<n->output_dims()[i].size(); j++) {
+                for (uint32_t j=1; j<n->output_dims()[i].size(); j++) {
                     PTK_LOGS("%d", n->output_dims()[i][j]);
                     if (j != n->output_dims()[i].size() - 1) PTK_LOGS(",");
                 }
@@ -201,14 +203,14 @@ public:
             std::vector<Node *> *outs = n->output_nodes();
             PTK_LOGS("%s -> in: [", n->name().c_str());
             if (ins != nullptr) {
-                for(int i=0; i<ins->size(); i++) {
+                for (uint32_t i=0; i<ins->size(); i++) {
                     PTK_LOGS("%s", (*ins)[i]->name().c_str());
                     if (i != ins->size() - 1) PTK_LOGS(", ");
                 }
             }
             PTK_LOGS("], out: [");
             if (outs != nullptr) {
-                for(int i=0; i<outs->size(); i++) {
+                for (uint32_t i=0; i<outs->size(); i++) {
                     PTK_LOGS("%s", (*outs)[i]->name().c_str());
                     if (i != outs->size() - 1) PTK_LOGS(", ");
                 }
@@ -225,14 +227,14 @@ public:
             if (ins.size() == 0 && outs.size() == 0)
                 continue;
             PTK_LOGS("%s -> in: [", n->name().c_str());
-            for (int i = 0; i < ins.size(); i++) {
-                PTK_LOGS("%d(%s)", ins[i], ins[i]->front_name.c_str());
+            for (uint32_t i = 0; i < ins.size(); i++) {
+                PTK_LOGS("%p(%s)", ins[i], ins[i]->front_name.c_str());
                 if (i != ins.size() - 1)
                     PTK_LOGS(", ");
             }
             PTK_LOGS("], out: [");
-            for (int i = 0; i < outs.size(); i++) {
-                PTK_LOGS("%d(%s)", outs[i], outs[i]->rear_name.c_str());
+            for (uint32_t i = 0; i < outs.size(); i++) {
+                PTK_LOGS("%p(%s)", outs[i], outs[i]->rear_name.c_str());
                 if (i != outs.size() - 1)
                     PTK_LOGS(", ");
             }
@@ -252,6 +254,12 @@ public:
     void Stop() {        
         // Stop all task threads.
         scheduler_.TasksStop();
+
+        for (uint32_t i=0; i<bq_pairs_.size(); i++) {
+            BlockingQueuePair *bqp = bq_pairs_[i];
+            bqp->full.exit();
+            bqp->free.exit();
+        }
         scheduler_.TasksJoin();
         // EndProfile();
         PTK_LOGI("Graph::Stop().\n");
@@ -273,7 +281,7 @@ private:
     BlockingQueuePair *CreateBlockingQueue(std::vector<int> &shape, util::Type type) {
         uint32_t queue_size = 10;
         BlockingQueuePair *bqp = new BlockingQueuePair;
-        for (int i = 0; i < queue_size; i++) {
+        for (uint32_t i = 0; i < queue_size; i++) {
             Tensor *t = new Tensor(shape, type);
             bqp->free.push(t);
         }
@@ -283,7 +291,7 @@ private:
 
     // Check whether the shapes match and create tensors for node interaction.
     void SetupInteractTensors() {
-        for (int i = 0; i < graph_nodes_.size(); i++) {
+        for (uint32_t i = 0; i < graph_nodes_.size(); i++) {
             Node *n = graph_nodes_[i];
             std::vector<std::vector<int>> input_dims = n->input_dims();
             std::vector<Node *> *input_nodes = n->input_nodes();
@@ -296,11 +304,11 @@ private:
 
             // The number of input shapes and input nodes should be the same.
             if (input_nodes->size() != input_dims.size())
-                PTK_LOGE("SetupInteractTensors -> output_nodes->size() != output_dims.size(): %d vs %d.\n",
+                PTK_LOGE("SetupInteractTensors -> output_nodes->size() != output_dims.size(): %lld vs %lld.\n",
                         input_nodes->size(), input_dims.size());
 
             // Check each of input nodes.
-            for (int si = 0; si < input_nodes->size(); si++) {
+            for (uint32_t si = 0; si < input_nodes->size(); si++) {
                 Node *in_node = (*input_nodes)[si];
                 std::vector<std::vector<int>> need_match_dims = in_node->output_dims();
 
@@ -313,7 +321,7 @@ private:
                 else if (need_match_dims.size() > 1) {
                     // TODO: 目前其中一个能匹配就算匹配上了，但实际上看可能会在a+b=>c时，a和b的输出维度一致和c的其中一个输入吻合，c的另一个不吻合，则应该是不匹配的。但目前的策略是会判断为匹配的。
                     bool is_pass = false;
-                    for (int ni = 0; ni < need_match_dims.size(); ni++) {
+                    for (uint32_t ni = 0; ni < need_match_dims.size(); ni++) {
                         if (need_match_dims[ni] == input_dims[si])
                             is_pass = true;
                     }
@@ -362,7 +370,7 @@ private:
     }
 
     void ReorderTensors() {
-        for (int i = 0; i < graph_nodes_.size(); i++) {
+        for (uint32_t i = 0; i < graph_nodes_.size(); i++) {
             graph_nodes_[i]->ReorderInputQueues();
             graph_nodes_[i]->ReorderOutputQueues();
         }

@@ -14,6 +14,9 @@ scrip -> obfuscator (.a / .hpp)
 
 ---
 
+TODO
+1. graph test 补充
+2. 排查thread_pool_test偶发卡住的问题
 
 ## 使用
 

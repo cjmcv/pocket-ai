@@ -19,7 +19,7 @@ else()
 endif()
 
 # Release by default
-set(CMAKE_BUILD_TYPE "Release")  # Debug / Release
+set(CMAKE_BUILD_TYPE "Debug")  # Debug / Release
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC") # Set for .so
 set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g") 

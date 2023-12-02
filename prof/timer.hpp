@@ -75,6 +75,8 @@ public:
 
         if (print_interval != 0 && count_[idx] >= print_interval) {
             for (uint32_t i=0; i<num_; i++) {
+                if (count_[i] <= 0)
+                    continue;
                 PTK_LOGS("Timer(%s) idx(%d) cnt(%d): %.3f ms (min: %.3f, max: %.3f).\n", 
                     name_.c_str(), i, count_[i], acc_[i] / count_[i], min_[i], max_[i]);
             }

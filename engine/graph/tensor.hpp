@@ -23,6 +23,13 @@ namespace engine {
 
 // 基本数据计算与操作
 
+enum Dim {
+    BATCH = 0,
+    CHANNEL = 1,
+    HEIGHT,
+    WIDTH
+};
+
 class Tensor {
 
 public:
@@ -33,6 +40,7 @@ public:
     inline void SetId(int id) { id_ = id; }
     inline uint32_t id() { return id_; }
     inline util::MemoryLoc mem_loc() { return mem_loc_; }
+    inline uint32_t len() { return len_; }
     inline uint32_t size() { return size_; }
     inline std::vector<int> &shape() { return shape_; }
 
@@ -61,13 +69,13 @@ public:
     // Use external memory.
     void BindHostDataPtr(void *data) {
         is_owned_data_ = false;
-        data_ = data;
+        data_ = (uint8_t *)data;
     }
     
     void *GetData(util::MemoryLoc mode = util::ON_HOST) {
         if (mode == util::ON_HOST) {
             if (mem_loc_ == util::ON_HOST)
-                return data_;
+                return (void *)data_;
             else {
                 // TODO: push data from host to device.
 
@@ -76,18 +84,19 @@ public:
         else {
             if (mem_loc_ == util::ON_HOST) {
                 // TODO: push data from device to host
-                return data_;
+                return (void *)data_;
             }
             else {
 
             }
         }
+        return nullptr;
     }
 
     void Print() {
         PTK_LOGS("\n====== Tensor %p ======\n", this);
         PTK_LOGS("\nShape: ");
-        for (int i = 0; i < shape_.size(); i++) {
+        for (uint32_t i = 0; i < shape_.size(); i++) {
             PTK_LOGS("%d, ", shape_[i]);
         }
 
@@ -118,17 +127,29 @@ private:
     void Create(std::vector<int> &shape, util::Type type) {
         id_ = -1;        
         type_ = type;
-        shape_ = shape;
+
+        // There are 4 dimensions
+        shape_.resize(4);
+        for (uint32_t i=0; i<4; i++)
+            shape_[i] = 1;
+
+        len_ = 1;
+        for (uint32_t i=0; i < shape.size(); i++) {
+            len_ *= shape[i];
+            shape_[4 - shape.size() + i] = shape[i];
+        }
+        // Empty tensors are not supported
+        if (len_ == 0)
+            std::abort();
 
         TYPE_SWITCH(type, T, size_ = sizeof(T););
-        for (int i=0; i < shape.size(); i++) {
-            size_ *= shape[i];
-        }
-        if (size_ == 0)
-            std::abort();
-        
+        size_ *= len_;
+
+        // Space will be allocated by default
         is_owned_data_ = true;
-        data_ = new int8_t[size_];
+        data_ = new uint8_t[size_];
+        memset(data_, 0, size_);
+        
         mem_loc_ = util::ON_HOST;
     }
 
@@ -140,10 +161,7 @@ private:
     }
 
     void CheckDimension(Tensor *target) {
-        if (shape_.size() != target->shape().size()) {
-            PTK_LOGE("Tensor::CloneFrom -> shape mismatch.\n");
-        }
-        for (int i=0; i<shape_.size(); i++) {
+        for (uint32_t i=0; i<shape_.size(); i++) {
             if (shape_[i] != target->shape()[i]) {
                 PTK_LOGE("Tensor::CloneFrom -> shape mismatch.\n");
             }
@@ -155,11 +173,12 @@ private:
     util::MemoryLoc mem_loc_;
 
     util::Type type_;
+    uint32_t len_;
     uint32_t size_;
     std::vector<int> shape_; // n c h w
 
     bool is_owned_data_;
-    void *data_;
+    uint8_t *data_;
 };
 
 }  // engine
