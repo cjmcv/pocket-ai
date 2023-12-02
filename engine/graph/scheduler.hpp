@@ -139,7 +139,7 @@ public:
                 PTK_LOGI("groups %d exit.\n", i);
             });
         }
-        PTK_LOGI("Scheduler::TasksSpawn End.\n");
+        // PTK_LOGI("Scheduler::TasksSpawn End.\n");
     }
 
     void TasksStop()  {

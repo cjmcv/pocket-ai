@@ -38,26 +38,22 @@ class Timer {
 public:
     Timer(std::string name, uint32_t num)
         : name_(name), num_(num) {
-        count_ = new uint32_t[num]();
-        min_ = new float[num]();
-        max_ = new float[num]();
-        acc_ = new float[num]();
+        count_.resize(num);
+        min_.resize(num);
+        max_.resize(num);
+        acc_.resize(num);
+        msg_.resize(num);
 
         for (uint32_t i=0; i<num; i++) min_[i] = 999999;
     }
 
-    ~Timer() {
-        delete[] count_;
-        delete[] min_;
-        delete[] max_;
-        delete[] acc_;
-    }
+    ~Timer() {}
 
     void Start() {
         timer_.Start();
     }
 
-    void Stop(uint32_t idx, uint32_t print_interval = 0) {
+    void Stop(uint32_t idx, std::string msg) {
         timer_.Stop();
         float time = timer_.MilliSeconds();
 
@@ -72,18 +68,23 @@ public:
 
         acc_[idx] += time;
         count_[idx]++;
+        msg_[idx] = msg;
+    }
 
-        if (print_interval != 0 && count_[idx] >= print_interval) {
+    void Print(uint32_t specify_id, uint32_t print_interval = 1) {
+        if (print_interval != 0 && count_[specify_id] >= print_interval) {
             for (uint32_t i=0; i<num_; i++) {
                 if (count_[i] <= 0)
                     continue;
-                PTK_LOGS("Timer(%s) idx(%d) cnt(%d): %.3f ms (min: %.3f, max: %.3f).\n", 
-                    name_.c_str(), i, count_[i], acc_[i] / count_[i], min_[i], max_[i]);
+                PTK_LOGS("Timer(%s-%s) idx(%d) cnt(%d): %.3f ms (min: %.3f, max: %.3f).\n", 
+                    name_.c_str(), msg_[i].c_str(), i, count_[i], acc_[i] / count_[i], min_[i], max_[i]);
             }
-            memset(count_, 0, sizeof(uint32_t) * num_);
-            memset(max_, 0, sizeof(float) * num_);
-            memset(acc_, 0, sizeof(float) * num_);
-            for (uint32_t i=0; i<num_; i++) min_[i] = 999999;
+            for (uint32_t i=0; i<num_; i++) {
+                count_[i] = 0;
+                max_[i] = 0;
+                acc_[i] = 0;
+                min_[i] = 999999;
+            }
         }
     }
 
@@ -92,11 +93,12 @@ private:
 
     std::string name_;
     uint32_t num_;
-    uint32_t *count_;
+    std::vector<uint32_t> count_;
+    std::vector<std::string> msg_;
 
-    float *min_;
-    float *max_;
-    float *acc_;
+    std::vector<float> min_;
+    std::vector<float> max_;
+    std::vector<float> acc_;
 };
 
 /////////////////////////////////////////////////
@@ -108,12 +110,12 @@ private:
 //    return timer.MilliSeconds();
 //  };
 //  ret = func();
-#define PTK_TIME_DIFF_RECORD(timer, ...)  \
-    [&]() -> void {                       \
-        timer.Start();                    \
-        {__VA_ARGS__}                     \
-        timer.Stop();                     \
-    }();
+// #define PTK_TIME_DIFF_RECORD(timer, ...)  \
+//     [&]() -> void {                       \
+//         timer.Start();                    \
+//         {__VA_ARGS__}                     \
+//         timer.Stop();                     \
+//     }();
 
 } // prof.
 } // ptk.

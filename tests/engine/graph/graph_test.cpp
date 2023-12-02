@@ -157,14 +157,77 @@ void TaskD(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outp
     printf("TaskD: %d (%s).\n", count++, id.str().c_str());
 }
 
+class SerialPass {
+public:
+    void Initialize(AlgoTasks *ins) {
+        ins_ = ins;
+        a_in_ = new Tensor({600, 600}, Type::FP32);
+        a_out_b_in_ = new Tensor({200, 600}, Type::FP32);
+        a_out_c_in_ = new Tensor({400, 600}, Type::FP32);
+
+        b_out_d_in_ = new Tensor({200, 300}, Type::FP32);
+        c_out_d_in_ = new Tensor({400, 300}, Type::FP32);
+
+        d_out_ = new Tensor({1}, Type::FP32);
+        //
+        a_vout_.push_back(a_out_b_in_);
+        a_vout_.push_back(a_out_c_in_);
+
+        b_vin_.push_back(a_out_b_in_);
+        b_vout_.push_back(b_out_d_in_);
+
+        c_vin_.push_back(a_out_c_in_);
+        c_vout_.push_back(c_out_d_in_);
+
+        d_vin_.push_back(b_out_d_in_);
+        d_vin_.push_back(c_out_d_in_);
+        // d_vout_.push_back(d_out_);
+    }
+
+    void Cleanup() {
+
+    }
+
+    void Run(std::vector<Tensor *> &inputs, std::vector<Tensor *> &outputs) {
+        TaskA(ins_, inputs, a_vout_);
+        TaskB(ins_, b_vin_, b_vout_);
+        TaskC(ins_, c_vin_, c_vout_);
+        TaskD(ins_, d_vin_, outputs);
+    }
+    
+private:
+    AlgoTasks *ins_;
+
+    Tensor *a_in_;
+    Tensor *a_out_b_in_;
+    Tensor *a_out_c_in_;
+
+    Tensor *b_out_d_in_;
+    Tensor *c_out_d_in_;
+
+    Tensor *d_out_;
+
+    std::vector<Tensor *> a_vin_;
+    std::vector<Tensor *> a_vout_;
+
+    std::vector<Tensor *> b_vin_;
+    std::vector<Tensor *> b_vout_;
+
+    std::vector<Tensor *> c_vin_;
+    std::vector<Tensor *> c_vout_;
+
+    std::vector<Tensor *> d_vin_;
+    std::vector<Tensor *> d_vout_;
+};
+
 void GraphBaseTest() {
 
     Graph *graph = new Graph("s1", 1);
 
     graph->CreateNode("n1", TaskA, {{Type::FP32, 600, 600}}, {{Type::FP32, 200, 600}, {Type::FP32, 400, 600}}, 0);
     graph->CreateNode("n2", TaskB, {{Type::FP32, 200, 600}}, {{Type::FP32, 200, 300}}, 1);
-    graph->CreateNode("n3", TaskC, {{Type::FP32, 400, 600}}, {{Type::FP32, 400, 300}}, 0);
-    graph->CreateNode("n4", TaskD, {{Type::FP32, 200, 300}, {Type::FP32, 400, 300}}, {{Type::FP32, 1}}, 0);
+    graph->CreateNode("n3", TaskC, {{Type::FP32, 400, 600}}, {{Type::FP32, 400, 300}}, 2);
+    graph->CreateNode("n4", TaskD, {{Type::FP32, 200, 300}, {Type::FP32, 400, 300}}, {{Type::FP32, 1}}, 3);
     
     graph->BuildGraph({{"n1", "n2"}, {"n1", "n3"}, {"n2", "n4"}, {"n3", "n4"}});
     graph->ShowInfo();
@@ -172,31 +235,48 @@ void GraphBaseTest() {
     Tensor *in = new Tensor({600, 600}, Type::FP32);
     Tensor *out = new Tensor({1}, Type::FP32);    
     float *in_data = (float *)in->GetData();        
-    for (int j=0; j<600*600; j++) {
-        in_data[j] = 1;
-    }
-    // in->Print();
 
+    uint32_t loop_num = 20;
     AlgoTasks algo;
     graph->Start((void *)&algo);
 
     prof::Timer timer("GraphBaseTest", 2);
     timer.Start();
-    for (int i=0; i<5; i++) {
-
+    for (int i=0; i<loop_num; i++) {
+        for (int j=0; j<600*600; j++) {
+            in_data[j] = 1;
+        }
         in->SetId(i);
         graph->Feed(in);
     }
-    printf("hello.\n");
-    for (int i=0; i<5; i++) {
-        printf("hello: %d.\n", i);
+    for (int i=0; i<loop_num; i++) {
         graph->GetResult(out);
         printf("out id: %d, %f.\n", out->id(), ((float *)out->GetData())[0]);
     }
-    timer.Stop(0, 1);
+    timer.Stop(0, "graph");
 
     printf("Call stop.\n");
     graph->Stop();
+
+    // SerialPass demo.
+    SerialPass sp;
+    sp.Initialize(&algo);
+    std::vector<Tensor *> a_vin;
+    a_vin.push_back(in);
+    std::vector<Tensor *> d_vout;
+    d_vout.push_back(out);
+
+    timer.Start();
+    for (int i=0; i<loop_num; i++) {
+        for (int j=0; j<600*600; j++) {
+            in_data[j] = 1;
+        }
+        in->SetId(i+loop_num);
+        sp.Run(a_vin, d_vout);
+        printf("out id: %d, %f.\n", out->id(), ((float *)out->GetData())[0]);
+    }
+    timer.Stop(1, "serial");
+    timer.Print(1, 1);
 
     delete in;
     delete out;
