@@ -14,14 +14,14 @@ public:
     BlockingQueue() : is_exit_(false) {};
     ~BlockingQueue() {};
 
-    void push(const T& t) {
+    void Push(const T& t) {
         std::unique_lock <std::mutex> lock(mutex_);
         queue_.emplace(t); // push
         lock.unlock();
         cond_var_.notify_one();
     }
 
-    bool try_front(T* t) {
+    bool TryGetFront(T* t) {
         std::unique_lock <std::mutex> lock(mutex_);
         if (queue_.empty())
             return false;
@@ -30,7 +30,7 @@ public:
         return true;
     }
     
-    bool try_pop(T* t) {
+    bool TryPop(T* t) {
         std::unique_lock <std::mutex> lock(mutex_);
         if (queue_.empty())
             return false;
@@ -40,7 +40,7 @@ public:
         return true;
     }
 
-    bool wait_and_pop(T* t) {
+    bool BlockingPop(T* t) {
         std::unique_lock <std::mutex> lock(mutex_);
         while (!is_exit_ && queue_.empty())
             cond_var_.wait(lock);

@@ -36,7 +36,16 @@ public:
             bqp->full.exit();
             bqp->free.exit();
 
-            // TODO: 删除BlockingQueuePair和里面的所有Tensor
+            while (!bqp->full.empty()) {
+                Tensor *t;
+                bqp->full.TryPop(&t);
+                delete t;
+            }
+            while (!bqp->free.empty()) {
+                Tensor *t;
+                bqp->free.TryPop(&t);
+                delete t;
+            }
         }
     }
 
@@ -283,7 +292,7 @@ private:
         BlockingQueuePair *bqp = new BlockingQueuePair;
         for (uint32_t i = 0; i < queue_size; i++) {
             Tensor *t = new Tensor(shape, type);
-            bqp->free.push(t);
+            bqp->free.Push(t);
         }
         bq_pairs_.push_back(bqp);
         return bqp;

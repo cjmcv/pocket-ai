@@ -29,24 +29,24 @@ struct BlockingQueuePair {
 
     void Enqueue(Tensor *input) {
         Tensor *inside_free;
-        free.wait_and_pop(&inside_free);
+        free.BlockingPop(&inside_free);
         inside_free->CopyFrom(input);
-        full.push(inside_free);
+        full.Push(inside_free);
     }
 
     void Dequeue(Tensor *output) {
         Tensor *inside_full;
-        full.wait_and_pop(&inside_full);
+        full.BlockingPop(&inside_full);
         inside_full->CopyTo(output);
-        free.push(inside_full);
+        free.Push(inside_full);
     }
 
     void LoanOutFromFull(Tensor **out_full) {
-        full.try_pop(out_full);
+        full.TryPop(out_full);
     }
 
     void RecycleToFree(Tensor *in_free) {
-        free.push(in_free);
+        free.Push(in_free);
     }
 };
 
@@ -137,7 +137,7 @@ public:
         for (uint32_t i=0; i<input_queues_.size(); i++) {
             Tensor *inside_full;
             // printf("input_queues_[%d]->full.size : %d.\n", i, input_queues_[i]->full.size());
-            bool is_ready = input_queues_[i]->full.wait_and_pop(&inside_full);
+            bool is_ready = input_queues_[i]->full.BlockingPop(&inside_full);
             if (!is_ready) return false;
             input_tensors_.push_back(inside_full);
         }
@@ -146,7 +146,7 @@ public:
         for (uint32_t i=0; i<output_queues_.size(); i++) {
             Tensor *inside_free;
             // printf("output_queues_[%d]->free.size : %d.\n", i, output_queues_[i]->free.size());
-            bool is_ready = output_queues_[i]->free.wait_and_pop(&inside_free);
+            bool is_ready = output_queues_[i]->free.BlockingPop(&inside_free);
             if (!is_ready) return false;
             output_tensors_.push_back(inside_free);
         }
@@ -175,10 +175,10 @@ public:
     void RecycleIo() {
         // TODO: 按需进行异步的跨设备内存拷贝。
         for (uint32_t i=0; i<input_queues_.size(); i++) {
-            input_queues_[i]->free.push(input_tensors_[i]);
+            input_queues_[i]->free.Push(input_tensors_[i]);
         }
         for (uint32_t i=0; i<output_queues_.size(); i++) {
-            output_queues_[i]->full.push(output_tensors_[i]);
+            output_queues_[i]->full.Push(output_tensors_[i]);
         }
     }
 

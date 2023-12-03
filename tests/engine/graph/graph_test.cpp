@@ -13,6 +13,9 @@ using namespace ptk;
 using namespace ptk::util;
 using namespace ptk::engine;
 
+#define PRINTF printf
+// #define PRINTF
+
 void Gemm(const int M, const int N, const int K,
             const float *A, const int lda,
             const float *B, const int ldb,
@@ -81,7 +84,7 @@ void TaskA(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outp
 
     std::ostringstream id;
     id << std::this_thread::get_id();
-    printf("TaskA: %d (%s).\n", count++, id.str().c_str());
+    PRINTF("TaskA: %d (%s).\n", count++, id.str().c_str());
 }
 
 // 200 * 600 -> gemm（600 * 300）-> 200 * 300 
@@ -92,11 +95,11 @@ void TaskB(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outp
     // // inputs[0]->Print();
     // if (inputs[0]->shape()[Dim::HEIGHT] != 200 || inputs[0]->shape()[Dim::WIDTH] != 600 || 
     //     inputs[0]->size() != 200 * 600 * sizeof(float))
-    //     printf("Error: input shape mismatch.\n");
+    //     PRINTF("Error: input shape mismatch.\n");
     // // outputs[0]->Print();
     // if (outputs[0]->shape()[Dim::HEIGHT] != 200 || outputs[0]->shape()[Dim::WIDTH] != 300 || 
     //     outputs[0]->size() != 200 * 300 * sizeof(float))
-    //     printf("Error: output shape mismatch.\n");
+    //     PRINTF("Error: output shape mismatch.\n");
 
     static int count = 0;
     float *A = (float *)inputs[0]->GetData();
@@ -111,7 +114,7 @@ void TaskB(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outp
 
     std::ostringstream id;
     id << std::this_thread::get_id();
-    printf("TaskB: %d (%s).\n", count++, id.str().c_str());
+    PRINTF("TaskB: %d (%s).\n", count++, id.str().c_str());
 }
 
 // 400 * 600 -> gemm（600 * 300）-> 400 * 300
@@ -132,7 +135,7 @@ void TaskC(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outp
 
     std::ostringstream id;
     id << std::this_thread::get_id();
-    printf("TaskC: %d (%s).\n", count++, id.str().c_str());
+    PRINTF("TaskC: %d (%s).\n", count++, id.str().c_str());
 }
 
 // 200 * 300， 400 * 300 合并 点积分
@@ -154,7 +157,7 @@ void TaskD(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outp
 
     std::ostringstream id;
     id << std::this_thread::get_id();
-    printf("TaskD: %d (%s).\n", count++, id.str().c_str());
+    PRINTF("TaskD: %d (%s).\n", count++, id.str().c_str());
 }
 
 class SerialPass {
@@ -222,6 +225,14 @@ private:
 
 void GraphBaseTest() {
 
+    uint32_t loop_num = 10;
+    Tensor *in = new Tensor({600, 600}, Type::FP32);
+    Tensor *out = new Tensor({1}, Type::FP32);    
+    float *in_data = (float *)in->GetData();        
+    float first_out = 0;
+    prof::Timer timer("GraphBaseTest", 2);
+
+    // Graph demo
     Graph *graph = new Graph("s1", 1);
 
     graph->CreateNode("n1", TaskA, {{Type::FP32, 600, 600}}, {{Type::FP32, 200, 600}, {Type::FP32, 400, 600}}, 0);
@@ -232,31 +243,32 @@ void GraphBaseTest() {
     graph->BuildGraph({{"n1", "n2"}, {"n1", "n3"}, {"n2", "n4"}, {"n3", "n4"}});
     graph->ShowInfo();
 
-    Tensor *in = new Tensor({600, 600}, Type::FP32);
-    Tensor *out = new Tensor({1}, Type::FP32);    
-    float *in_data = (float *)in->GetData();        
-
-    uint32_t loop_num = 20;
     AlgoTasks algo;
     graph->Start((void *)&algo);
 
-    prof::Timer timer("GraphBaseTest", 2);
     timer.Start();
-    for (int i=0; i<loop_num; i++) {
+    for (uint32_t i=0; i<loop_num; i++) {
         for (int j=0; j<600*600; j++) {
             in_data[j] = 1;
         }
         in->SetId(i);
         graph->Feed(in);
     }
-    for (int i=0; i<loop_num; i++) {
+
+    for (uint32_t i=0; i<loop_num; i++) {
         graph->GetResult(out);
-        printf("out id: %d, %f.\n", out->id(), ((float *)out->GetData())[0]);
+
+        EXPECT_EQ(out->id(), i);
+        if (i == 0)
+            first_out = ((float *)out->GetData())[0];
+        EXPECT_EQ(first_out, ((float *)out->GetData())[0]);
+        PRINTF("out id: %d, %f.\n", out->id(), ((float *)out->GetData())[0]);
     }
     timer.Stop(0, "graph");
 
-    printf("Call stop.\n");
+    PRINTF("Call stop.\n");
     graph->Stop();
+    delete graph;
 
     // SerialPass demo.
     SerialPass sp;
@@ -267,13 +279,15 @@ void GraphBaseTest() {
     d_vout.push_back(out);
 
     timer.Start();
-    for (int i=0; i<loop_num; i++) {
-        for (int j=0; j<600*600; j++) {
+    for (uint32_t i=0; i<loop_num; i++) {
+        for (uint32_t j=0; j<600*600; j++) {
             in_data[j] = 1;
         }
         in->SetId(i+loop_num);
         sp.Run(a_vin, d_vout);
-        printf("out id: %d, %f.\n", out->id(), ((float *)out->GetData())[0]);
+
+        EXPECT_EQ(first_out, ((float *)out->GetData())[0]);
+        PRINTF("out id: %d, %f.\n", out->id(), ((float *)out->GetData())[0]);
     }
     timer.Stop(1, "serial");
     timer.Print(1, 1);

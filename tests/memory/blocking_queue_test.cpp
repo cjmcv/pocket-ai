@@ -32,18 +32,18 @@ void BlockingQueueTest() {
 
     for (int i=0; i<500; i++) {
         std::string str = "abc" + std::to_string(i);
-        bq->push(new MyClass(i, str));
+        bq->Push(new MyClass(i, str));
     }
 
     MyClass *c;
-    bq->try_front(&c);
+    bq->TryGetFront(&c);
 
     EXPECT_EQ(c->value(), 0);
     EXPECT_EQ(c->str(), "abc0");
 
     for (int i=0; i<500; i++) {
         MyClass *c;
-        bq->wait_and_pop(&c);
+        bq->BlockingPop(&c);
         EXPECT_EQ(c->value(), i);
         // printf("%d,", c->value());
         delete c;

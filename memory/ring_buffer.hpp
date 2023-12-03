@@ -2,8 +2,8 @@
 * \brief RingBuffer with cond.
 */
 
-#ifndef PTK_UTIL_RINGBUFFER_HPP_
-#define PTK_UTIL_RINGBUFFER_HPP_
+#ifndef PTK_MEMORY_RINGBUFFER_HPP_
+#define PTK_MEMORY_RINGBUFFER_HPP_
 
 #include <thread>
 #include <chrono>
@@ -157,4 +157,4 @@ private:
 
 } // memory.
 } // ptk.
-#endif //PTK_UTIL_RINGBUFFER_HPP_
+#endif //PTK_MEMORY_RINGBUFFER_HPP_
