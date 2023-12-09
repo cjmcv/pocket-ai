@@ -36,11 +36,11 @@ public:
     void GenerateLogMessage(const char *fname, int line, int severity)  {
     #ifdef PTK_PLATFORM_ANDRIOD
         if (severity == LogLevel::ERROR)
-            __android_log_print(ANDROID_LOG_ERROR, "com.ecas", "[%s:%d] %s", fname, line, buffer_);
+            __android_log_print(ANDROID_LOG_ERROR, "com.ptk", "[%s:%d] %s", fname, line, buffer_);
         else if (severity == LogLevel::WARNING)
-            __android_log_print(ANDROID_LOG_INFO, "com.ecas", "[%s:%d] %s", fname, line, buffer_);
+            __android_log_print(ANDROID_LOG_INFO, "com.ptk", "[%s:%d] %s", fname, line, buffer_);
         else
-            __android_log_print(ANDROID_LOG_INFO, "com.ecas", "[%s:%d] %s", fname, line, buffer_);
+            __android_log_print(ANDROID_LOG_INFO, "com.ptk", "[%s:%d] %s", fname, line, buffer_);
     #else
         if (severity != LogLevel::INFO_SIMPLE) {
             fprintf(stderr, "<%c>", "IIWE"[severity]);

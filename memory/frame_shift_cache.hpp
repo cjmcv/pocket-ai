@@ -61,5 +61,5 @@ public:
 };
 
 } // memory.
-} // ecas.
+} // ptk.
 #endif //PTK_UTIL_FRAME_SHIFT_CACHE_HPP_

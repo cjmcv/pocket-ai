@@ -105,7 +105,7 @@ private:
 //  auto func = [&]()
 //  -> float {
 //    timer.Start();
-//    ecas::QueryDevices();
+//    ptk::QueryDevices();
 //    timer.Stop();
 //    return timer.MilliSeconds();
 //  };

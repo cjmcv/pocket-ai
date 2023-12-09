@@ -9,7 +9,7 @@ ptk::thread -> pthread（gemmlowp-pthread_everywhere） / InternalThread / Threa
 ptk::memory -> Align / RingBuffer / FrameShift / BlockingQueue / MemReuser / MemPart / MemPool / 
 ptk::prof -> AsmPeakPerf / Timer（gflops） / MemRecoder (直接替换malloc/calloc) 
 #ptk::common -> PcmReader / BmpReader
-ptk::util -> Logger / TypeConverter  / 
+ptk::util -> Logger / Type / Compressor(数组/权重压缩)
 scrip -> obfuscator (.a / .hpp)
 
 ---

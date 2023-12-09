@@ -119,7 +119,7 @@ public:
         }
 
         std::vector<std::vector<Node *>> &groups = groups_;
-        printf("group size: %lld.\n", groups_.size());
+        PTK_LOGI("group size: %lld.\n", groups_.size());
         for (unsigned i = 0; i < groups.size(); ++i) {
             threads_.emplace_back([this, i, groups, usr]() -> void {
                 std::vector<Tensor *> inputs;

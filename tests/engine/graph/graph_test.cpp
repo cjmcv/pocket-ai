@@ -5,6 +5,7 @@
 #include "engine/graph/graph.hpp"
 #include "prof/timer.hpp"
 
+#include "util/basic_marco.hpp"
 #include "gtest/gtest.h"
 
 namespace {
@@ -13,8 +14,10 @@ using namespace ptk;
 using namespace ptk::util;
 using namespace ptk::engine;
 
-#define PRINTF printf
-// #define PRINTF
+// #define PRINTF PTK_PRINTF
+#define PRINTF PTK_NO_PRINTF
+// #define DEBUG_CALL PTK_DEBUG_CALL
+#define DEBUG_CALL PTK_DEBUG_NO_CALL
 
 void Gemm(const int M, const int N, const int K,
             const float *A, const int lda,
@@ -52,6 +55,7 @@ public:
 void TaskA(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outputs) {
     AlgoTasks *ins = (AlgoTasks *)usr;
     static int count = 0;
+    count++;
 
     float *in_data = (float *)inputs[0]->GetData(); // 600, 600
     int rows = inputs[0]->shape()[Dim::HEIGHT];
@@ -84,7 +88,7 @@ void TaskA(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outp
 
     std::ostringstream id;
     id << std::this_thread::get_id();
-    PRINTF("TaskA: %d (%s).\n", count++, id.str().c_str());
+    PRINTF("TaskA: %d (%s).\n", count, id.str().c_str());
 }
 
 // 200 * 600 -> gemm（600 * 300）-> 200 * 300 
@@ -102,6 +106,8 @@ void TaskB(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outp
     //     PRINTF("Error: output shape mismatch.\n");
 
     static int count = 0;
+    count++;
+
     float *A = (float *)inputs[0]->GetData();
     float *B = (float *)ins->gemm_b_->GetData();
     float *C = (float *)outputs[0]->GetData();
@@ -114,7 +120,7 @@ void TaskB(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outp
 
     std::ostringstream id;
     id << std::this_thread::get_id();
-    PRINTF("TaskB: %d (%s).\n", count++, id.str().c_str());
+    PRINTF("TaskB: %d (%s).\n", count, id.str().c_str());
 }
 
 // 400 * 600 -> gemm（600 * 300）-> 400 * 300
@@ -122,6 +128,7 @@ void TaskC(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outp
     AlgoTasks *ins = (AlgoTasks *)usr;
 
     static int count = 0;
+    count++;
 
     float *A = (float *)inputs[0]->GetData();
     float *B = (float *)ins->gemm_b_->GetData();
@@ -135,13 +142,14 @@ void TaskC(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outp
 
     std::ostringstream id;
     id << std::this_thread::get_id();
-    PRINTF("TaskC: %d (%s).\n", count++, id.str().c_str());
+    PRINTF("TaskC: %d (%s).\n", count, id.str().c_str());
 }
 
 // 200 * 300， 400 * 300 合并 点积分
 void TaskD(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outputs) {
     AlgoTasks *ins = (AlgoTasks *)usr;
     static int count = 0;
+    count++;
 
     uint32_t len = inputs[0]->len();
     float *data0 = (float *)inputs[0]->GetData();
@@ -157,7 +165,7 @@ void TaskD(void *usr, std::vector<Tensor *> &inputs, std::vector<Tensor *> &outp
 
     std::ostringstream id;
     id << std::this_thread::get_id();
-    PRINTF("TaskD: %d (%s).\n", count++, id.str().c_str());
+    PRINTF("TaskD: %d (%s).\n", count, id.str().c_str());
 }
 
 class SerialPass {
@@ -188,7 +196,13 @@ public:
     }
 
     void Cleanup() {
+        delete a_in_;
+        delete a_out_b_in_;
+        delete a_out_c_in_;
 
+        delete b_out_d_in_;
+        delete c_out_d_in_;
+        delete d_out_;
     }
 
     void Run(std::vector<Tensor *> &inputs, std::vector<Tensor *> &outputs) {
@@ -241,7 +255,7 @@ void GraphBaseTest() {
     graph->CreateNode("n4", TaskD, {{Type::FP32, 200, 300}, {Type::FP32, 400, 300}}, {{Type::FP32, 1}}, 3);
     
     graph->BuildGraph({{"n1", "n2"}, {"n1", "n3"}, {"n2", "n4"}, {"n3", "n4"}});
-    graph->ShowInfo();
+    DEBUG_CALL(graph->ShowInfo());
 
     AlgoTasks algo;
     graph->Start((void *)&algo);
@@ -291,6 +305,7 @@ void GraphBaseTest() {
     }
     timer.Stop(1, "serial");
     timer.Print(1, 1);
+    sp.Cleanup();
 
     delete in;
     delete out;
