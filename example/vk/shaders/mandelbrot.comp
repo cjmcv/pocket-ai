@@ -3,8 +3,9 @@
 
 #define WIDTH 3200
 #define HEIGHT 2400
-#define WORKGROUP_SIZE 32
-layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = 1 ) in;
+
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1 ) in;
+layout(local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in; 
 
 struct Pixel{
   vec4 value;

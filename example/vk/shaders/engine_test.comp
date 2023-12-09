@@ -7,16 +7,19 @@ layout(binding=2) buffer Output { vec4 x[]; } outputO;
 const uint TILE_M = 8;
 const uint TILE_N = 64;
 const uint TILE_K = 4;
-const uint WG_X = 16;
-const uint WG_Y = 1;
 
-layout(local_size_x = WG_X, local_size_y = WG_Y, local_size_z = 1) in;
+// Kernel Rules 1: specialization constants 0-2 are used for workgroup size.
+// Default workgroup size
+layout(local_size_x = 16, local_size_y = 1, local_size_z = 1) in;
+// Workgroup size defined with specialization constants. 
+// On cpp side there is associated SpecializationInfo entry in PipelineShaderStageCreateInfo
+layout(local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in; 
 
 // 特化常量，在 vkCreateComputePipelines 中通过 pSpecializationInfo 指定。
 // constant_id 对应偏移量，以0为首地址往后按数据类型内存占用量进行偏移
-layout(constant_id = 0) const uint M = 1;
-layout(constant_id = 1) const uint N = 1;
-layout(constant_id = 2) const float K = 1;
+layout(constant_id = 3) const uint M = 1;
+layout(constant_id = 4) const uint N = 1;
+layout(constant_id = 5) const float K = 1;
 
 // 创建pipeline layout时，需要用VkPushConstantRange指定push constant的数据大小范围。
 // 在kernel运行时，用vkCmdPushConstants来推送实际的数值
@@ -44,6 +47,6 @@ void main()
 
     if (gID.x == 0 && gID.y == 0) {
         outputO.x[0] = vec4(M, N, K, params.Width);
-        outputO.x[1] = vec4(gSize.x, gSize.y, gSize.z, params.Height);
+        outputO.x[1] = vec4(gl_WorkGroupSize.x, gSize.y, gSize.z, params.Height);
     }
 }
