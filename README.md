@@ -6,10 +6,9 @@ test -> 单元测试
 ptk::engine -> graph / vk / cl / cu
 ptk::type -> Vector (相同使用方式，添加约束进行加速) / Mat
 ptk::thread -> pthread（gemmlowp-pthread_everywhere） / InternalThread / ThreadPool
-ptk::memory -> Align / RingBuffer / FrameShift / BlockingQueue / MemReuser / MemPart / MemPool / 
+ptk::memory -> Align / RingBuffer / FrameShift / BlockingQueue / MemReuser / MemPart / MemPool / Compressor(数组/权重压缩)
 ptk::prof -> AsmPeakPerf / Timer（gflops） / MemRecoder (直接替换malloc/calloc) 
-#ptk::common -> PcmReader / BmpReader
-ptk::util -> Logger / Type / Compressor(数组/权重压缩)
+ptk::util -> basic_marco / Logger / Type / PcmReader / BmpReader
 scrip -> obfuscator (.a / .hpp)
 
 ---

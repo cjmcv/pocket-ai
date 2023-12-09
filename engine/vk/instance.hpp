@@ -92,10 +92,10 @@ public:
         if (enable_validation_) {
             // destroy callback.
             auto func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance_, "vkDestroyDebugReportCallbackEXT");
-            if (func == nullptr) {
-                throw std::runtime_error("Could not load vkDestroyDebugReportCallbackEXT");
-            }
-            func(instance_, debug_report_callback_, NULL);
+            if (func != nullptr)
+                func(instance_, debug_report_callback_, NULL);                
+            else
+                PTK_LOGE("Could not load vkDestroyDebugReportCallbackEXT.\n");
         }
 
         vkDestroyInstance(instance_, /*pAllocator=*/nullptr);
@@ -113,7 +113,7 @@ public:
 
         // Display properties of physical devices
         if (show_infos) {
-            for (int i = 0; i < count; ++i) {
+            for (uint32_t i = 0; i < count; ++i) {
                 VkPhysicalDeviceProperties properties;
                 vkGetPhysicalDeviceProperties(devices[i], &properties);
 
@@ -149,8 +149,9 @@ public:
                                                                 properties.limits.maxComputeWorkGroupSize[1],
                                                                 properties.limits.maxComputeWorkGroupSize[2]);
 
-                PTK_LOGS("memory map alignment: %d\n", properties.limits.minMemoryMapAlignment);
-                PTK_LOGS("buffer offset alignment: %d\n", properties.limits.minStorageBufferOffsetAlignment);
+                PTK_LOGS("memory map alignment: %lld\n", properties.limits.minMemoryMapAlignment);
+                PTK_LOGS("buffer offset alignment: %lld\n", properties.limits.minStorageBufferOffsetAlignment);
+                PTK_LOGS("//////////////////////////////////////////////////////\n\n");
             }
         }
         return devices;

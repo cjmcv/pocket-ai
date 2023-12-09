@@ -133,7 +133,7 @@ private:
           set_layouts_(std::move(set_layouts)) {
 
         vk_set_layouts_.resize(set_layouts_.size());
-        for (int i = 0; i < set_layouts_.size(); ++i) {
+        for (uint32_t i = 0; i < set_layouts_.size(); ++i) {
             vk_set_layouts_[i] = set_layouts_[i].layout;
         }
     }

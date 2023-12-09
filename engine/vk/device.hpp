@@ -96,9 +96,10 @@ private:
            VkPhysicalDevice physical_device, uint32_t queue_family_index)
            : device_(device), command_pool_(command_pool) {
 
+        physical_device_ = physical_device;
         vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties_);
         // Get a handle to the only member of the queue family.
-        vkGetDeviceQueue(device, queue_family_index, 0, &queue_);       
+        vkGetDeviceQueue(device, queue_family_index, 0, &queue_);
     }
 
     // Retrieve the queue family in the physical device as needed 
@@ -110,7 +111,7 @@ private:
         std::vector<VkQueueFamilyProperties> queue_families(count);
         vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &count, queue_families.data());
 
-        for (int index = 0; index < count; ++index) {
+        for (uint32_t index = 0; index < count; ++index) {
             const VkQueueFamilyProperties &properties = queue_families[index];
             if (properties.queueCount > 0 &&
                 ((properties.queueFlags & queue_flags) == queue_flags)) {
@@ -122,6 +123,7 @@ private:
         return 0;
     }
 
+    VkPhysicalDevice physical_device_;
     VkDevice device_;
     VkCommandPool command_pool_;    
     

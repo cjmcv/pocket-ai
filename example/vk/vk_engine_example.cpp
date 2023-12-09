@@ -3,7 +3,7 @@
 
 #include <cmath>
 #include "engine/vk/vulkan_engine.hpp"
-#include "bmp_reader.hpp"
+#include "util/bmp_reader.hpp"
 
 const int WIDTH = 3200; // Size of rendered mandelbrot set.
 const int HEIGHT = 2400; // Size of renderered mandelbrot set.
@@ -32,11 +32,66 @@ void saveRenderedImage(void *mappedMemory, int idx) {
     img.Write(img_name.c_str());
 }
 
+void SetParamsMandelbrot(vk::KernelParams *params) {
+    params->buffer_type = {
+        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER
+    };
+    params->spec_constant = {
+        {0, 32}, 
+        {1, 32}, 
+        {2, 1}        
+    };
+    params->push_constant_num = 0;
+}
+
+void SetParamsMatMulTiledFp32(vk::KernelParams *params) {
+    params->buffer_type = {
+        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+    };
+
+    params->spec_constant = {
+        {0, 16}, 
+        {1, 1}, 
+        {2, 1},
+        {3, 640},
+        {4, 640},
+        {5, 640},
+    };
+    params->push_constant_num = 0;
+}
+
+void SetParamsEngineTest(vk::KernelParams *params) {
+    params->buffer_type = {
+        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+    };
+
+    params->spec_constant = {
+        {0, 32}, 
+        {1, 2}, 
+        {2, 2}, 
+        {3, 160},
+        {4, 320}};
+    vk::SpecializationConstant c;
+    c.id = 5;
+    c.value.f32 = 640.123f;
+    params->spec_constant.push_back(c);
+
+    params->push_constant_num = 2;
+}
+
 int main() {
     printf("VulkanMain Start.\n");
-
     vk::VulkanEngine engine;
-    engine.Init("shaders", 0, true);
+    std::vector<std::pair<std::string, vk::SetpParamsFuncs>> shaders_name;
+    shaders_name.push_back(std::make_pair("mandelbrot", SetParamsMandelbrot));
+    shaders_name.push_back(std::make_pair("matmul_tiled_fp32", SetParamsMatMulTiledFp32));
+    shaders_name.push_back(std::make_pair("engine_test", SetParamsEngineTest));
+
+    engine.Init("shaders", shaders_name, 0, true);
 
     {
         uint32_t size = sizeof(Pixel) * WIDTH * HEIGHT;
@@ -44,7 +99,8 @@ int main() {
         std::vector<vk::Buffer *> input_buffers = { buf };
         std::vector<vk::Buffer *> output_buffers = {};
         for (uint32_t i=0; i<2; i++) {
-            engine.Run("mandelbrot", input_buffers, 0, nullptr, output_buffers);
+            uint32_t num_xyz[3] = {WIDTH, HEIGHT, 1};
+            engine.Run("mandelbrot", num_xyz, input_buffers, 0, nullptr, output_buffers);
             {
                 vk::Buffer *buffer = input_buffers[0];
                 void *mapped_data = buffer->MapMemory(0, buffer->buffer_size());
@@ -74,7 +130,8 @@ int main() {
         input_buffer1->UnmapMemory();
 
         for (uint32_t i=0; i<2; i++) {
-            engine.Run("matmul_tiled_fp32", input_buffers, 0, nullptr, output_buffers);
+            uint32_t num_xyz[3] = {WIDTH, HEIGHT, 1};
+            engine.Run("matmul_tiled_fp32", num_xyz, input_buffers, 0, nullptr, output_buffers);
 
             {
                 vk::Buffer *buffer = output_buffers[0];
@@ -115,7 +172,8 @@ int main() {
 
         for (uint32_t i=0; i<1; i++) {
             uint32_t p[2] = { 12, 23 };
-            engine.Run("engine_test", input_buffers, sizeof(uint32_t) * 2, p, output_buffers);
+            uint32_t num_xyz[3] = {WIDTH, HEIGHT, 1};
+            engine.Run("engine_test", num_xyz, input_buffers, sizeof(uint32_t) * 2, p, output_buffers);
 
             {
                 vk::Buffer *buffer = output_buffers[0];

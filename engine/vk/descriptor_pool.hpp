@@ -57,7 +57,7 @@ public:
 
         std::vector<VkDescriptorSet> sets(set_layouts.size());
         vkAllocateDescriptorSets(device_, &allocate_info, sets.data());
-        for (int i = 0; i < set_layouts.size(); ++i) {
+        for (uint32_t i = 0; i < set_layouts.size(); ++i) {
             layout_set_map_[set_layouts[i]] = sets[i];
         }
     }

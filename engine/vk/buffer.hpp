@@ -70,7 +70,7 @@ private:
     static uint32_t SelectMemoryType(VkPhysicalDeviceMemoryProperties &memory_properties,
                                      uint32_t supported_memory_types,
                                      VkMemoryPropertyFlags desired_memory_properties) {
-        for (int i = 0; i < memory_properties.memoryTypeCount; ++i) {
+        for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
             if ((supported_memory_types & (1 << i)) &&
                 ((memory_properties.memoryTypes[i].propertyFlags &
                 desired_memory_properties) == desired_memory_properties))

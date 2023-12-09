@@ -4,7 +4,7 @@
 ## x86 no gpu
 mkdir -p build-x86
 pushd build-x86
-cmake -DECAS_GPU_USE_VULKAN=OFF -DCMAKE_BUILD_TYPE=DEBUG ..
+cmake -DCMAKE_BUILD_TYPE=DEBUG ..
 make -j8
 popd
 
