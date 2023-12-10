@@ -1,8 +1,6 @@
 
-#include "vulkan/vulkan.h"
-
 #include <cmath>
-#include "engine/vk/vulkan_engine.hpp"
+#include "engine/vk/engine.hpp"
 #include "util/bmp_reader.hpp"
 
 const int WIDTH = 3200; // Size of rendered mandelbrot set.
@@ -34,7 +32,7 @@ void saveRenderedImage(void *mappedMemory, int idx) {
 
 void SetParamsMandelbrot(vk::KernelParams *params) {
     params->buffer_type = {
-        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     };
     params->spec_constant = {
         {0, 32}, 
@@ -46,9 +44,9 @@ void SetParamsMandelbrot(vk::KernelParams *params) {
 
 void SetParamsMatMulTiledFp32(vk::KernelParams *params) {
     params->buffer_type = {
-        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
     };
 
     params->spec_constant = {
@@ -64,9 +62,9 @@ void SetParamsMatMulTiledFp32(vk::KernelParams *params) {
 
 void SetParamsEngineTest(vk::KernelParams *params) {
     params->buffer_type = {
-        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        vk::DESCRIPTOR_TYPE_STORAGE_BUFFER // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
     };
 
     params->spec_constant = {
@@ -75,7 +73,7 @@ void SetParamsEngineTest(vk::KernelParams *params) {
         {2, 2}, 
         {3, 160},
         {4, 320}};
-    vk::SpecializationConstant c;
+    vk::SpecConstant c;
     c.id = 5;
     c.value.f32 = 640.123f;
     params->spec_constant.push_back(c);
@@ -85,7 +83,7 @@ void SetParamsEngineTest(vk::KernelParams *params) {
 
 int main() {
     printf("VulkanMain Start.\n");
-    vk::VulkanEngine engine;
+    vk::Engine engine;
     std::vector<std::pair<std::string, vk::SetpParamsFuncs>> shaders_name;
     shaders_name.push_back(std::make_pair("mandelbrot", SetParamsMandelbrot));
     shaders_name.push_back(std::make_pair("matmul_tiled_fp32", SetParamsMatMulTiledFp32));

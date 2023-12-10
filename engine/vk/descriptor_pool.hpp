@@ -1,7 +1,7 @@
 
 /*!
-* \brief 描述符池
-*     围绕VkDescriptorPool进行，用于创建描述符集。
+* \brief DescriptorPool
+*     Centered around VkDescriptorPool, used to create a descriptor set.
 */
 
 #ifndef PTK_ENGINE_VULKAN_DESCRIPTOR_POOL_HPP_

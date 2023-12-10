@@ -1,9 +1,9 @@
 
 /*!
-* \brief 逻辑设备
-*    vulkan操作的主体，大部分操作都基于逻辑设备进行
-*  基于手动选定的物理设备，按用途需求进行创建。
-*  同时构建 队列和命令池
+* \brief Logical device
+*   Most Vulkan operations are based on logical devices.
+*   Manually select physical devices for creation according to usage requirements. 
+*   It is also used to build queues and commands pool.
 */
 
 #ifndef PTK_ENGINE_VULKAN_DEVICE_HPP_

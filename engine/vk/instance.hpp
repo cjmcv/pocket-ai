@@ -1,8 +1,8 @@
 
 /*!
-* \brief vulkan实例
-*    与 vulkan交互的第一个环节，对应VkInstance
-*    负责设置调试验证层 和 查询可用的物理设备。
+* \brief vulkan Instance
+*    VkInstance is the first step in interacting with Vulkan.
+*    It can set up set up debugging verification layers and query available physical devices.
 */
 
 #ifndef PTK_ENGINE_VULKAN_INSTANCE_HPP_

@@ -1,7 +1,7 @@
 /*!
-* \brief 命令缓冲区
-*     围绕VkCommandBuffer进行，由命令池创建，在命令池释放时释放
-*     主要用于命令的记录
+* \brief CommandBuffer
+*     Centered around VkCommandBuffer, created by the command pool and released when the command pool is released.
+*     Mainly used for recording commands.
 */
 
 #ifndef PTK_ENGINE_VULKAN_COMMAND_BUFFER_HPP_

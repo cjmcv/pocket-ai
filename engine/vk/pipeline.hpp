@@ -1,6 +1,6 @@
 /*!
-* \brief 计算管线
-*      围绕VkPipeline进行，
+* \brief Compute pipeline
+*      Centered around VkPipeline, the setting of specialization constants is also here
 */
 
 #ifndef PTK_ENGINE_VULKAN_PIPELINE_HPP_
@@ -22,38 +22,39 @@ struct SpecConstant {
     } value;
 };
 
-    struct SpecConstantData {
-        // All packed specialization data
-        std::vector<uint8_t> data;
-        // Entry describing each specialization constant
-        std::vector<VkSpecializationMapEntry> entries;
-    };
-    // Packs |spec_constants| into a byte buffer so that they can used for Vulkan
-    // API calls.
-    SpecConstantData PackSpecConstantData(std::vector<SpecConstant> &spec_constants) {
+struct SpecConstantData {
+    // All packed specialization data
+    std::vector<uint8_t> data;
+    // Entry describing each specialization constant
+    std::vector<VkSpecializationMapEntry> entries;
+};
 
-        size_t const_size = 4; // 只支持4字节，包含int32_t，uint32_t和float
-        size_t total_size = const_size * spec_constants.size();
+// Packs |spec_constants| into a byte buffer so that they can used for Vulkan
+// API calls.
+SpecConstantData PackSpecConstantData(std::vector<SpecConstant> &spec_constants) {
 
-        std::vector<uint8_t> data(total_size);
-        std::vector<VkSpecializationMapEntry> entries;
-        entries.reserve(spec_constants.size());
+    size_t const_size = 4; // 只支持4字节，包含int32_t，uint32_t和float
+    size_t total_size = const_size * spec_constants.size();
 
-        uint32_t index = 0;  // Next available byte's index in the buffer
-        for (const auto &spec_const : spec_constants) {
-            uint8_t *ptr = data.data() + index;
+    std::vector<uint8_t> data(total_size);
+    std::vector<VkSpecializationMapEntry> entries;
+    entries.reserve(spec_constants.size());
 
-            memcpy(ptr, &(spec_const.value.u32), const_size); // TODO: 优化union
-            entries.emplace_back();
-            entries.back().constantID = spec_const.id;
-            entries.back().offset = index;
-            entries.back().size = const_size;
+    uint32_t index = 0; // Next available byte's index in the buffer
+    for (const auto &spec_const : spec_constants) {
+        uint8_t *ptr = data.data() + index;
 
-            index += const_size;
-        }
+        memcpy(ptr, &(spec_const.value.u32), const_size); // TODO: 优化union
+        entries.emplace_back();
+        entries.back().constantID = spec_const.id;
+        entries.back().offset = index;
+        entries.back().size = const_size;
 
-        return SpecConstantData{std::move(data), std::move(entries)};
+        index += const_size;
     }
+
+    return SpecConstantData{std::move(data), std::move(entries)};
+}
     
 class Pipeline {
 public:

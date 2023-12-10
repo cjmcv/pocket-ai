@@ -1,6 +1,5 @@
 /*!
-* \brief VulkanEngine 对外提供vulkan操作的最外层类，
-*     而engine/vulkan内其他文件对外部不可见。
+* \brief Engine is the outermost class of engine/vk
 */
 
 #ifndef PTK_ENGINE_VULKAN_ENGINE_HPP_
@@ -20,32 +19,17 @@
 namespace ptk {
 namespace vk {
 
-typedef enum DescriptorType {
-    DESCRIPTOR_TYPE_STORAGE_IMAGE = 1, // 3,
-    DESCRIPTOR_TYPE_UNIFORM_BUFFER = 2, // 6,
-    DESCRIPTOR_TYPE_STORAGE_BUFFER = 3 // 7
-} DescriptorType;
-
-struct SpecializationConstant {
-    uint32_t id;
-    union {
-        int32_t s32;
-        uint32_t u32;
-        float f32;
-    } value;
-};
-
-// kernel固定参数，在kernel注册时指定，不需要依赖vulkan头文件和库
 struct KernelParams {
-    std::vector<DescriptorType> buffer_type;
-    std::vector<SpecializationConstant> spec_constant;
+    std::vector<VkDescriptorType> buffer_type;
+    std::vector<SpecConstant> spec_constant;
     uint32_t push_constant_num;
 };
 
 typedef void (*SetpParamsFuncs)(KernelParams *params);
 
-class VulkanEngine {
-    // kernel运行所需资源单元。由Engine创建，一个kernel对应一个ExecUnit
+class Engine {
+    // The main units required for kernel operation. 
+    // Created by the Engine, one kernel corresponds to one ExecUnit.
     class ExecUnit {
     public:
         void GetGroupCount(const uint32_t width, const uint32_t height, const uint32_t channels) {
@@ -64,7 +48,8 @@ class VulkanEngine {
             idx++;
             printf("round idx: %d.\n", idx);
 
-            // buffer绑定顺序需要跟comp里一致, 即i与comp里对应的一致
+            // The binding order of the buffer needs to be consistent with the one in comp,
+            // That is, "i=0" corresponds to the one in comp "binding=0"
             for (uint32_t i=0; i<input_buffers.size(); i++)
                 descriptor_pool_->WriteBuffer(descriptor_set_, i, input_buffers[i]);
             for (uint32_t i=0; i<output_buffers.size(); i++)
@@ -118,23 +103,11 @@ public:
 
             res->device_ = device_;
             std::string kernel_path = shaders_path + (std::string)"/" + it->first + ".spv";
-            std::vector<VkDescriptorType> buffer_types;
-            buffer_types.resize(params->buffer_type.size());
-            for (uint32_t i=0; i<params->buffer_type.size(); i++) {
-                if (params->buffer_type[i] == DESCRIPTOR_TYPE_STORAGE_BUFFER)
-                    buffer_types[i] = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            }
-            res->shader_module_ = ShaderModule::Create(device_->device(), buffer_types, kernel_path.c_str());
+            res->shader_module_ = ShaderModule::Create(device_->device(), params->buffer_type, kernel_path.c_str());
             //
-            std::vector<SpecConstant> spec_constants;
-            spec_constants.resize(params->spec_constant.size());
-            for (uint32_t i=0; i<params->spec_constant.size(); i++) {
-                spec_constants[i].id = params->spec_constant[i].id;
-                spec_constants[i].value.u32 = params->spec_constant[i].value.u32;
-            }
             std::vector<VkDescriptorSetLayout> set_layouts = res->shader_module_->descriptor_set_layouts();
             res->pipeline_ = Pipeline::Create(device_->device(), res->shader_module_->shader_module(), 
-                                            set_layouts, "main", spec_constants, params->push_constant_num); 
+                                              set_layouts, "main", params->spec_constant, params->push_constant_num); 
             //
             auto pool_sizes = res->shader_module_->CalculateDescriptorPoolSize();
             res->descriptor_pool_ = DescriptorPool::Create(device_->device(), res->shader_module_->num_sets(), pool_sizes);
@@ -145,7 +118,7 @@ public:
 
             it++;
         } 
-        printf("Finish VulkanEngine::Init.\n");
+        printf("Finish Engine::Init.\n");
     }
 
     void Deinit() {

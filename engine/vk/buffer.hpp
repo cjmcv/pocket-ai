@@ -1,6 +1,6 @@
 /*!
 * \brief Buffer
-*    管理Buffer和与之绑定的memory
+*    Used to manage VkBuffer and VkDeviceMemory bound to it
 */
 
 #ifndef PTK_ENGINE_VULKAN_BUFFER_HPP_

@@ -1,6 +1,6 @@
 /*!
-* \brief 着色器模块
-*      基于spir-v代码创建VkShaderModule和描述符集layout
+* \brief ShaderModule
+*      Create VkShaderModule and VkDescriptorSetLayout based on spir-v code
 */
 
 #ifndef PTK_ENGINE_VULKAN_SHADER_MODULE_HPP_
