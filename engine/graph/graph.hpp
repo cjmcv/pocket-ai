@@ -46,6 +46,7 @@ public:
                 bqp->free.TryPop(&t);
                 delete t;
             }
+            delete bqp;
         }
     }
 

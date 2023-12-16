@@ -44,6 +44,9 @@ public:
             data[j] = 1;
         }
     }
+    ~AlgoTasks() {
+        delete gemm_b_;
+    }
 
 public:
     Tensor *gemm_b_;
