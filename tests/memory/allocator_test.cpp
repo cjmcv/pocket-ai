@@ -133,24 +133,90 @@ void AllocatorSubBlockTest() {
         ptrs.push_back(allocator.FastMalloc(i*200));
         allocator.FastFree(ptrs[i]);
     }
-    allocator.Show();
+    // allocator.Show();
     
     std::vector<void *> ptrs2;
     for (uint32_t i=0; i<15; i++) {
         ptrs2.push_back(allocator.FastMalloc(i*40, true));
-        allocator.Show();
+        // 200 => 40 / 80 / 120 / 160 / 200
+        if (i > 0 && i <= 5)
+            EXPECT_EQ(ptrs[1], ptrs2[i]);
+        // 400 => 240 / 280 / 320 / 360 / 400
+        if (i > 5 && i <= 10)
+            EXPECT_EQ(ptrs[2], ptrs2[i]);
+        // 600 => 440 / 480 / 520 / 560 / 600
+        if (i>10)
+            EXPECT_EQ(ptrs[3], ptrs2[i]);
+
+        // allocator.Show();
         allocator.FastFree(ptrs2[i], true);
-        allocator.Show();
+        // allocator.Show();
+
+        // if (i==10)
+        //     allocator.Shrink();
     }
+    
+    /////////
+    // allocator.Show();
+    std::vector<void *> ptrs3;
+    for (uint32_t i=0; i<6; i++) {
+        ptrs3.push_back(allocator.FastMalloc(i*40, true));
+        // 200 => 40 / 80 bias 40 
+        // 400 => 120 / 160 bias 120 / 200 / 240 / 280
+        if (i == 1)
+            EXPECT_EQ(ptrs[1], ptrs3[i]); // 40
+        else if (i==2)
+            EXPECT_EQ(ptrs[1] + 40, ptrs3[i]); // 80
+        else if (i==3)
+            EXPECT_EQ(ptrs[2], ptrs3[i]); // 120
+        else if (i==4)
+            EXPECT_EQ(ptrs[2] + 120, ptrs3[i]); // 160
+        else if (i==5)
+            EXPECT_EQ(ptrs[3], ptrs3[i]); // 200 
+        else if (i==6)
+            EXPECT_EQ(ptrs[3] + 200, ptrs3[i]); // 240 
+        // allocator.Show();
+    }
+    for (uint32_t i=0; i<6; i++) {
+        allocator.FastFree(ptrs3[i], true);
+    }
+    /////////
+
     allocator.Clear();
 }
 
+void AllocatorBindingPtrTest() {
+    Allocator allocator;
+
+    char *bptr = new char[1000];
+
+    uint32_t id = allocator.InplacementCreate(1000, bptr); // 默认为free
+    void *ptr0 = allocator.FastMalloc(900); // 整体复用 bptr
+    void *ptr1 = allocator.FastMalloc(1100); // 新开一个1100的
+    allocator.FastFree(ptr0);
+
+    void *ptr2 = allocator.FastMallocSubBlock(200, id);
+    void *ptr3 = allocator.FastMallocSubBlock(200, id);
+
+    // void *ptr2 = allocator.FastMalloc(1000, true, id);
+    allocator.Show();
+    allocator.FastFree(ptr3, true);
+    allocator.FastFree(ptr2, true);
+    allocator.FastFree(ptr1);
+    allocator.Show();
+
+    // std::vector<void *> ptrs;
+
+    allocator.Clear();    
+    delete[] bptr;
+}
 
 TEST(MemoryTest, Allocator) {
     AllocatorScratchBufferTest();
     AllocatorScratchBufferTest2();
     AllocatorManuallySpecifyTest();
     AllocatorSubBlockTest();
+    AllocatorBindingPtrTest();
 }
 
 }  // end of namespace.
