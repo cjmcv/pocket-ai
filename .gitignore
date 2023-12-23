@@ -4,6 +4,7 @@ tests/bin
 tests/build-win-x86
 tests/build-x86/
 example/*/build-win-x86
+example/*/bin
 
 # Prerequisites
 *.d
