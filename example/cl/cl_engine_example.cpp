@@ -33,6 +33,24 @@ void SetParams4DotProduct(cl::KernelParams *params) {
 #endif
 }
 
+void SetParams4Gemm(cl::KernelParams *params) {    
+#ifdef USE_MAP_DATA
+    params->io_attri = {
+        {CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, sizeof(cl_mem)},
+        {CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, sizeof(cl_mem)},
+        {NULL,                                      sizeof(uint32_t)},
+        {CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, sizeof(cl_mem)}
+    };
+#else
+    params->io_attri = {
+        {CL_MEM_READ_ONLY,  sizeof(cl_mem)},
+        {CL_MEM_READ_ONLY,  sizeof(cl_mem)},
+        {NULL,              sizeof(uint32_t)},
+        {CL_MEM_WRITE_ONLY, sizeof(cl_mem)}
+    };
+#endif
+}
+
 int main(int argc, char **argv) {
     cl_int err_code;
     size_t num_elements = 2560000; 
@@ -54,8 +72,10 @@ int main(int argc, char **argv) {
         h_src2[i] = 2;
     }
 
-    std::vector<std::pair<std::string, cl::pSetParamsFuncs>> kernels_name;
-    kernels_name.push_back(std::make_pair("DotProductDevice", SetParams4DotProduct));
+    std::vector<std::tuple<std::string, std::string, cl::pSetParamsFuncs>> kernels_name;
+    kernels_name.push_back(std::make_tuple("dot_product", "DotProductDevice", SetParams4DotProduct));
+    kernels_name.push_back(std::make_tuple("gemm", "MatrixMulDeviceV1", SetParams4Gemm));
+    kernels_name.push_back(std::make_tuple("gemm", "MatrixMulDeviceV2", SetParams4Gemm));
 
     cl::Engine engine;
     engine.Init("./kernels", kernels_name, 0);
@@ -73,8 +93,10 @@ int main(int argc, char **argv) {
     #ifdef USE_MAP_DATA
         cl_int *h_src1_map = (cl_int *)kernel->MapBuffer(CL_TRUE, 0);        
         cl_int *h_src2_map = (cl_int *)kernel->MapBuffer(CL_TRUE, 1);
-        memcpy(h_src1_map, h_src1, sizeof(cl_int) * num_elements);
-        memcpy(h_src2_map, h_src2, sizeof(cl_int) * num_elements);
+        for (int i = 0; i < num_elements; i++) {
+            h_src1_map[i] = 1;
+            h_src2_map[i] = 2;
+        }
         kernel->UnmapBuffer(0);
         kernel->UnmapBuffer(1);
     #else
@@ -85,7 +107,7 @@ int main(int argc, char **argv) {
 
         // Launch kernel
         cl_event ev;
-        engine.AsyncRun("DotProductDevice", 1, &global_work_size, &local_work_size, &ev);
+        engine.AsyncRun(kernel, 1, &global_work_size, &local_work_size, &ev);
  
         // Synchronous/blocking read of results, and check accumulated errors
     #ifdef USE_MAP_DATA
@@ -99,7 +121,6 @@ int main(int argc, char **argv) {
 
         // Gets the running time of the kernel function.
         cl::PrintCommandElapsedTime(ev);
-        //--------------------------------------------------------
 
         // Compute and compare results on host.
         DotProductHost(h_src1, h_src2, num_elements, &h_dst);
