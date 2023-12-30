@@ -1,4 +1,4 @@
-# PTK - Portable Toolkit for Edge ai
+# PTK - Portable ToolKit for AI / edge computing / hpc
 
 极简可拆分无耦合工具箱
 

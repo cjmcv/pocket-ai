@@ -58,7 +58,7 @@ public:
         for (uint32_t i=0; i<params_->io_attri.size(); i++) {
             KernelIOAttri *io_attri = &params_->io_attri[i];
             // 将所有非NULL的 mem_flag 改为 map 常用的标志
-            if (io_attri->mem_flag != NULL) {
+            if (io_attri->mem_flag != 0) {
                 io_attri->mem_flag = CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR;
             }
         }
@@ -70,7 +70,7 @@ public:
         for (uint32_t i=0; i<params_->io_attri.size(); i++) {
             KernelIOAttri *io_attri = &params_->io_attri[i];
             KernelIOBuffer *id_buffer = &params_->io_buffer[i];
-            if (io_attri->mem_flag != NULL) {
+            if (io_attri->mem_flag != 0) {
                 id_buffer->mem = clCreateBuffer(context_, io_attri->mem_flag, size[i], NULL, &err_code);
                 CL_CHECK(err_code);
                 CL_CHECK(clSetKernelArg(kernel_, i, io_attri->args_size, (void*)&id_buffer->mem));

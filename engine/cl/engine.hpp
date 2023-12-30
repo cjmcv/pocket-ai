@@ -68,6 +68,7 @@ public:
         delete platform_;
         if (context_) CL_CHECK(clReleaseContext(context_));
         if (queue_) CL_CHECK(clReleaseCommandQueue(queue_));
+        if (ev_) CL_CHECK(clReleaseEvent(ev_));
 
         for (auto it=loaders_map_.begin(); it != loaders_map_.end(); it++) {
             it->second->UnLoad();
@@ -88,11 +89,19 @@ public:
         return kernel;
     }
 
-    void AsyncRun(cl::Kernel *kernel, uint32_t work_dim, const size_t *global_work_size, const size_t *local_work_size, cl_event *ev) {
-        clEnqueueNDRangeKernel(queue_, kernel->kernel(), work_dim, NULL, global_work_size, local_work_size, 0, NULL, ev);
+    void AsyncRun(cl::Kernel *kernel, uint32_t work_dim, const size_t *global_work_size, const size_t *local_work_size, bool is_profile = false) {
+        if (is_profile) {
+            clEnqueueNDRangeKernel(queue_, kernel->kernel(), work_dim, NULL, global_work_size, local_work_size, 0, NULL, &ev_);
+            // Gets the running time of the kernel function.
+            cl::PrintCommandElapsedTime(ev_);
+        }
+        else {
+            clEnqueueNDRangeKernel(queue_, kernel->kernel(), work_dim, NULL, global_work_size, local_work_size, 0, NULL, NULL);            
+        }
     }
 
     void FinishQueue() {
+        // Block until all tasks in command_queue have been completed.
         clFinish(queue_);
     }
 
@@ -102,6 +111,7 @@ private:
     cl_context context_;
     cl_command_queue queue_;
 
+    cl_event ev_;
     std::unordered_map<std::string, KernelLoader*> loaders_map_;
     std::unordered_map<std::string, Kernel*> kernels_map_;
 };
