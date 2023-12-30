@@ -54,7 +54,17 @@ public:
         queue_ = queue;
     }
 
-    void CreateBuffer(std::vector<uint32_t> &size) {
+    void AdjustIoMemAttri4Mapp() {
+        for (uint32_t i=0; i<params_->io_attri.size(); i++) {
+            KernelIOAttri *io_attri = &params_->io_attri[i];
+            // 将所有非NULL的 mem_flag 改为 map 常用的标志
+            if (io_attri->mem_flag != NULL) {
+                io_attri->mem_flag = CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR;
+            }
+        }
+    }
+
+    void CreateBuffer(std::vector<size_t> &size) {
         cl_int err_code;
         params_->io_buffer.resize(params_->io_attri.size());
         for (uint32_t i=0; i<params_->io_attri.size(); i++) {

@@ -11,6 +11,7 @@
 namespace ptk {
 namespace cl {
 
+// One Engine using one device, one context, and one queue.
 class Engine {
 public:
     Engine() {}
@@ -74,13 +75,15 @@ public:
         }
     }
 
-    Kernel *GetKernel(std::string kernel_name) {
+    Kernel *GetKernel(std::string kernel_name, bool is_use_mapped_buffer = false) {
         std::unordered_map<std::string, Kernel *>::iterator it = kernels_map_.find(kernel_name);
         if (it == kernels_map_.end()) {
             PTK_LOGE("Can not find Kernel: %s.\n", kernel_name.c_str());
         }
 
         cl::Kernel *kernel = it->second;
+        if (is_use_mapped_buffer)
+            kernel->AdjustIoMemAttri4Mapp();
         kernel->ResourceBinding(context_, queue_);
         return kernel;
     }

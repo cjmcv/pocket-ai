@@ -1,5 +1,5 @@
 // Corresponding to CUDA -> MatrixMulKernelv1
-__kernel void MatrixMulDeviceV1(const int M, const int N, const int K, const float ALPHA,
+__kernel void MatrixMulDeviceV1(const int M, const int N, const int K,
     __global const float *A, const int lda,
     __global const float *B, const int ldb,
     __global float *C, const int ldc) {
@@ -17,7 +17,7 @@ __kernel void MatrixMulDeviceV1(const int M, const int N, const int K, const flo
 }
 
 #define BLOCK_SIDE_SIZE 16
-__kernel void MatrixMulDeviceV2(const int M, const int N, const int K, const float ALPHA,
+__kernel void MatrixMulDeviceV2(const int M, const int N, const int K,
     __global const float *A, const int lda,
     __global const float *B, const int ldb,
     __global float *C, const int ldc) {
