@@ -34,7 +34,7 @@ public:
         commandBufferAllocateInfo.commandBufferCount = 1;                                       // allocate a single command buffer.
         vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &command_buffer); // allocate command buffer.
 
-        return new CommandBuffer(device, command_buffer);
+        return new CommandBuffer(command_buffer);
     }
     ~CommandBuffer() = default;
 
@@ -116,10 +116,9 @@ public:
     }
 
 private:
-    CommandBuffer(VkDevice device, VkCommandBuffer command_buffer)
-    : command_buffer_(command_buffer), device_(device) {}
+    CommandBuffer(VkCommandBuffer command_buffer)
+    : command_buffer_(command_buffer) {}
 
-    VkDevice device_;
     VkCommandBuffer command_buffer_;
 };
 

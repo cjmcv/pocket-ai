@@ -12,7 +12,7 @@ ptk::thread -> pthread（gemmlowp-pthread_everywhere） / InternalThread / Threa
 
 ptk::memory -> Align / RingBuffer / FrameShift / BlockingQueue / MemReuser(内存复用 / 内存分区，用于管理高速缓存的使用) / MemPool(内存池) / Compressor(数组/权重压缩)
 
-ptk::prof -> AsmPeakPerf(宏定义代码块) / Timer（gflops） / MemRecoder (直接替换malloc/calloc) 
+ptk::prof -> AsmPeakPerf(宏定义代码块) / Timer（gflops） / MemRecorder (直接替换malloc/calloc) 
 
 ptk::util -> basic_marco / Logger / Type / PcmReader / BmpReader
 
@@ -29,8 +29,7 @@ TODO: 排查thread_pool_test偶发卡住的问题
 如:
 
 ```bash
-#include "ptk/engine/graph.hpp"
+#include "ptk/engine/graph/graph.hpp"
 #include "ptk/engine/cl/engine.hpp"
 #include "ptk/engine/vk/engine.hpp"
-...
 ```

@@ -149,8 +149,8 @@ public:
                                                                 properties.limits.maxComputeWorkGroupSize[1],
                                                                 properties.limits.maxComputeWorkGroupSize[2]);
 
-                PTK_LOGS("memory map alignment: %lld\n", properties.limits.minMemoryMapAlignment);
-                PTK_LOGS("buffer offset alignment: %lld\n", properties.limits.minStorageBufferOffsetAlignment);
+                PTK_LOGS("memory map alignment: %zu\n", properties.limits.minMemoryMapAlignment);
+                PTK_LOGS("buffer offset alignment: %lu\n", properties.limits.minStorageBufferOffsetAlignment);
                 PTK_LOGS("//////////////////////////////////////////////////////\n\n");
             }
         }
