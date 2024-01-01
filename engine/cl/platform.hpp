@@ -100,13 +100,13 @@ public:
                 PTK_LOGS("=========== CL_DEVICE_MAX_CLOCK_FREQUENCY: <%d>.\n", num_value);
 
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_GLOBAL_MEM_CACHE_SIZE, sizeof(long_value), &long_value, &length));
-                PTK_LOGS("=========== CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: <%llu>.\n", long_value);
+                PTK_LOGS("=========== CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: <%lu>.\n", long_value);
 
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(long_value), &long_value, &length));
-                PTK_LOGS("=========== CL_DEVICE_GLOBAL_MEM_SIZE: <%llu>.\n", long_value);
+                PTK_LOGS("=========== CL_DEVICE_GLOBAL_MEM_SIZE: <%lu>.\n", long_value);
 
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(long_value), &long_value, &length));
-                PTK_LOGS("=========== CL_DEVICE_LOCAL_MEM_SIZE: <%llu>.\n", long_value);
+                PTK_LOGS("=========== CL_DEVICE_LOCAL_MEM_SIZE: <%lu>.\n", long_value);
             }
             delete[] text_value;
             delete[] arr_value;

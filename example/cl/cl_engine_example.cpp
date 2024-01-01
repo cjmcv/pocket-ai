@@ -126,7 +126,7 @@ void TestGemm(cl::Engine *engine, std::string kernel_name, int step = 1) {
     size_t global_work_size[2] =
         {cl::GetRoundUpMultiple(width_b/step, local_work_size[0]) * local_work_size[0],
          cl::GetRoundUpMultiple(height_a/step, local_work_size[1]) * local_work_size[1]};
-    printf("global_work_size: (%d, %d).\n", global_work_size[0], global_work_size[1]);
+    printf("global_work_size: (%zu, %zu).\n", global_work_size[0], global_work_size[1]);
 
     std::vector<size_t> size = {
         height_a, width_b, width_a,                     // 0 1 2

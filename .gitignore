@@ -4,7 +4,11 @@ tests/bin
 tests/build-win-x86
 tests/build-x86/
 example/*/build-win-x86
+example/*/build-android-aarch64
+example/*/build-android-armv7
 example/*/bin
+example/*/opencl/lib
+example/*/opencl/lib64
 
 # Prerequisites
 *.d

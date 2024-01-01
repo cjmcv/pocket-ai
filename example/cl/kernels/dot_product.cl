@@ -1,4 +1,4 @@
-#define WORKGROUP_SIZE 256
+
 
 // opencl: local memory: __local          cuda: shared memory: __shared__
 //         get_local_id(0)                      threadIdx.x
@@ -6,6 +6,7 @@
 //         get_global_id(0)                     blockIdx.x * blockDim.x + threadIdx.x
 //         get_global_id(1)                     blockIdx.y * blockDim.y + threadIdx.y
 //         barrier(CLK_LOCAL_MEM_FENCE)         __syncthreads();
+#define WORKGROUP_SIZE 256
 __kernel void DotProductDevice(__global int *src1, __global int *src2, const int len, __global int *dst) {
   
     __local int shared[WORKGROUP_SIZE];

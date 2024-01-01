@@ -27,7 +27,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 # Include
 SET(INCLUDE_DIR
-    ${OPENCL_WIN_SDK_INCLUDE}
+    ${OPENCL_SDK_INCLUDE}
     ${CMAKE_CURRENT_SOURCE_DIR}/../..
 )
 message(STATUS "include: ${INCLUDE_DIR}")
@@ -44,7 +44,25 @@ message(STATUS "src: ${SRC_LIST}")
 # add_library(${PROJECT_NAME} STATIC  ${SRC_LIST})  #SHARED
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 
-target_link_libraries(${PROJECT_NAME} ${OPENCL_WIN_SDK_LIB}/OpenCL.lib)
+if(ANDROID)
+file(GLOB OPENCL_LIBRARY_LIST 
+    # "${OPENCL_SDK_LIB}/*.so"
+    ${OPENCL_SDK_LIB}/libOpenCL.so
+    ${OPENCL_SDK_LIB}/libutils.so
+    ${OPENCL_SDK_LIB}/libcutils.so
+    ${OPENCL_SDK_LIB}/liblog.so
+    ${OPENCL_SDK_LIB}/libprocessgroup.so
+    ${OPENCL_SDK_LIB}/libvndksupport.so
+    ${OPENCL_SDK_LIB}/libbase.so
+    ${OPENCL_SDK_LIB}/libcgrouprc.so
+    ${OPENCL_SDK_LIB}/libdl_android.so
+    ${OPENCL_SDK_LIB}/libc++.so
+    ${OPENCL_SDK_LIB}/libc.so
+)
+target_link_libraries(${PROJECT_NAME} ${OPENCL_LIBRARY_LIST}) # android
+else()
+target_link_libraries(${PROJECT_NAME} ${OPENCL_SDK_LIB}/OpenCL.lib) # x86
+endif()
 
 # Set output path
 set(OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
