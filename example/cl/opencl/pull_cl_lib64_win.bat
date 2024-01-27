@@ -1,4 +1,5 @@
-:: 缺 ld-android.so ？
+:: 比32位多依赖 ld-android.so
+:: ? libc.so: undefined reference to `android_get_application_target_sdk_version@LIBC_N
 
 md lib64
 
@@ -13,5 +14,6 @@ adb pull /system/lib64/libcgrouprc.so ./lib64
 adb pull /system/lib64/libdl_android.so ./lib64
 adb pull /system/lib64/libc++.so ./lib64
 adb pull /system/lib64/libc.so ./lib64
+adb pull /system/lib64/ld-android.so ./lib64
 
 pause

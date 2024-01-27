@@ -116,6 +116,7 @@ void TestDotProduct(cl::Engine *engine, std::string kernel_name) {
 }
 
 void TestGemm(cl::Engine *engine, std::string kernel_name, int step = 1) {
+    printf(">>> %s.\n", kernel_name.c_str());
 
     cl::Kernel *kernel = engine->GetKernel(kernel_name, true);
 
@@ -173,6 +174,8 @@ int main(int argc, char **argv) {
     kernels_name.push_back(std::make_tuple("gemm", "GemmDeviceV1", SetParams4Gemm));
     kernels_name.push_back(std::make_tuple("gemm", "GemmDeviceV2", SetParams4Gemm));
     kernels_name.push_back(std::make_tuple("gemm", "GemmDeviceV3", SetParams4Gemm));
+    kernels_name.push_back(std::make_tuple("gemm", "GemmDeviceV4", SetParams4Gemm));
+    // kernels_name.push_back(std::make_tuple("gemm", "GemmDeviceV5", SetParams4Gemm));
 
     cl::Engine engine;
     engine.Init("./kernels", kernels_name, 0);
@@ -203,5 +206,7 @@ int main(int argc, char **argv) {
     TestGemm(&engine, "GemmDeviceV1");
     TestGemm(&engine, "GemmDeviceV2");
     TestGemm(&engine, "GemmDeviceV3", 2);
+    TestGemm(&engine, "GemmDeviceV4", 4);
+    // TestGemm(&engine, "GemmDeviceV5", 4);
     return 0;
 }
