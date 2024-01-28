@@ -58,6 +58,7 @@ file(GLOB OPENCL_LIBRARY_LIST
     ${OPENCL_SDK_LIB}/libdl_android.so
     ${OPENCL_SDK_LIB}/libc++.so
     ${OPENCL_SDK_LIB}/libc.so
+    # ${OPENCL_SDK_LIB}/ld-android.so
 )
 target_link_libraries(${PROJECT_NAME} ${OPENCL_LIBRARY_LIST}) # android
 else()

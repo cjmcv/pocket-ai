@@ -152,8 +152,8 @@ __kernel void GemmDeviceV3(const int M, const int N, const int K,
 }
 
 // v4
-// 基于v3，进一步扩大STEP，则计算访存比为(4*4)/(4+4)=16/8
-// 在核显中耗时略高于v3，猜测是寄存器数量不足？？
+// 基于v3，进一步扩大STEP为4，则计算访存比为(4*4)/(4+4)=16/8
+// 但是测在核显中耗时略高于v3，猜测是寄存器数量不足所致。
 __kernel void GemmDeviceV4(const int M, const int N, const int K,
                            __global const float *A, const int lda,
                            __global const float *B, const int ldb,
@@ -207,3 +207,23 @@ __kernel void GemmDeviceV4(const int M, const int N, const int K,
         }
     }
 }
+
+// https://zhuanlan.zhihu.com/p/657632577
+// v5 
+// 基于v3，在v3中数据从全局内存->局部内存->寄存器后才开始计算，多线程与单线程相似，
+// 假设硬件资源限制只有5个线程，会同时处理0-4号数据，5-10号数据需要等0-4号的某些数据处理完了之后，才有空闲去执行新的数据。
+// 就会存在如下情况，计算需要依赖读的结果，而写又依赖读的结果，造成了不必要的耗时等待。
+// 读 ->      -> 写，读  ->        ->  写，读  ->        -> 写
+//       计算                计算                  计算
+// 而计算和访存指令可同时执行，可使用double buffer来掩盖这个耗时，变成：
+// 读0 ->  读1  ->  写0，读2  -> 写1，读3  ->  写2  -> 写3
+//        计算0      计算1        计算2       计算3
+// 第一次计算0需要依赖读0完了后才开始计算，但计算0时可以同时读1，在计算0完了后，读1也结束了。
+//
+// 具体实施方式：
+// 1) 设置双份局部内存，如上流程，偶数用buffer0，奇数用buffer1。在buffer0中进行计算0的同时在buffer1中读1.
+// 2）第一次数据加载在主循环之前，最后一次计算在主循环之后；
+// 3) 由于计算和下一次访存使用的Shared Memory不同，因此主循环中每次循环只需要一次__syncthreads()即可.
+// 4) 由于GPU不能向CPU那样支持乱序执行，主循环中需要先将下一次循环计算需要的Gloabal Memory中的数据load 到寄存器，
+//    然后进行本次计算，之后再将load到寄存器中的数据写到Shared Memory，这样在LDG指令向Global Memory做load时，
+//    不会影响后续FFMA及其它运算指令的 launch 执行，也就达到了Double Buffering的目的。
