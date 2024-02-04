@@ -120,8 +120,8 @@ void TestGemm(cl::Engine *engine, std::string kernel_name, int step = 1) {
 
     cl::Kernel *kernel = engine->GetKernel(kernel_name, true);
 
-    uint32_t height_a = 2560, width_a = 5120;
-    uint32_t height_b = 5120, width_b = 3840;
+    uint32_t height_a = 960, width_a = 1280;
+    uint32_t height_b = 1280, width_b = 640;
     // set and log Global and Local work size dimensions
     size_t local_work_size[2] = {16, 16}; // x, y
     size_t global_work_size[2] =
@@ -175,10 +175,12 @@ int main(int argc, char **argv) {
     kernels_name.push_back(std::make_tuple("gemm", "GemmDeviceV2", SetParams4Gemm));
     kernels_name.push_back(std::make_tuple("gemm", "GemmDeviceV3", SetParams4Gemm));
     kernels_name.push_back(std::make_tuple("gemm", "GemmDeviceV4", SetParams4Gemm));
-    // kernels_name.push_back(std::make_tuple("gemm", "GemmDeviceV5", SetParams4Gemm));
+    kernels_name.push_back(std::make_tuple("gemm", "GemmDeviceV5_0", SetParams4Gemm));
+    kernels_name.push_back(std::make_tuple("gemm", "GemmDeviceV5_1", SetParams4Gemm));
+    kernels_name.push_back(std::make_tuple("gemm", "GemmDeviceV5_2", SetParams4Gemm));
 
     cl::Engine engine;
-    engine.Init("./kernels", kernels_name, 0);
+    engine.Init("./kernels", kernels_name, 0, true);
 
     // DotProductCPU
     {
@@ -207,6 +209,8 @@ int main(int argc, char **argv) {
     TestGemm(&engine, "GemmDeviceV2");
     TestGemm(&engine, "GemmDeviceV3", 2);
     TestGemm(&engine, "GemmDeviceV4", 4);
-    // TestGemm(&engine, "GemmDeviceV5", 4);
+    TestGemm(&engine, "GemmDeviceV5_0", 2);
+    TestGemm(&engine, "GemmDeviceV5_1", 2);
+    TestGemm(&engine, "GemmDeviceV5_2", 2);
     return 0;
 }
