@@ -1,10 +1,13 @@
-// TODO: split-k
+// TODO: split-k å’Œ å‘é‡åŒ–ç±»å‹ï¼Œå¦‚float4
 
+
+// GEMM çŸ©é˜µä¹˜æ³•ä¾‹å­
+// ä¼˜åŒ–é‡‡ç”¨äº†å…±äº«å†…å­˜ï¼Œä¸é€‚ç”¨ä¸ç§»åŠ¨ç«¯gpu
 
 //    K     N        N
 // M     K     =  M
 
-//// CPU°æ±¾
+//// CPUç‰ˆæœ¬
 // for (i = 0; i < M; ++i) {
 //     for (j = 0; j < N; ++j) {
 //         for (k = 0; k < K; ++k) {
@@ -13,11 +16,11 @@
 //     }
 // }
 
-// V1 ´ÓÈ«¾ÖÄÚ´æÖĞ¶ÁÈ¡ËùĞèÒª¼ÆËãµÄÊı¾İµ½¼Ä´æÆ÷×ö¼ÆËã¡£Ö±½Ó»ùÓÚCPU°æ±¾£¬½«iºÍjÑ­»·È¥µô¡£
-// Kernel´úÂë±àĞ´Ê±Ê¡ÂÔÁËiºÍjÑ­»·£¬µ«Êµ¼ÊiºÍjÑ­»·ÈÔÈ»ÊÇ´æÔÚµÄ£¬
-// ÒòÎªµ±¾ØÕó¹æÄ£Ïà¶ÔÓÚÓ²¼ş×ÊÔ´À´Ëµ¹»´óÊ±£¬SMÊıÁ¿ÓĞÏŞÇÒSMÄÚ»îÔ¾warpÊıÁ¿Ò²ÓĞÏŞ
-// £¨Active Warp ÊıÁ¿£¬È¡¾öÓÚ block Ê¹ÓÃµÄ×ÊÔ´ÊıÁ¿£©£¬µ¼ÖÂgpuÎŞ·¨Ò»´Î½«ËùÓĞÊı¾İ¶¼¶ÁÈ¡µ½¡£
-// ËùÒÔiºÍjÁ½²ãÑ­»·ÖĞÒ²ÊÇÓĞÒ»¶¨µÄÏÈºóË³ĞòµÄ¡£·ÖÎö·Ã´æÊ±£¬¿ÉÒÔÖ±½ÓÈõ»¯ÎªÈı²ãÑ­»·½øĞĞ·ÖÎö¡£
+// V1 ä»å…¨å±€å†…å­˜ä¸­è¯»å–æ‰€éœ€è¦è®¡ç®—çš„æ•°æ®åˆ°å¯„å­˜å™¨åšè®¡ç®—ã€‚ç›´æ¥åŸºäºCPUç‰ˆæœ¬ï¼Œå°†iå’Œjå¾ªç¯å»æ‰ã€‚
+// Kernelä»£ç ç¼–å†™æ—¶çœç•¥äº†iå’Œjå¾ªç¯ï¼Œä½†å®é™…iå’Œjå¾ªç¯ä»ç„¶æ˜¯å­˜åœ¨çš„ï¼Œ
+// å› ä¸ºå½“çŸ©é˜µè§„æ¨¡ç›¸å¯¹äºç¡¬ä»¶èµ„æºæ¥è¯´å¤Ÿå¤§æ—¶ï¼ŒSMæ•°é‡æœ‰é™ä¸”SMå†…æ´»è·ƒwarpæ•°é‡ä¹Ÿæœ‰é™
+// ï¼ˆActive Warp æ•°é‡ï¼Œå–å†³äº block ä½¿ç”¨çš„èµ„æºæ•°é‡ï¼‰ï¼Œå¯¼è‡´gpuæ— æ³•ä¸€æ¬¡å°†æ‰€æœ‰æ•°æ®éƒ½è¯»å–åˆ°ã€‚
+// æ‰€ä»¥iå’Œjä¸¤å±‚å¾ªç¯ä¸­ä¹Ÿæ˜¯æœ‰ä¸€å®šçš„å…ˆåé¡ºåºçš„ã€‚åˆ†æè®¿å­˜æ—¶ï¼Œå¯ä»¥ç›´æ¥å¼±åŒ–ä¸ºä¸‰å±‚å¾ªç¯è¿›è¡Œåˆ†æã€‚
 __kernel void GemmDeviceV1(const int M, const int N, const int K,
                            __global const float *A, const int lda,
                            __global const float *B, const int ldb,
@@ -36,11 +39,11 @@ __kernel void GemmDeviceV1(const int M, const int N, const int K,
 }
 
 // v2
-// v1ÖĞ£¬½«Êı¾İ´ÓÈ«¾ÖÄÚ²¿ÖĞ°áµ½¼Ä´æÆ÷ÖĞ½øĞĞ¼ÆËã£¬ÒòÎª±¾ÖÊÓĞÈı²ãÑ­»·£¬²Î¿¼CPU°æ±¾£¬ËùÒÔAB¾ØÕóµÄÊı¾İ»áÖØ¸´¶ÁÈ¡¡£
-// Ôò¿ÉÒÔ½«global memory µÄÊı¾İÒ»´ÎĞÔ¼ÓÔØµ½ local memory£¬Ã¿¸öÊı¾İ´ÓÈ«¾ÖÄÚ´æ¶ÁÈ¡£¬Ïàµ±ÓëCPUµÄÁ½²ãÑ­»·¡£
-// Ëæºó¼ÆËãËùĞèÊı¾İ´Ó¾Ö²¿ÄÚ´æÖĞ¶ÁÈ¡µ½¼Ä´æÆ÷½øĞĞ¼ÆËã£¬
-// ¼´½«Èı²ãÑ­»·ÖØ¸´¶ÁÈ¡È«¾ÖÄÚ´æ£¬¸ÄÎªÁ½²ãÑ­»·Ò»´Î¶ÁÈ¡È«¾ÖÄÚ´æºÍÈı²ãÑ­»·ÖØ¸´¶ÁÈ¡¾Ö²¿ÄÚ´æ¡£
-// ´ó´ó½ÚÊ¡´Óglobal memory¶ÁÈ¡µÄ´ÎÊı¡£
+// v1ä¸­ï¼Œå°†æ•°æ®ä»å…¨å±€å†…éƒ¨ä¸­æ¬åˆ°å¯„å­˜å™¨ä¸­è¿›è¡Œè®¡ç®—ï¼Œå› ä¸ºæœ¬è´¨æœ‰ä¸‰å±‚å¾ªç¯ï¼Œå‚è€ƒCPUç‰ˆæœ¬ï¼Œæ‰€ä»¥ABçŸ©é˜µçš„æ•°æ®ä¼šé‡å¤è¯»å–ã€‚
+// åˆ™å¯ä»¥å°†global memory çš„æ•°æ®ä¸€æ¬¡æ€§åŠ è½½åˆ° local memoryï¼Œæ¯ä¸ªæ•°æ®ä»å…¨å±€å†…å­˜è¯»å–ï¼Œç›¸å½“ä¸CPUçš„ä¸¤å±‚å¾ªç¯ã€‚
+// éšåè®¡ç®—æ‰€éœ€æ•°æ®ä»å±€éƒ¨å†…å­˜ä¸­è¯»å–åˆ°å¯„å­˜å™¨è¿›è¡Œè®¡ç®—ï¼Œ
+// å³å°†ä¸‰å±‚å¾ªç¯é‡å¤è¯»å–å…¨å±€å†…å­˜ï¼Œæ”¹ä¸ºä¸¤å±‚å¾ªç¯ä¸€æ¬¡è¯»å–å…¨å±€å†…å­˜å’Œä¸‰å±‚å¾ªç¯é‡å¤è¯»å–å±€éƒ¨å†…å­˜ã€‚
+// å¤§å¤§èŠ‚çœä»global memoryè¯»å–çš„æ¬¡æ•°ã€‚
 #define BLOCK_SIDE_SIZE 16
 __kernel void GemmDeviceV2(const int M, const int N, const int K,
                            __global const float *A, const int lda,
@@ -79,21 +82,21 @@ __kernel void GemmDeviceV2(const int M, const int N, const int K,
 }
 
 // v3 
-// v2ÖĞ£¬Ê¹ÓÃ¾Ö²¿ÄÚ´æÀ´Ìæ´úÈ«¾ÖÄÚ´æµÄ¶à´Î·ÃÎÊ£¬¼õÉÙÈ«¾ÖÄÚ´æµÄ·ÃÎÊ´ÎÊı£¬Æğµ½¼ÓËÙËùÓÃ¡£
-// µ«ÒòÎªÊµ¼Ê¼ÆËãĞèÒªÏÈ½«Êı¾İ¶ÁÈ¡µ½¼Ä´æÆ÷£¬ËäÈ»¾Ö²¿ÄÚ´æ·ÃÎÊ±ÈÈ«¾ÖÄÚ´æ¿ì²»ÉÙ£¬Ò²ÈÔÈ»´æÔÚ²»¶ÌµÄºÄÊ±¡£
-// ¿´ÄÚ²ãÑ­»·¿ÉÖª£¬Ò»´Î³Ë·¨ÔËËã´îÅäÁ½´Î¾Ö²¿ÄÚ´æµÄ¶ÁÈ¡£¬¼´¼ÆËãÖ¸ÁîÕ¼1/3£¬¶øµ¼ÖÂ·Ã´æÑÓ³ÙÎŞ·¨±»Òş²Ø¡£
+// v2ä¸­ï¼Œä½¿ç”¨å±€éƒ¨å†…å­˜æ¥æ›¿ä»£å…¨å±€å†…å­˜çš„å¤šæ¬¡è®¿é—®ï¼Œå‡å°‘å…¨å±€å†…å­˜çš„è®¿é—®æ¬¡æ•°ï¼Œèµ·åˆ°åŠ é€Ÿæ‰€ç”¨ã€‚
+// ä½†å› ä¸ºå®é™…è®¡ç®—éœ€è¦å…ˆå°†æ•°æ®è¯»å–åˆ°å¯„å­˜å™¨ï¼Œè™½ç„¶å±€éƒ¨å†…å­˜è®¿é—®æ¯”å…¨å±€å†…å­˜å¿«ä¸å°‘ï¼Œä¹Ÿä»ç„¶å­˜åœ¨ä¸çŸ­çš„è€—æ—¶ã€‚
+// çœ‹å†…å±‚å¾ªç¯å¯çŸ¥ï¼Œä¸€æ¬¡ä¹˜æ³•è¿ç®—æ­é…ä¸¤æ¬¡å±€éƒ¨å†…å­˜çš„è¯»å–ï¼Œå³è®¡ç®—æŒ‡ä»¤å 1/3ï¼Œè€Œå¯¼è‡´è®¿å­˜å»¶è¿Ÿæ— æ³•è¢«éšè—ã€‚
 // 
-// ÒòÎª°´Èı²ãÑ­»·´Ó¾Ö²¿ÄÚ´æÖĞ¶ÁÈ¡Êı¾İ£¬Ôò¿ÉÒÔÊ¹ÓÃ¶à¸ö¼Ä´æÆ÷×÷ÎªÏÂÒ»²ã¼¶ÄÚ´æ¡£
-// ¼´ v1 Èı²ãÈ«¾ÖÄÚ´æ -> v2 Á½²ãÈ«¾ÖÄÚ´æ+Èı²ã¾Ö²¿ÄÚ´æ -> v3 Á½²ãÈ«¾ÖÄÚ´æ+Èı²ã/stepµÄ¾Ö²¿ÄÚ´æ+Èı²ãstep¼Ä´æÆ÷£¨¼Ä´æÆ÷¿ÉºöÂÔ£©
-// Ôò ²Ù×÷·½Ê½ÊÇ½«Êı¾İ´Ó¾Ö²¿ÄÚ´æ¶ÁÈ¡Ê±£¬±¾À´1¸öÏß³Ì¶ÁÈ¡K¸öÊı¾İ£¬±ä³É1¸öÏß³Ì¶ÁÈ¡step*K¸öÊı¾İÒÔ¼°step*stepµÄ×Ó¾ØÕó³Ë·¨¡£
+// å› ä¸ºæŒ‰ä¸‰å±‚å¾ªç¯ä»å±€éƒ¨å†…å­˜ä¸­è¯»å–æ•°æ®ï¼Œåˆ™å¯ä»¥ä½¿ç”¨å¤šä¸ªå¯„å­˜å™¨ä½œä¸ºä¸‹ä¸€å±‚çº§å†…å­˜ã€‚
+// å³ v1 ä¸‰å±‚å…¨å±€å†…å­˜ -> v2 ä¸¤å±‚å…¨å±€å†…å­˜+ä¸‰å±‚å±€éƒ¨å†…å­˜ -> v3 ä¸¤å±‚å…¨å±€å†…å­˜+ä¸‰å±‚/stepçš„å±€éƒ¨å†…å­˜+ä¸‰å±‚stepå¯„å­˜å™¨ï¼ˆå¯„å­˜å™¨å¯å¿½ç•¥ï¼‰
+// åˆ™ æ“ä½œæ–¹å¼æ˜¯å°†æ•°æ®ä»å±€éƒ¨å†…å­˜è¯»å–æ—¶ï¼Œæœ¬æ¥1ä¸ªçº¿ç¨‹è¯»å–Kä¸ªæ•°æ®ï¼Œå˜æˆ1ä¸ªçº¿ç¨‹è¯»å–step*Kä¸ªæ•°æ®ä»¥åŠstep*stepçš„å­çŸ©é˜µä¹˜æ³•ã€‚
 //
-// ÁîÒ»¸öÏß³Ì´¦Àí2*2¸öÔªËØ£¬¶ÔÓ¦Ê¹ÓÃÔ­À´4±¶µÄlocal memory
-// local size ²»±ä£¬global size Ëõ¼õµ½1/4£¬Ôò×ÜÏß³ÌÊı¼õÉÙµ½1/4
+// ä»¤ä¸€ä¸ªçº¿ç¨‹å¤„ç†2*2ä¸ªå…ƒç´ ï¼Œå¯¹åº”ä½¿ç”¨åŸæ¥4å€çš„local memory
+// local size ä¸å˜ï¼Œglobal size ç¼©å‡åˆ°1/4ï¼Œåˆ™æ€»çº¿ç¨‹æ•°å‡å°‘åˆ°1/4
 //
-// note: 1¸öÏß³Ì¶ÁÈ¡K¸öÊı¾İ ºÍ 1¸öÏß³Ì¶ÁÈ¡step*k¸öÊı¾İ ĞÔÄÜÉÏÎŞÌ«´ó²îÒì£¬ÒòÎªÊı¾İ¶àÊ±Ç°Õß¿ªµÄÏß³Ì¶à£¬ÔòÈÔĞèÒªÂÖÑ¯£¬²»»áÍ¬Ò»Ê±¿ÌÈ«²¿´¦ÀíÍê¡£
-//       µ«ÊÇstep*stepµÄ¼Ä´æÆ÷ÉÏ¾ØÕó³Ë·¨, Ã¿¸öÔªËØ»á±»Ê¹ÓÃSTEP´Î£¬Ïàµ±ÓÚ¾Ö²¿ÄÚ´æµÄ·Ã´æÉÙÁËSTEP±¶¡£
-//       ÈçstepÎª2£¬ÔòAºÍB¾ØÕó´Ó¾Ö²¿ÄÚ´æµ½¼Ä´æÆ÷µÄ·Ã´æ´ÎÊı·Ö±ğÊÇ2´Î£¬¹²4´Î£¬¶ø¼ÆËãÒ²ÊÇ2*2´Î£¬Ôò¼ÆËã·Ã´æ±ÈÎª1±È1.
-//       stepÎª4£¬Ôò·Ã´æ4+4´Î£¬¼ÆËã4*4=16´Î£¬¼ÆËã·Ã´æ±ÈÎª16/8
+// note: 1ä¸ªçº¿ç¨‹è¯»å–Kä¸ªæ•°æ® å’Œ 1ä¸ªçº¿ç¨‹è¯»å–step*kä¸ªæ•°æ® æ€§èƒ½ä¸Šæ— å¤ªå¤§å·®å¼‚ï¼Œå› ä¸ºæ•°æ®å¤šæ—¶å‰è€…å¼€çš„çº¿ç¨‹å¤šï¼Œåˆ™ä»éœ€è¦è½®è¯¢ï¼Œä¸ä¼šåŒä¸€æ—¶åˆ»å…¨éƒ¨å¤„ç†å®Œã€‚
+//       ä½†æ˜¯step*stepçš„å¯„å­˜å™¨ä¸ŠçŸ©é˜µä¹˜æ³•, æ¯ä¸ªå…ƒç´ ä¼šè¢«ä½¿ç”¨STEPæ¬¡ï¼Œç›¸å½“äºå±€éƒ¨å†…å­˜çš„è®¿å­˜å°‘äº†STEPå€ã€‚
+//       å¦‚stepä¸º2ï¼Œåˆ™Aå’ŒBçŸ©é˜µä»å±€éƒ¨å†…å­˜åˆ°å¯„å­˜å™¨çš„è®¿å­˜æ¬¡æ•°åˆ†åˆ«æ˜¯2æ¬¡ï¼Œå…±4æ¬¡ï¼Œè€Œè®¡ç®—ä¹Ÿæ˜¯2*2æ¬¡ï¼Œåˆ™è®¡ç®—è®¿å­˜æ¯”ä¸º1æ¯”1.
+//       stepä¸º4ï¼Œåˆ™è®¿å­˜4+4æ¬¡ï¼Œè®¡ç®—4*4=16æ¬¡ï¼Œè®¡ç®—è®¿å­˜æ¯”ä¸º16/8
 __kernel void GemmDeviceV3(const int M, const int N, const int K,
                            __global const float *A, const int lda,
                            __global const float *B, const int ldb,
@@ -105,20 +108,20 @@ __kernel void GemmDeviceV3(const int M, const int N, const int K,
     __local float a_shared[BLOCK_SIDE_SIZE*STEP][BLOCK_SIDE_SIZE*STEP];
     __local float b_shared[BLOCK_SIDE_SIZE*STEP][BLOCK_SIDE_SIZE*STEP];
 
-    for (int gid_x = get_global_id(0), gid_y = get_global_id(1);
-        gid_x < N && gid_y < M; 
-        gid_x += get_global_size(0), gid_y += get_global_size(1)) {
+    for (int gid_sx = get_global_id(0)*STEP, gid_sy = get_global_id(1)*STEP;
+        gid_sx < N && gid_sy < M; 
+        gid_sx += get_global_size(0)*STEP, gid_sy += get_global_size(1)*STEP) {
 
-        int tid_x = get_local_id(0);
-        int tid_y = get_local_id(1);
+        int tid_sx = get_local_id(0)*STEP;
+        int tid_sy = get_local_id(1)*STEP;
 
         // For blocks in grid.
         for (int bk = 0; bk < K; bk += BLOCK_SIDE_SIZE*STEP) {
             for (int si = 0; si < STEP; si++) {
                 for (int sj = 0; sj < STEP; sj++) {
                     // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
-                    a_shared[tid_y*STEP+si][tid_x*STEP+sj] = A[(gid_y*STEP+si) * lda + (bk + tid_x*STEP+sj)];
-                    b_shared[tid_y*STEP+si][tid_x*STEP+sj] = B[(bk + (tid_y*STEP+si)) * ldb + gid_x*STEP+sj];
+                    a_shared[tid_sy+si][tid_sx+sj] = A[(gid_sy+si) * lda + (bk + tid_sx+sj)];
+                    b_shared[tid_sy+si][tid_sx+sj] = B[(bk + (tid_sy+si)) * ldb + gid_sx+sj];
                 }
             }
             barrier(CLK_LOCAL_MEM_FENCE); 
@@ -127,18 +130,18 @@ __kernel void GemmDeviceV3(const int M, const int N, const int K,
             for (int k = 0; k < BLOCK_SIDE_SIZE*STEP; k++) {
                 // for (int si = 0; si < STEP; si++) {
                 //     for (int sj = 0; sj < STEP; sj++) {
-                //         sub_sum[si][sj] += a_shared[tid_y*STEP+si][k] * b_shared[k][tid_x*STEP+sj];
+                //         sub_sum[si][sj] += a_shared[tid_sy*STEP+si][k] * b_shared[k][tid_sx*STEP+sj];
                 //     }
                 // }
 
                 for (int si=0; si < STEP; si++) {
-                    a_reg[si] = a_shared[tid_y*STEP+si][k];
-                    b_reg[si] = b_shared[k][tid_x*STEP+si];
+                    a_reg[si] = a_shared[tid_sy+si][k];
+                    b_reg[si] = b_shared[k][tid_sx+si];
                 }
                 // Both a_reg[si] and b_reg[sj] have been used STEP times.
                 for (int si = 0; si < STEP; si++) {
                     for (int sj = 0; sj < STEP; sj++) {
-                        sub_sum[si][sj] += a_reg[si] * b_reg[sj]; // a_shared[tid_y*STEP+si][k] * b_shared[k][tid_x*STEP+sj];
+                        sub_sum[si][sj] += a_reg[si] * b_reg[sj]; // a_shared[tid_sy*STEP+si][k] * b_shared[k][tid_sx*STEP+sj];
                     }
                 }
             }
@@ -147,15 +150,14 @@ __kernel void GemmDeviceV3(const int M, const int N, const int K,
 
         for (int i=0; i<STEP; i++) {
             for (int j=0; j<STEP; j++) {
-                C[(gid_y*STEP+i) * ldc + gid_x*STEP+j] += sub_sum[i][j];
+                C[(gid_sy+i) * ldc + gid_sx+j] += sub_sum[i][j];
             }
         }
     }
 }
 
 // v4
-// »ùÓÚv3£¬½øÒ»²½À©´óSTEPÎª4£¬Ôò¼ÆËã·Ã´æ±ÈÎª(4*4)/(4+4)=16/8
-// µ«ÊÇ²âÔÚºËÏÔÖĞºÄÊ±ÂÔ¸ßÓÚv3£¬²Â²âÊÇ¼Ä´æÆ÷ÊıÁ¿²»×ãËùÖÂ¡£
+// åŸºäºv3ï¼Œè¿›ä¸€æ­¥æ‰©å¤§STEPä¸º4ï¼Œåˆ™è®¡ç®—è®¿å­˜æ¯”ä¸º(4*4)/(4+4)=16/8, è¿›ä¸€æ­¥æé«˜
 __kernel void GemmDeviceV4(const int M, const int N, const int K,
                            __global const float *A, const int lda,
                            __global const float *B, const int ldb,
@@ -168,20 +170,20 @@ __kernel void GemmDeviceV4(const int M, const int N, const int K,
     __local float a_shared[BLOCK_SIDE_SIZE*STEP][BLOCK_SIDE_SIZE*STEP];
     __local float b_shared[BLOCK_SIDE_SIZE*STEP][BLOCK_SIDE_SIZE*STEP];
 
-    for (int gid_x = get_global_id(0), gid_y = get_global_id(1);
-        gid_x < N && gid_y < M; 
-        gid_x += get_global_size(0), gid_y += get_global_size(1)) {
+    for (int gid_sx = get_global_id(0)*STEP, gid_sy = get_global_id(1)*STEP;
+        gid_sx < N && gid_sy < M; 
+        gid_sx += get_global_size(0)*STEP, gid_sy += get_global_size(1)*STEP) {
 
-        int tid_x = get_local_id(0);
-        int tid_y = get_local_id(1);
+        int tid_sx = get_local_id(0)*STEP;
+        int tid_sy = get_local_id(1)*STEP;
 
         // For blocks in grid.
         for (int bk = 0; bk < K; bk += BLOCK_SIDE_SIZE*STEP) {
             for (int si = 0; si < STEP; si++) {
                 for (int sj = 0; sj < STEP; sj++) {
                     // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
-                    a_shared[tid_y*STEP+si][tid_x*STEP+sj] = A[(gid_y*STEP+si) * lda + (bk + tid_x*STEP+sj)];
-                    b_shared[tid_y*STEP+si][tid_x*STEP+sj] = B[(bk + (tid_y*STEP+si)) * ldb + gid_x*STEP+sj];
+                    a_shared[tid_sy+si][tid_sx+sj] = A[(gid_sy+si) * lda + (bk + tid_sx+sj)];
+                    b_shared[tid_sy+si][tid_sx+sj] = B[(bk + (tid_sy+si)) * ldb + gid_sx+sj];
                 }
             }
             barrier(CLK_LOCAL_MEM_FENCE); 
@@ -189,13 +191,13 @@ __kernel void GemmDeviceV4(const int M, const int N, const int K,
             // For elements in a block.
             for (int k = 0; k < BLOCK_SIDE_SIZE*STEP; k++) {
                 for (int si=0; si < STEP; si++) {
-                    a_reg[si] = a_shared[tid_y*STEP+si][k];
-                    b_reg[si] = b_shared[k][tid_x*STEP+si];
+                    a_reg[si] = a_shared[tid_sy+si][k];
+                    b_reg[si] = b_shared[k][tid_sx+si];
                 }
                 // Both a_reg[si] and b_reg[sj] have been used STEP times.
                 for (int si = 0; si < STEP; si++) {
                     for (int sj = 0; sj < STEP; sj++) {
-                        sub_sum[si][sj] += a_reg[si] * b_reg[sj]; // a_shared[tid_y*STEP+si][k] * b_shared[k][tid_x*STEP+sj];
+                        sub_sum[si][sj] += a_reg[si] * b_reg[sj]; // a_shared[tid_sy*STEP+si][k] * b_shared[k][tid_sx*STEP+sj];
                     }
                 }
             }
@@ -204,48 +206,48 @@ __kernel void GemmDeviceV4(const int M, const int N, const int K,
 
         for (int i=0; i<STEP; i++) {
             for (int j=0; j<STEP; j++) {
-                C[(gid_y*STEP+i) * ldc + gid_x*STEP+j] += sub_sum[i][j];
+                C[(gid_sy+i) * ldc + gid_sx+j] += sub_sum[i][j];
             }
         }
     }
 }
 
 // https://zhuanlan.zhihu.com/p/657632577
-// ²Î¿¼¿õÊÓÌìÔªµÄ ¡¶CUDA ¾ØÕó³Ë·¨ÖÕ¼«ÓÅ»¯Ö¸ÄÏ¡·
+// å‚è€ƒæ—·è§†å¤©å…ƒçš„ ã€ŠCUDA çŸ©é˜µä¹˜æ³•ç»ˆæä¼˜åŒ–æŒ‡å—ã€‹
 // v5 
-// »ùÓÚv3£¬ÔÚv3ÖĞÊı¾İ´ÓÈ«¾ÖÄÚ´æ->¾Ö²¿ÄÚ´æ->¼Ä´æÆ÷ºó²Å¿ªÊ¼¼ÆËã£¬¶àÏß³ÌÓëµ¥Ïß³ÌÏàËÆ£¬
-// ¼ÙÉèÓ²¼ş×ÊÔ´ÏŞÖÆÖ»ÓĞ5¸öÏß³Ì£¬»áÍ¬Ê±´¦Àí0-4ºÅÊı¾İ£¬5-10ºÅÊı¾İĞèÒªµÈ0-4ºÅµÄÄ³Ğ©Êı¾İ´¦ÀíÍêÁËÖ®ºó£¬²ÅÓĞ¿ÕÏĞÈ¥Ö´ĞĞĞÂµÄÊı¾İ¡£
-// ¶ø¼ÆËãĞèÒªÒÀÀµ¶ÁµÄ½á¹û£¬¶øĞ´ÓÖÒÀÀµ¶ÁµÄ½á¹û£¬Ôì³ÉÁË²»±ØÒªµÄºÄÊ±µÈ´ı¡£
-// ¶Á ->      -> Ğ´£¬¶Á  ->        ->  Ğ´£¬¶Á  ->        -> Ğ´
-//       ¼ÆËã                ¼ÆËã                  ¼ÆËã
-// ¶ø¼ÆËãºÍ·Ã´æÖ¸Áî¿ÉÍ¬Ê±Ö´ĞĞ£¬¿ÉÊ¹ÓÃdouble buffer / prefetch À´ÑÚ¸ÇÕâ¸öºÄÊ±£¬±ä³É£º
-// ¶Á0 ->  ¶Á1  ->  Ğ´0£¬¶Á2  -> Ğ´1£¬¶Á3  ->  Ğ´2  -> Ğ´3
-//        ¼ÆËã0      ¼ÆËã1        ¼ÆËã2       ¼ÆËã3
-// µÚÒ»´Î¼ÆËã0ĞèÒªÒÀÀµ¶Á0ÍêÁËºó²Å¿ªÊ¼¼ÆËã£¬µ«¼ÆËã0Ê±¿ÉÒÔÍ¬Ê±¶Á1£¬ÔÚ¼ÆËã0ÍêÁËºó£¬¶Á1Ò²½áÊøÁË¡£
-// ¶Á1ºÍ¼ÆËã0Ö®¼äÎŞÊı¾İÒÀÀµ£¬¿É²Î¿¼CPU¶à¼¶Á÷Ë®ÏßÖĞµÄĞ´ºó¶ÁÊı¾İ³åÍ»£¬ÎŞÒÀÀµÊ±Á÷Ë®Ïß¸ü¸ßĞ§(ILPÖ¸Áî¼¶²¢ĞĞ)£¬
-// loadÖ¸Áî²»»á×èÈûºóĞøÖ¸ÁîµÄ·¢Éä£¬Ê¹¼ÆËãµ¥ÔªÅÅµÃ¸üÂú¡£
-// Í¬Ê±Ê¡µôÁËÒ»´Îbarrier(CLK_LOCAL_MEM_FENCE) / __syncthreads(), ¼õÉÙµÈ´ıÊ±¼ä¡£
+// åŸºäºv3ï¼Œåœ¨v3ä¸­æ•°æ®ä»å…¨å±€å†…å­˜->å±€éƒ¨å†…å­˜->å¯„å­˜å™¨åæ‰å¼€å§‹è®¡ç®—ï¼Œå¤šçº¿ç¨‹ä¸å•çº¿ç¨‹ç›¸ä¼¼ï¼Œ
+// å‡è®¾ç¡¬ä»¶èµ„æºé™åˆ¶åªæœ‰5ä¸ªçº¿ç¨‹ï¼Œä¼šåŒæ—¶å¤„ç†0-4å·æ•°æ®ï¼Œ5-10å·æ•°æ®éœ€è¦ç­‰0-4å·çš„æŸäº›æ•°æ®å¤„ç†å®Œäº†ä¹‹åï¼Œæ‰æœ‰ç©ºé—²å»æ‰§è¡Œæ–°çš„æ•°æ®ã€‚
+// è€Œè®¡ç®—éœ€è¦ä¾èµ–è¯»çš„ç»“æœï¼Œè€Œå†™åˆä¾èµ–è¯»çš„ç»“æœï¼Œé€ æˆäº†ä¸å¿…è¦çš„è€—æ—¶ç­‰å¾…ã€‚
+// è¯» ->      -> å†™ï¼Œè¯»  ->        ->  å†™ï¼Œè¯»  ->        -> å†™
+//       è®¡ç®—                è®¡ç®—                  è®¡ç®—
+// è€Œè®¡ç®—å’Œè®¿å­˜æŒ‡ä»¤å¯åŒæ—¶æ‰§è¡Œï¼Œå¯ä½¿ç”¨double buffer / prefetch æ¥æ©ç›–è¿™ä¸ªè€—æ—¶ï¼Œå˜æˆï¼š
+// è¯»0 ->  è¯»1  ->  å†™0ï¼Œè¯»2  -> å†™1ï¼Œè¯»3  ->  å†™2  -> å†™3
+//        è®¡ç®—0      è®¡ç®—1        è®¡ç®—2       è®¡ç®—3
+// ç¬¬ä¸€æ¬¡è®¡ç®—0éœ€è¦ä¾èµ–è¯»0å®Œäº†åæ‰å¼€å§‹è®¡ç®—ï¼Œä½†è®¡ç®—0æ—¶å¯ä»¥åŒæ—¶è¯»1ï¼Œåœ¨è®¡ç®—0å®Œäº†åï¼Œè¯»1ä¹Ÿç»“æŸäº†ã€‚
+// è¯»1å’Œè®¡ç®—0ä¹‹é—´æ— æ•°æ®ä¾èµ–ï¼Œå¯å‚è€ƒCPUå¤šçº§æµæ°´çº¿ä¸­çš„å†™åè¯»æ•°æ®å†²çªï¼Œæ— ä¾èµ–æ—¶æµæ°´çº¿æ›´é«˜æ•ˆ(ILPæŒ‡ä»¤çº§å¹¶è¡Œ)ï¼Œ
+// loadæŒ‡ä»¤ä¸ä¼šé˜»å¡åç»­æŒ‡ä»¤çš„å‘å°„ï¼Œä½¿è®¡ç®—å•å…ƒæ’å¾—æ›´æ»¡ã€‚
+// åŒæ—¶çœæ‰äº†ä¸€æ¬¡barrier(CLK_LOCAL_MEM_FENCE) / __syncthreads(), å‡å°‘ç­‰å¾…æ—¶é—´ã€‚
 //
-// ¾ßÌåÊµÊ©·½Ê½£º
-// 1) ÉèÖÃË«·İ¾Ö²¿ÄÚ´æ£¬ÈçÉÏÁ÷³Ì£¬Å¼ÊıÓÃbuffer0£¬ÆæÊıÓÃbuffer1¡£ÔÚbuffer0ÖĞ½øĞĞ¼ÆËã0µÄÍ¬Ê±ÔÚbuffer1ÖĞ¶Á1.
-// 2£©µÚÒ»´ÎÊı¾İ¼ÓÔØÔÚÖ÷Ñ­»·Ö®Ç°£¬×îºóÒ»´Î¼ÆËãÔÚÖ÷Ñ­»·Ö®ºó£»
+// å…·ä½“å®æ–½æ–¹å¼ï¼š
+// 1) è®¾ç½®åŒä»½å±€éƒ¨å†…å­˜ï¼Œå¦‚ä¸Šæµç¨‹ï¼Œå¶æ•°ç”¨buffer0ï¼Œå¥‡æ•°ç”¨buffer1ã€‚åœ¨buffer0ä¸­è¿›è¡Œè®¡ç®—0çš„åŒæ—¶åœ¨buffer1ä¸­è¯»1.
+// 2ï¼‰ç¬¬ä¸€æ¬¡æ•°æ®åŠ è½½åœ¨ä¸»å¾ªç¯ä¹‹å‰ï¼Œæœ€åä¸€æ¬¡è®¡ç®—åœ¨ä¸»å¾ªç¯ä¹‹åï¼›
 //      (gmem0->smem0)   // first.  sync
 //        for  (smem0->reg0) 
 //             (reg0 compute)
 //             (gmem1->smem1)  // sync
 //      (reg1 compute)   // last
-// 3) ÓÉÓÚ¼ÆËãºÍÏÂÒ»´Î·Ã´æÊ¹ÓÃµÄShared Memory²»Í¬£¬Òò´ËÖ÷Ñ­»·ÖĞÃ¿´ÎÑ­»·Ö»ĞèÒªÒ»´Î__syncthreads()¼´¿É.
-// 4) ÓÉÓÚGPU²»ÄÜÏòCPUÄÇÑùÖ§³ÖÂÒĞòÖ´ĞĞ£¬Ö÷Ñ­»·ÖĞĞèÒªÏÈ½«ÏÂÒ»´ÎÑ­»·¼ÆËãĞèÒªµÄGloabal MemoryÖĞµÄÊı¾İload µ½¼Ä´æÆ÷£¬
-//    È»ºó½øĞĞ±¾´Î¼ÆËã£¬Ö®ºóÔÙ½«loadµ½¼Ä´æÆ÷ÖĞµÄÊı¾İĞ´µ½Shared Memory£¬ÕâÑùÔÚLDGÖ¸ÁîÏòGlobal Memory×öloadÊ±£¬
-//    ²»»áÓ°ÏìºóĞøFFMA¼°ÆäËüÔËËãÖ¸ÁîµÄ launch Ö´ĞĞ£¬Ò²¾Í´ïµ½ÁËDouble BufferingµÄÄ¿µÄ¡£
-// 4.1) ½«smem¼ÓÔØregµÄ´úÂë¸úgmem¼ÓÔØµ½smemµÄ´úÂë·ÅÔÚÒ»Æğ£¬Í¬ÊôÓÚ¼ÓÔØ²¿·Ö¡£
+// 3) ç”±äºè®¡ç®—å’Œä¸‹ä¸€æ¬¡è®¿å­˜ä½¿ç”¨çš„Shared Memoryä¸åŒï¼Œå› æ­¤ä¸»å¾ªç¯ä¸­æ¯æ¬¡å¾ªç¯åªéœ€è¦ä¸€æ¬¡__syncthreads()å³å¯.
+// 4) ç”±äºGPUä¸èƒ½å‘CPUé‚£æ ·æ”¯æŒä¹±åºæ‰§è¡Œï¼Œä¸»å¾ªç¯ä¸­éœ€è¦å…ˆå°†ä¸‹ä¸€æ¬¡å¾ªç¯è®¡ç®—éœ€è¦çš„Gloabal Memoryä¸­çš„æ•°æ®load åˆ°å¯„å­˜å™¨ï¼Œ
+//    ç„¶åè¿›è¡Œæœ¬æ¬¡è®¡ç®—ï¼Œä¹‹åå†å°†loadåˆ°å¯„å­˜å™¨ä¸­çš„æ•°æ®å†™åˆ°Shared Memoryï¼Œè¿™æ ·åœ¨LDGæŒ‡ä»¤å‘Global Memoryåšloadæ—¶ï¼Œ
+//    ä¸ä¼šå½±å“åç»­FFMAåŠå…¶å®ƒè¿ç®—æŒ‡ä»¤çš„ launch æ‰§è¡Œï¼Œä¹Ÿå°±è¾¾åˆ°äº†Double Bufferingçš„ç›®çš„ã€‚
+// 4.1) å°†smemåŠ è½½regçš„ä»£ç è·ŸgmemåŠ è½½åˆ°smemçš„ä»£ç æ”¾åœ¨ä¸€èµ·ï¼ŒåŒå±äºåŠ è½½éƒ¨åˆ†ã€‚
 //      (gmem0->smem0)   // first. sync
 //      (smem0->reg0)    
 //        for  (reg0 compute)
 //             (gmem1->smem1)  // sync
 //             (smem1->reg1) 
 //      (reg1 compute)   // last  
-// 4.2£©gmem -> smem Æä±¾ÖÊÆäÊµÊÇ gmem -> reg(ldg_reg) -> smem, ¶ÔÆä½øĞĞ·Ö½â£¬·½±ã×éºÏ
+// 4.2ï¼‰gmem -> smem å…¶æœ¬è´¨å…¶å®æ˜¯ gmem -> reg(ldg_reg) -> smem, å¯¹å…¶è¿›è¡Œåˆ†è§£ï¼Œæ–¹ä¾¿ç»„åˆ
 //      (gmem0->ldg_reg0)   // first
 //      (ldg_reg0->smem0)   // sync
 //      (smem0->reg0) 
@@ -254,10 +256,10 @@ __kernel void GemmDeviceV4(const int M, const int N, const int K,
 //             (ldg_reg1->smem1) // sync
 //             (smem1->reg1) 
 //      (reg1 compute)   // last  
-//      ÊµÏÖµ½ÕâÀï£¬¿ÉÒÔ¿´µ½¼ÆËã²¿·ÖÓÃµ½reg0£¬reg0ÓÉÉÏÒ»¾äµÄsmem0->reg0µÃµ½£¬´æÔÚÒÀÀµ¡£
+//      å®ç°åˆ°è¿™é‡Œï¼Œå¯ä»¥çœ‹åˆ°è®¡ç®—éƒ¨åˆ†ç”¨åˆ°reg0ï¼Œreg0ç”±ä¸Šä¸€å¥çš„smem0->reg0å¾—åˆ°ï¼Œå­˜åœ¨ä¾èµ–ã€‚
 // 
-// 4.3£©½«ÄÚ²ãÑ­»·ÖĞ gmem -> ldg_reg ·Åµ½ ¼ÆËãµÄÇ°Ãæ£¬ldg_reg -> smem ·Åµ½¼ÆËãµÄºóÃæ¡£
-//      Ôògmem¶ÁÈ¡ºÍsmemĞ´ÈëÓĞÒ»¶¨¼ä¸ô£¬smem¶ÁÈ¡ºÍ¼ÆËãÒ²ÓĞÒ»¶¨¼ä¸ô£¬ÒÀÀµĞÔ¼õÈõ£¿
+// 4.3ï¼‰å°†å†…å±‚å¾ªç¯ä¸­ gmem -> ldg_reg æ”¾åˆ° è®¡ç®—çš„å‰é¢ï¼Œldg_reg -> smem æ”¾åˆ°è®¡ç®—çš„åé¢ã€‚
+//      åˆ™gmemè¯»å–å’Œsmemå†™å…¥æœ‰ä¸€å®šé—´éš”ï¼Œsmemè¯»å–å’Œè®¡ç®—ä¹Ÿæœ‰ä¸€å®šé—´éš”ï¼Œä¾èµ–æ€§å‡å¼±ï¼Ÿ
 //      (gmem0->ldg_reg0)   // first
 //      (ldg_reg0->smem0)   // sync
 //      (smem0->reg0) 
@@ -268,33 +270,33 @@ __kernel void GemmDeviceV4(const int M, const int N, const int K,
 //      (reg1 compute)   // last  
 //
 
-// ÖĞ¼ä°æ±¾£¬½«Ö÷Ñ­»·²ğ·Ö³ÉÈı¶Î ÊµÏÖÉÏÃæµÄ 1£¬2 ºÍ 3
+// ä¸­é—´ç‰ˆæœ¬ï¼Œå°†ä¸»å¾ªç¯æ‹†åˆ†æˆä¸‰æ®µ å®ç°ä¸Šé¢çš„ 1ï¼Œ2 å’Œ 3
 __kernel void GemmDeviceV5_0(const int M, const int N, const int K,
                            __global const float *A, const int lda,
                            __global const float *B, const int ldb,
                            __global float *C, const int ldc) {
 
-    const int STEP = 2;
+    const int STEP = 4;
     float a_reg[2][STEP] = {0};
     float b_reg[2][STEP] = {0};    
     float sub_sum[2][STEP][STEP] = {{{0}}};
     __local float a_shared[2][BLOCK_SIDE_SIZE*STEP][BLOCK_SIDE_SIZE*STEP];
     __local float b_shared[2][BLOCK_SIDE_SIZE*STEP][BLOCK_SIDE_SIZE*STEP];
 
-    for (int gid_x = get_global_id(0), gid_y = get_global_id(1);
-        gid_x < N && gid_y < M; 
-        gid_x += get_global_size(0), gid_y += get_global_size(1)) {
+    for (int gid_sx = get_global_id(0)*STEP, gid_sy = get_global_id(1)*STEP;
+        gid_sx < N && gid_sy < M; 
+        gid_sx += get_global_size(0)*STEP, gid_sy += get_global_size(1)*STEP) {
 
-        int tid_x = get_local_id(0);
-        int tid_y = get_local_id(1);
+        int tid_sx = get_local_id(0)*STEP;
+        int tid_sy = get_local_id(1)*STEP;
 
         // The first fetching.
         int bk = 0;
         for (int si = 0; si < STEP; si++) {
             for (int sj = 0; sj < STEP; sj++) {
                 // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
-                a_shared[0][tid_y*STEP+si][tid_x*STEP+sj] = A[(gid_y*STEP+si) * lda + (bk + tid_x*STEP+sj)];
-                b_shared[0][tid_y*STEP+si][tid_x*STEP+sj] = B[(bk + (tid_y*STEP+si)) * ldb + gid_x*STEP+sj];
+                a_shared[0][tid_sy+si][tid_sx+sj] = A[(gid_sy+si) * lda + (bk + tid_sx+sj)];
+                b_shared[0][tid_sy+si][tid_sx+sj] = B[(bk + (tid_sy+si)) * ldb + gid_sx+sj];
             }
         }
         barrier(CLK_LOCAL_MEM_FENCE); 
@@ -308,22 +310,22 @@ __kernel void GemmDeviceV5_0(const int M, const int N, const int K,
             // For elements in a block.
             for (int k = 0; k < block_step; k++) {
                 for (int si=0; si < STEP; si++) {
-                    a_reg[buffer_id][si] = a_shared[buffer_id][tid_y*STEP+si][k];
-                    b_reg[buffer_id][si] = b_shared[buffer_id][k][tid_x*STEP+si];
+                    a_reg[buffer_id][si] = a_shared[buffer_id][tid_sy+si][k];
+                    b_reg[buffer_id][si] = b_shared[buffer_id][k][tid_sx+si];
                 }
                 // Both a_reg[si] and b_reg[sj] have been used STEP times.
                 for (int si = 0; si < STEP; si++) {
                     for (int sj = 0; sj < STEP; sj++) {
-                        sub_sum[buffer_id][si][sj] += a_reg[buffer_id][si] * b_reg[buffer_id][sj]; // a_shared[tid_y*STEP+si][k] * b_shared[k][tid_x*STEP+sj];
+                        sub_sum[buffer_id][si][sj] += a_reg[buffer_id][si] * b_reg[buffer_id][sj]; // a_shared[tid_sy*STEP+si][k] * b_shared[k][tid_sx*STEP+sj];
                     }
                 }
             }
-
+            
             for (int si = 0; si < STEP; si++) {
                 for (int sj = 0; sj < STEP; sj++) {
                     // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
-                    a_shared[buffer_next_id][tid_y*STEP+si][tid_x*STEP+sj] = A[(gid_y*STEP+si) * lda + (bk + tid_x*STEP+sj)];
-                    b_shared[buffer_next_id][tid_y*STEP+si][tid_x*STEP+sj] = B[(bk + (tid_y*STEP+si)) * ldb + gid_x*STEP+sj];
+                    a_shared[buffer_next_id][tid_sy+si][tid_sx+sj] = A[(gid_sy+si) * lda + (bk + tid_sx+sj)];
+                    b_shared[buffer_next_id][tid_sy+si][tid_sx+sj] = B[(bk + (tid_sy+si)) * ldb + gid_sx+sj];
                 }
             }
             barrier(CLK_LOCAL_MEM_FENCE);
@@ -336,13 +338,13 @@ __kernel void GemmDeviceV5_0(const int M, const int N, const int K,
         // The last computing
         for (int k = 0; k < block_step; k++) {
             for (int si=0; si < STEP; si++) {
-                a_reg[buffer_id][si] = a_shared[buffer_next_id][tid_y*STEP+si][k];
-                b_reg[buffer_id][si] = b_shared[buffer_next_id][k][tid_x*STEP+si];
+                a_reg[buffer_id][si] = a_shared[buffer_id][tid_sy+si][k];
+                b_reg[buffer_id][si] = b_shared[buffer_id][k][tid_sx+si];
             }
             // Both a_reg[si] and b_reg[sj] have been used STEP times.
             for (int si = 0; si < STEP; si++) {
                 for (int sj = 0; sj < STEP; sj++) {
-                    sub_sum[buffer_id][si][sj] += a_reg[buffer_id][si] * b_reg[buffer_id][sj]; // a_shared[tid_y*STEP+si][k] * b_shared[k][tid_x*STEP+sj];
+                    sub_sum[buffer_id][si][sj] += a_reg[buffer_id][si] * b_reg[buffer_id][sj]; // a_shared[tid_sy*STEP+si][k] * b_shared[k][tid_sx*STEP+sj];
                 }
             }
         }
@@ -350,129 +352,19 @@ __kernel void GemmDeviceV5_0(const int M, const int N, const int K,
 
         for (int i=0; i<STEP; i++) {
             for (int j=0; j<STEP; j++) {
-                C[(gid_y*STEP+i) * ldc + gid_x*STEP+j] += sub_sum[0][i][j] + sub_sum[1][i][j];
+                C[(gid_sy+i) * ldc + gid_sx+j] += sub_sum[0][i][j] + sub_sum[1][i][j];
             }
         }
     }
 }
 
-// ÖĞ¼ä°æ±¾£¬ÊµÏÖ4.1ºÍ4.2
+// ä¸­é—´ç‰ˆæœ¬ï¼Œå®ç°4.1å’Œ4.2
 __kernel void GemmDeviceV5_1(const int M, const int N, const int K,
                            __global const float *A, const int lda,
                            __global const float *B, const int ldb,
                            __global float *C, const int ldc) {
 
-    const int STEP = 2;
-    float a_ldg_reg[2][2] = {0};
-    float b_ldg_reg[2][2] = {0}; 
-
-    float a_reg[2][STEP] = {0};
-    float b_reg[2][STEP] = {0};    
-    float sub_sum[2][STEP][STEP] = {{{0}}};
-    __local float a_shared[2][BLOCK_SIDE_SIZE*STEP][BLOCK_SIDE_SIZE*STEP];
-    __local float b_shared[2][BLOCK_SIDE_SIZE*STEP][BLOCK_SIDE_SIZE*STEP];
-
-    int  block_step = BLOCK_SIDE_SIZE*STEP;
-    for (int gid_x = get_global_id(0), gid_y = get_global_id(1);
-        gid_x < N && gid_y < M; 
-        gid_x += get_global_size(0), gid_y += get_global_size(1)) {
-
-        int tid_x = get_local_id(0);
-        int tid_y = get_local_id(1);
-
-        // The first fetching.
-        int bk = 0;
-        for (int si = 0; si < STEP; si++) {
-            for (int sj = 0; sj < STEP; sj++) {
-                a_ldg_reg[si][sj] = A[(gid_y*STEP+si) * lda + (bk + tid_x*STEP+sj)];
-                b_ldg_reg[si][sj] = B[(bk + (tid_y*STEP+si)) * ldb + gid_x*STEP+sj];
-            }
-        }
-        for (int si = 0; si < STEP; si++) {
-            for (int sj = 0; sj < STEP; sj++) {
-                // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
-                a_shared[0][tid_y*STEP+si][tid_x*STEP+sj] = a_ldg_reg[si][sj];
-                b_shared[0][tid_y*STEP+si][tid_x*STEP+sj] = b_ldg_reg[si][sj];
-            }
-        }
-        barrier(CLK_LOCAL_MEM_FENCE);
-
-        for (int k = 0; k < block_step; k++) {
-            for (int si=0; si < STEP; si++) {
-                a_reg[0][si] = a_shared[0][tid_y*STEP+si][k];
-                b_reg[0][si] = b_shared[0][k][tid_x*STEP+si];
-            }
-        }
-
-        // Main loop.
-        int buffer_id = 0;
-        int buffer_next_id = 1;
-        int temp_id;
-        for (bk = block_step; bk < K; bk += block_step) {
-            // For elements in a block.
-            for (int k = 0; k < block_step; k++) {
-                // Both a_reg[si] and b_reg[sj] have been used STEP times.
-                for (int si = 0; si < STEP; si++) {
-                    for (int sj = 0; sj < STEP; sj++) {
-                        sub_sum[buffer_id][si][sj] += a_reg[buffer_id][si] * b_reg[buffer_id][sj]; // a_shared[tid_y*STEP+si][k] * b_shared[k][tid_x*STEP+sj];
-                    }
-                }
-            }
-
-            for (int si = 0; si < STEP; si++) {
-                for (int sj = 0; sj < STEP; sj++) {
-                    // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
-                    a_ldg_reg[si][sj] = A[(gid_y*STEP+si) * lda + (bk + tid_x*STEP+sj)];
-                    b_ldg_reg[si][sj] = B[(bk + (tid_y*STEP+si)) * ldb + gid_x*STEP+sj];
-                }
-            }
-            for (int si = 0; si < STEP; si++) {
-                for (int sj = 0; sj < STEP; sj++) {
-                    // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
-                    a_shared[buffer_next_id][tid_y*STEP+si][tid_x*STEP+sj] = a_ldg_reg[si][sj];
-                    b_shared[buffer_next_id][tid_y*STEP+si][tid_x*STEP+sj] = b_ldg_reg[si][sj];
-                }
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
-
-            for (int k = 0; k < block_step; k++) {
-                for (int si=0; si < STEP; si++) {
-                    a_reg[buffer_next_id][si] = a_shared[buffer_next_id][tid_y*STEP+si][k];
-                    b_reg[buffer_next_id][si] = b_shared[buffer_next_id][k][tid_x*STEP+si];
-                }
-            }
-            temp_id = buffer_next_id;
-            buffer_next_id = buffer_id;
-            buffer_id = temp_id;
-        }
-
-        // The last computing
-        for (int k = 0; k < block_step; k++) {
-            // Both a_reg[si] and b_reg[sj] have been used STEP times.
-            for (int si = 0; si < STEP; si++) {
-                for (int sj = 0; sj < STEP; sj++) {
-                    sub_sum[buffer_id][si][sj] += a_reg[buffer_id][si] * b_reg[buffer_id][sj]; // a_shared[tid_y*STEP+si][k] * b_shared[k][tid_x*STEP+sj];
-                }
-            }
-        }
-        barrier(CLK_LOCAL_MEM_FENCE); 
-
-        for (int i=0; i<STEP; i++) {
-            for (int j=0; j<STEP; j++) {
-                C[(gid_y*STEP+i) * ldc + gid_x*STEP+j] += sub_sum[0][i][j] + sub_sum[1][i][j];
-            }
-        }
-    }
-}
-
-
-// v5 prefetch / double buffering ÊµÏÖÖÕ°æ£¨ÊµÏÖ4.3£©
-__kernel void GemmDeviceV5_2(const int M, const int N, const int K,
-                           __global const float *A, const int lda,
-                           __global const float *B, const int ldb,
-                           __global float *C, const int ldc) {
-
-    const int STEP = 2;
+    const int STEP = 4;
     float a_ldg_reg[STEP][STEP] = {0};
     float b_ldg_reg[STEP][STEP] = {0}; 
 
@@ -483,57 +375,45 @@ __kernel void GemmDeviceV5_2(const int M, const int N, const int K,
     __local float b_shared[2][BLOCK_SIDE_SIZE*STEP][BLOCK_SIDE_SIZE*STEP];
 
     int  block_step = BLOCK_SIDE_SIZE*STEP;
-    for (int gid_x = get_global_id(0), gid_y = get_global_id(1);
-        gid_x < N && gid_y < M; 
-        gid_x += get_global_size(0), gid_y += get_global_size(1)) {
+    for (int gid_sx = get_global_id(0)*STEP, gid_sy = get_global_id(1)*STEP;
+        gid_sx < N && gid_sy < M; 
+        gid_sx += get_global_size(0)*STEP, gid_sy += get_global_size(1)*STEP) {
 
-        int tid_x = get_local_id(0);
-        int tid_y = get_local_id(1);
+        int tid_sx = get_local_id(0)*STEP;
+        int tid_sy = get_local_id(1)*STEP;
 
         // The first fetching.
         int bk = 0;
         for (int si = 0; si < STEP; si++) {
             for (int sj = 0; sj < STEP; sj++) {
-                a_ldg_reg[si][sj] = A[(gid_y*STEP+si) * lda + (bk + tid_x*STEP+sj)];
-                b_ldg_reg[si][sj] = B[(bk + (tid_y*STEP+si)) * ldb + gid_x*STEP+sj];
+                a_ldg_reg[si][sj] = A[(gid_sy+si) * lda + (bk + tid_sx+sj)];
+                b_ldg_reg[si][sj] = B[(bk + (tid_sy+si)) * ldb + gid_sx+sj];
             }
         }
         for (int si = 0; si < STEP; si++) {
             for (int sj = 0; sj < STEP; sj++) {
                 // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
-                a_shared[0][tid_y*STEP+si][tid_x*STEP+sj] = a_ldg_reg[si][sj];
-                b_shared[0][tid_y*STEP+si][tid_x*STEP+sj] = b_ldg_reg[si][sj];
+                a_shared[0][tid_sy+si][tid_sx+sj] = a_ldg_reg[si][sj];
+                b_shared[0][tid_sy+si][tid_sx+sj] = b_ldg_reg[si][sj];
             }
         }
         barrier(CLK_LOCAL_MEM_FENCE);
-
-        for (int k = 0; k < block_step; k++) {
-            for (int si=0; si < STEP; si++) {
-                a_reg[0][si] = a_shared[0][tid_y*STEP+si][k];
-                b_reg[0][si] = b_shared[0][k][tid_x*STEP+si];
-            }
-        }
 
         // Main loop.
         int buffer_id = 0;
         int buffer_next_id = 1;
         int temp_id;
         for (bk = block_step; bk < K; bk += block_step) {
-
-            for (int si = 0; si < STEP; si++) {
-                for (int sj = 0; sj < STEP; sj++) {
-                    // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
-                    a_ldg_reg[si][sj] = A[(gid_y*STEP+si) * lda + (bk + tid_x*STEP+sj)];
-                    b_ldg_reg[si][sj] = B[(bk + (tid_y*STEP+si)) * ldb + gid_x*STEP+sj];
-                }
-            }
-
             // For elements in a block.
             for (int k = 0; k < block_step; k++) {
+                for (int si=0; si < STEP; si++) {
+                    a_reg[buffer_id][si] = a_shared[buffer_id][tid_sy+si][k];
+                    b_reg[buffer_id][si] = b_shared[buffer_id][k][tid_sx+si];
+                }
                 // Both a_reg[si] and b_reg[sj] have been used STEP times.
                 for (int si = 0; si < STEP; si++) {
                     for (int sj = 0; sj < STEP; sj++) {
-                        sub_sum[buffer_id][si][sj] += a_reg[buffer_id][si] * b_reg[buffer_id][sj]; // a_shared[tid_y*STEP+si][k] * b_shared[k][tid_x*STEP+sj];
+                        sub_sum[buffer_id][si][sj] += a_reg[buffer_id][si] * b_reg[buffer_id][sj]; // a_shared[tid_sy*STEP+si][k] * b_shared[k][tid_sx*STEP+sj];
                     }
                 }
             }
@@ -541,18 +421,19 @@ __kernel void GemmDeviceV5_2(const int M, const int N, const int K,
             for (int si = 0; si < STEP; si++) {
                 for (int sj = 0; sj < STEP; sj++) {
                     // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
-                    a_shared[buffer_next_id][tid_y*STEP+si][tid_x*STEP+sj] = a_ldg_reg[si][sj];
-                    b_shared[buffer_next_id][tid_y*STEP+si][tid_x*STEP+sj] = b_ldg_reg[si][sj];
+                    a_ldg_reg[si][sj] = A[(gid_sy+si) * lda + (bk + tid_sx+sj)];
+                    b_ldg_reg[si][sj] = B[(bk + (tid_sy+si)) * ldb + gid_sx+sj];
+                }
+            }
+            for (int si = 0; si < STEP; si++) {
+                for (int sj = 0; sj < STEP; sj++) {
+                    // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
+                    a_shared[buffer_next_id][tid_sy+si][tid_sx+sj] = a_ldg_reg[si][sj];
+                    b_shared[buffer_next_id][tid_sy+si][tid_sx+sj] = b_ldg_reg[si][sj];
                 }
             }
             barrier(CLK_LOCAL_MEM_FENCE);
 
-            for (int k = 0; k < block_step; k++) {
-                for (int si=0; si < STEP; si++) {
-                    a_reg[buffer_next_id][si] = a_shared[buffer_next_id][tid_y*STEP+si][k];
-                    b_reg[buffer_next_id][si] = b_shared[buffer_next_id][k][tid_x*STEP+si];
-                }
-            }
             temp_id = buffer_next_id;
             buffer_next_id = buffer_id;
             buffer_id = temp_id;
@@ -560,10 +441,14 @@ __kernel void GemmDeviceV5_2(const int M, const int N, const int K,
 
         // The last computing
         for (int k = 0; k < block_step; k++) {
+            for (int si=0; si < STEP; si++) {
+                a_reg[buffer_id][si] = a_shared[buffer_id][tid_sy+si][k];
+                b_reg[buffer_id][si] = b_shared[buffer_id][k][tid_sx+si];
+            }
             // Both a_reg[si] and b_reg[sj] have been used STEP times.
             for (int si = 0; si < STEP; si++) {
                 for (int sj = 0; sj < STEP; sj++) {
-                    sub_sum[buffer_id][si][sj] += a_reg[buffer_id][si] * b_reg[buffer_id][sj]; // a_shared[tid_y*STEP+si][k] * b_shared[k][tid_x*STEP+sj];
+                    sub_sum[buffer_id][si][sj] += a_reg[buffer_id][si] * b_reg[buffer_id][sj]; // a_shared[tid_sy*STEP+si][k] * b_shared[k][tid_sx*STEP+sj];
                 }
             }
         }
@@ -571,7 +456,111 @@ __kernel void GemmDeviceV5_2(const int M, const int N, const int K,
 
         for (int i=0; i<STEP; i++) {
             for (int j=0; j<STEP; j++) {
-                C[(gid_y*STEP+i) * ldc + gid_x*STEP+j] += sub_sum[0][i][j] + sub_sum[1][i][j];
+                C[(gid_sy+i) * ldc + gid_sx+j] += sub_sum[0][i][j] + sub_sum[1][i][j];
+            }
+        }
+    }
+}
+
+// v5 prefetch / double buffering å®ç°ç»ˆç‰ˆï¼ˆå®ç°4.3ï¼‰
+__kernel void GemmDeviceV5_2(const int M, const int N, const int K,
+                           __global const float *A, const int lda,
+                           __global const float *B, const int ldb,
+                           __global float *C, const int ldc) {
+
+    const int STEP = 4;
+    float a_ldg_reg[STEP][STEP] = {0};
+    float b_ldg_reg[STEP][STEP] = {0}; 
+
+    float a_reg[2][STEP] = {0};
+    float b_reg[2][STEP] = {0};    
+    float sub_sum[2][STEP][STEP] = {{{0}}};
+    __local float a_shared[2][BLOCK_SIDE_SIZE*STEP][BLOCK_SIDE_SIZE*STEP];
+    __local float b_shared[2][BLOCK_SIDE_SIZE*STEP][BLOCK_SIDE_SIZE*STEP];
+
+    int  block_step = BLOCK_SIDE_SIZE*STEP;
+    for (int gid_sx = get_global_id(0)*STEP, gid_sy = get_global_id(1)*STEP;
+        gid_sx < N && gid_sy < M; 
+        gid_sx += get_global_size(0)*STEP, gid_sy += get_global_size(1)*STEP) {
+
+        int tid_sx = get_local_id(0)*STEP;
+        int tid_sy = get_local_id(1)*STEP;
+
+        // The first fetching.
+        int bk = 0;
+        for (int si = 0; si < STEP; si++) {
+            for (int sj = 0; sj < STEP; sj++) {
+                a_ldg_reg[si][sj] = A[(gid_sy+si) * lda + (bk + tid_sx+sj)];
+                b_ldg_reg[si][sj] = B[(bk + (tid_sy+si)) * ldb + gid_sx+sj];
+            }
+        }
+        for (int si = 0; si < STEP; si++) {
+            for (int sj = 0; sj < STEP; sj++) {
+                // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
+                a_shared[0][tid_sy+si][tid_sx+sj] = a_ldg_reg[si][sj];
+                b_shared[0][tid_sy+si][tid_sx+sj] = b_ldg_reg[si][sj];
+            }
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        // Main loop.
+        int buffer_id = 0;
+        int buffer_next_id = 1;
+        int temp_id;
+        for (bk = block_step; bk < K; bk += block_step) {            
+            for (int si = 0; si < STEP; si++) {
+                for (int sj = 0; sj < STEP; sj++) {
+                    // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
+                    a_ldg_reg[si][sj] = A[(gid_sy+si) * lda + (bk + tid_sx+sj)];
+                    b_ldg_reg[si][sj] = B[(bk + (tid_sy+si)) * ldb + gid_sx+sj];
+                }
+            }
+            // For elements in a block.
+            for (int k = 0; k < block_step; k++) {
+                for (int si=0; si < STEP; si++) {
+                    a_reg[buffer_id][si] = a_shared[buffer_id][tid_sy+si][k];
+                    b_reg[buffer_id][si] = b_shared[buffer_id][k][tid_sx+si];
+                }
+                // Both a_reg[si] and b_reg[sj] have been used STEP times.
+                for (int si = 0; si < STEP; si++) {
+                    for (int sj = 0; sj < STEP; sj++) {
+                        sub_sum[buffer_id][si][sj] += a_reg[buffer_id][si] * b_reg[buffer_id][sj]; // a_shared[tid_sy*STEP+si][k] * b_shared[k][tid_sx*STEP+sj];
+                    }
+                }
+            }
+
+            for (int si = 0; si < STEP; si++) {
+                for (int sj = 0; sj < STEP; sj++) {
+                    // 0->01, 1->23 => 0*2+0/0*2+1, 1*2+0/1*2+1
+                    a_shared[buffer_next_id][tid_sy+si][tid_sx+sj] = a_ldg_reg[si][sj];
+                    b_shared[buffer_next_id][tid_sy+si][tid_sx+sj] = b_ldg_reg[si][sj];
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+
+            temp_id = buffer_next_id;
+            buffer_next_id = buffer_id;
+            buffer_id = temp_id;
+        }
+
+        // The last computing
+        for (int k = 0; k < block_step; k++) {
+            for (int si=0; si < STEP; si++) {
+                a_reg[buffer_id][si] = a_shared[buffer_id][tid_sy+si][k];
+                b_reg[buffer_id][si] = b_shared[buffer_id][k][tid_sx+si];
+            }
+            // Both a_reg[si] and b_reg[sj] have been used STEP times.
+            for (int si = 0; si < STEP; si++) {
+                for (int sj = 0; sj < STEP; sj++) {
+                    sub_sum[buffer_id][si][sj] += a_reg[buffer_id][si] * b_reg[buffer_id][sj]; // a_shared[tid_sy*STEP+si][k] * b_shared[k][tid_sx*STEP+sj];
+                }
+            }
+        }
+        barrier(CLK_LOCAL_MEM_FENCE); 
+
+        for (int i=0; i<STEP; i++) {
+            for (int j=0; j<STEP; j++) {
+                C[(gid_sy+i) * ldc + gid_sx+j] += sub_sum[0][i][j] + sub_sum[1][i][j];
             }
         }
     }

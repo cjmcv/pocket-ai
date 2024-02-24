@@ -19,7 +19,7 @@ public:
 
     void Init(std::string kernels_path, 
               std::vector<std::tuple<std::string, std::string, pSetParamsFuncs>> &kernels_params, 
-              uint32_t platform_id) {
+              uint32_t platform_id, bool is_enable_profiling = false) {
         platform_ = new cl::Platform;
         platform_->GetInfos();
         platform_->GetDeviceId(platform_id, &device_);
@@ -61,7 +61,13 @@ public:
             PTK_LOGS("Registered kernels: %s.\n", kernel_name.c_str());
         }
 
-        queue_ = clCreateCommandQueue(context_, device_, CL_QUEUE_PROFILING_ENABLE, &err_code);
+        cl_command_queue_properties properties = 0;
+        is_enable_profiling_ = false;
+        if (is_enable_profiling) {
+            is_enable_profiling_ = true;
+            properties = CL_QUEUE_PROFILING_ENABLE;
+        }
+        queue_ = clCreateCommandQueue(context_, device_, properties, &err_code);
     }
 
     void Deinit() {
@@ -90,7 +96,7 @@ public:
     }
 
     void AsyncRun(cl::Kernel *kernel, uint32_t work_dim, const size_t *global_work_size, const size_t *local_work_size, bool is_profile = false) {
-        if (is_profile) {
+        if (is_profile && is_enable_profiling_) {
             clEnqueueNDRangeKernel(queue_, kernel->kernel(), work_dim, NULL, global_work_size, local_work_size, 0, NULL, &ev_);
             // Gets the running time of the kernel function.
             cl::PrintCommandElapsedTime(ev_);
@@ -110,6 +116,7 @@ private:
     cl_device_id device_;
     cl_context context_;
     cl_command_queue queue_;
+    bool is_enable_profiling_;
 
     cl_event ev_;
     std::unordered_map<std::string, KernelLoader*> loaders_map_;

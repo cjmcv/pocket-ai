@@ -1,3 +1,5 @@
+adb shell "rm -r /data/local/tmp/ptk/"
+
 adb push ./bin/ptk_cl /data/local/tmp/ptk/bin/ptk_cl
 adb push ./kernels /data/local/tmp/ptk/kernels
 
