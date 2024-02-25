@@ -137,6 +137,7 @@ void TestGemm(cl::Engine *engine, std::string kernel_name, int step, bool transp
 
     cl::Kernel *kernel = engine->GetKernel(kernel_name, true);
 
+    // 1024
     uint32_t height_a = 960, width_a = 1280;
     uint32_t height_b = 1280, width_b = 640;
     // set and log Global and Local work size dimensions
@@ -159,21 +160,22 @@ void TestGemm(cl::Engine *engine, std::string kernel_name, int step, bool transp
         kernel->CreateBuffer(size);      
     }
     else {
+        const uint32_t image_chn = 4; // RGBA
         uint32_t lda = width_a;
         cl::BufferArgs a_arg = {};
         if (transpose_a) {
             lda = height_a;
-            a_arg = {sizeof(cl_float), width_a, height_a/4};
+            a_arg = {sizeof(cl_float), width_a, height_a/image_chn};
         }
         else {
             lda = width_a;
-            a_arg = {sizeof(cl_float), height_a, width_a/4};
+            a_arg = {sizeof(cl_float), height_a, width_a/image_chn};
         }
         std::vector<cl::BufferArgs> args = {
             {height_a}, {width_b}, {width_a},                 // 0-M 1-N 2-K
             a_arg, {lda},                                     // 3-A 4-lda
-            {sizeof(cl_float), height_b, width_b/4}, {width_b}, // 5-B 6-ldb
-            {sizeof(cl_float), height_a, width_b/4}, {width_b}  // 7-C 8-ldc
+            {sizeof(cl_float), height_b, width_b/image_chn}, {width_b}, // 5-B 6-ldb
+            {sizeof(cl_float), height_a, width_b/image_chn}, {width_b}  // 7-C 8-ldc
         };
         kernel->CreateBuffer(args);
     }
@@ -194,13 +196,6 @@ void TestGemm(cl::Engine *engine, std::string kernel_name, int step, bool transp
             }
         }
         free(temp);
-        // for (uint32_t i = 0; i < height_a; i++) {
-        //     for (uint32_t j = i; j < width_a; j++) {
-        //         float temp = hA_map[i*width_a+j];
-        //         hA_map[i*width_a+j] = hA_map[j*height_a+i];
-        //         hA_map[j*height_a+i] = temp;
-        //     }
-        // }
     }
     kernel->UnmapBuffer(3);
     kernel->UnmapBuffer(5);
@@ -244,6 +239,7 @@ int main(int argc, char **argv) {
     kernels_name.push_back(std::make_tuple("gemm_mobile", "GemmMobileDeviceV3_1", SetParams4Gemm));
     kernels_name.push_back(std::make_tuple("gemm_mobile", "GemmMobileDeviceV3_2", SetParams4Gemm));
     kernels_name.push_back(std::make_tuple("gemm_mobile", "GemmMobileDeviceV4", SetImageParams4Gemm));
+    kernels_name.push_back(std::make_tuple("gemm_mobile", "GemmMobileDeviceV5", SetImageParams4Gemm));
 
     cl::Engine engine;
     engine.Init("./kernels", kernels_name, 0, true);
@@ -285,5 +281,6 @@ int main(int argc, char **argv) {
     TestGemm(&engine, "GemmMobileDeviceV3_1", 4, false);
     TestGemm(&engine, "GemmMobileDeviceV3_2", 4, true);
     TestGemm(&engine, "GemmMobileDeviceV4", 4, true, true);
+    TestGemm(&engine, "GemmMobileDeviceV5", 8, true, true);
     return 0;
 }

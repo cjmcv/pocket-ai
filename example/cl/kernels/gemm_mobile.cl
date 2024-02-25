@@ -17,6 +17,7 @@
 // }
 
 // V1 初始版本 同 用于独显的 GemmDeviceV1
+// B矩阵 gid_x 作为列，相邻线程访问相邻元素，满足全局内存合并访问
 __kernel void GemmMobileDeviceV1(const int M, const int N, const int K,
                            __global const float *A, const int lda,
                            __global const float *B, const int ldb,
@@ -162,9 +163,10 @@ __kernel void GemmMobileDeviceV3_1(const int M, const int N, const int K,
     }
 }
 
-// v3_2 基于v3_1, 将A矩阵在外部进行转置, 使A的单线程读取满足向量化加载(优化思路同cpu的缓存命中率)
-// note: 独显的全局内存合并访问优化指的是warp内线程访问的地址需要连续,与线程一一对应,
-//       一个线程访问一个数据.且起始地址是每个线程所存取的大小的16倍.
+// v3_2 基于v3_1, 将A矩阵在外部进行转置, gid_sy充当列，可使访存得到合并。
+// 同时也使A的单线程读取满足向量化加载(优化思路同cpu的缓存命中率)。
+// note: 全局内存合并访问优化指的一个线程束对全局内存的一次访问请求导致最少数量的数据传输。
+//       比如warp内线程访问的地址连续,与线程一一对应, 一个线程访问一个数据.且起始地址是每个线程所存取的大小的16倍.
 __kernel void GemmMobileDeviceV3_2(const int M, const int N, const int K,
                            __global const float *A, const int lda,
                            __global const float *B, const int ldb,
@@ -224,6 +226,11 @@ __kernel void GemmMobileDeviceV4(const int M, const int N, const int K,
             acc[1] += Asi.s1 * Bsj;
             acc[2] += Asi.s2 * Bsj;
             acc[3] += Asi.s3 * Bsj;
+
+            // acc[0] = fma(Asi.s0, Bsj, acc[0]);
+            // acc[1] = fma(Asi.s1, Bsj, acc[1]);
+            // acc[2] = fma(Asi.s2, Bsj, acc[2]);
+            // acc[3] = fma(Asi.s3, Bsj, acc[3]);
         }
 
         // (int2)(列，行)，一次存4列1行，共回存4列4行
@@ -233,5 +240,131 @@ __kernel void GemmMobileDeviceV4(const int M, const int N, const int K,
         write_imagef(C, (int2)(gid_x, gid_sy+1), acc[1]);
         write_imagef(C, (int2)(gid_x, gid_sy+2), acc[2]);
         write_imagef(C, (int2)(gid_x, gid_sy+3), acc[3]);
+    }
+}
+
+// v5, 基于v4, 进一步增大STEP到8，即一个线程将需要处理8*8的数据，
+//     读4*4次，计算4*16次fma，计算访存比是4:1, 优化的前提是寄存器充足
+__kernel void GemmMobileDeviceV5(const int M, const int N, const int K,
+                           __read_only image2d_t A, const int lda,
+                           __read_only image2d_t B, const int ldb,
+                           __write_only image2d_t C, const int ldc) {
+
+    const int CHANNEL = 4;
+    const int STEP = 8;
+    float4 acc[STEP][STEP/CHANNEL] = {{0}};
+    float4 Asi[STEP/CHANNEL], Bsj[STEP/CHANNEL];
+
+    for (int gid_x = get_global_id(0) * STEP/CHANNEL, gid_y = get_global_id(1) * STEP/CHANNEL;
+        gid_x*CHANNEL < N && gid_y*CHANNEL < M; 
+        gid_x += get_global_size(0) * STEP/CHANNEL, gid_y += get_global_size(1) * STEP/CHANNEL) {
+
+        for (int k = 0; k < K; k++) {
+            Asi[0] = read_imagef(A, default_sampler, (int2)(gid_y, k));
+            Asi[1] = read_imagef(A, default_sampler, (int2)(gid_y+1, k));
+            Bsj[0] = read_imagef(B, default_sampler, (int2)(gid_x, k));
+            Bsj[1] = read_imagef(B, default_sampler, (int2)(gid_x+1, k));
+
+            acc[0][0] += Asi[0].s0 * Bsj[0];
+            acc[0][1] += Asi[0].s0 * Bsj[1];
+            acc[1][0] += Asi[0].s1 * Bsj[0];
+            acc[1][1] += Asi[0].s1 * Bsj[1];
+            acc[2][0] += Asi[0].s2 * Bsj[0];
+            acc[2][1] += Asi[0].s2 * Bsj[1];
+            acc[3][0] += Asi[0].s3 * Bsj[0];
+            acc[3][1] += Asi[0].s3 * Bsj[1];
+
+            acc[4][0] += Asi[1].s0 * Bsj[0];
+            acc[4][1] += Asi[1].s0 * Bsj[1];
+            acc[5][0] += Asi[1].s1 * Bsj[0];
+            acc[5][1] += Asi[1].s1 * Bsj[1];
+            acc[6][0] += Asi[1].s2 * Bsj[0];
+            acc[6][1] += Asi[1].s2 * Bsj[1];
+            acc[7][0] += Asi[1].s3 * Bsj[0];
+            acc[7][1] += Asi[1].s3 * Bsj[1];
+
+            //// 推算
+            // A0
+            // Asi[0] = A[k * lda + (gid_sy+0)];
+            // Asi[1] = A[k * lda + (gid_sy+1)];
+            // Asi[2] = A[k * lda + (gid_sy+2)];
+            // Asi[3] = A[k * lda + (gid_sy+3)];
+            // A1
+            // Asi[4] = A[k * lda + (gid_sy+4)];
+            // Asi[5] = A[k * lda + (gid_sy+5)];
+            // Asi[6] = A[k * lda + (gid_sy+6)];
+            // Asi[7] = A[k * lda + (gid_sy+7)];
+            // B0
+            // Bsj[0] = B[k * ldb + gid_sx + 0];
+            // Bsj[1] = B[k * ldb + gid_sx + 1];
+            // Bsj[2] = B[k * ldb + gid_sx + 2];
+            // Bsj[3] = B[k * ldb + gid_sx + 3];
+            // B1
+            // Bsj[4] = B[k * ldb + gid_sx + 4];
+            // Bsj[5] = B[k * ldb + gid_sx + 5];
+            // Bsj[6] = B[k * ldb + gid_sx + 6];
+            // Bsj[7] = B[k * ldb + gid_sx + 7];
+
+            // acc[0][0]
+            // c_sub_acc[0][0] += Asi[0] * Bsj[0];
+            // c_sub_acc[0][1] += Asi[0] * Bsj[1];
+            // c_sub_acc[0][2] += Asi[0] * Bsj[2];
+            // c_sub_acc[0][3] += Asi[0] * Bsj[3];
+            // acc[0][1]
+            // c_sub_acc[0][4] += Asi[0] * Bsj[4];
+            // c_sub_acc[0][5] += Asi[0] * Bsj[5];
+            // c_sub_acc[0][6] += Asi[0] * Bsj[6];
+            // c_sub_acc[0][7] += Asi[0] * Bsj[7];
+            // acc[1][0]
+            // c_sub_acc[1][0] += Asi[1] * Bsj[0];
+            // c_sub_acc[1][1] += Asi[1] * Bsj[1];
+            // c_sub_acc[1][2] += Asi[1] * Bsj[2];
+            // c_sub_acc[1][3] += Asi[1] * Bsj[3];
+            // acc[1][1]
+            // c_sub_acc[1][4] += Asi[1] * Bsj[4];
+            // c_sub_acc[1][5] += Asi[1] * Bsj[5];
+            // c_sub_acc[1][6] += Asi[1] * Bsj[6];
+            // c_sub_acc[1][7] += Asi[1] * Bsj[7];
+            // ...
+
+            // for (int si = 0; si < 8; si++) {
+            //     for (int sj = 0; sj < 8; sj++) {
+            //         acc[si][sj] += Asi[si] * Bsj[sj];
+            //     }
+            // }
+
+        }
+
+        // printf("<<%d, %d>>\n", gid_x, gid_y);
+        // printf("0->(%f; %f; %f; %f; %f; %f; %f; %f)\n", acc[0][0], acc[1][0], acc[2][0], acc[3][0], acc[4][0], acc[5][0], acc[6][0], acc[7][0]);
+        // printf("1->(%f; %f; %f; %f; %f; %f; %f; %f)\n", acc[0][1], acc[1][1], acc[2][1], acc[3][1], acc[4][1], acc[5][1], acc[6][1], acc[7][1]);
+        // 回存 8*8 的数据
+        int gid_sy = gid_y * CHANNEL;
+        write_imagef(C, (int2)(gid_x, gid_sy+0), acc[0][0]);
+        write_imagef(C, (int2)(gid_x, gid_sy+1), acc[1][0]);
+        write_imagef(C, (int2)(gid_x, gid_sy+2), acc[2][0]);
+        write_imagef(C, (int2)(gid_x, gid_sy+3), acc[3][0]);
+
+        write_imagef(C, (int2)(gid_x, gid_sy+4), acc[4][0]);
+        write_imagef(C, (int2)(gid_x, gid_sy+5), acc[5][0]);
+        write_imagef(C, (int2)(gid_x, gid_sy+6), acc[6][0]);
+        write_imagef(C, (int2)(gid_x, gid_sy+7), acc[7][0]);
+
+        write_imagef(C, (int2)(gid_x+1, gid_sy+0), acc[0][1]);
+        write_imagef(C, (int2)(gid_x+1, gid_sy+1), acc[1][1]);
+        write_imagef(C, (int2)(gid_x+1, gid_sy+2), acc[2][1]);
+        write_imagef(C, (int2)(gid_x+1, gid_sy+3), acc[3][1]);
+
+        write_imagef(C, (int2)(gid_x+1, gid_sy+4), acc[4][1]);
+        write_imagef(C, (int2)(gid_x+1, gid_sy+5), acc[5][1]);
+        write_imagef(C, (int2)(gid_x+1, gid_sy+6), acc[6][1]);
+        write_imagef(C, (int2)(gid_x+1, gid_sy+7), acc[7][1]);
+        
+        //
+        // for (int si=0; si<STEP; si++) {
+        //     for (int sj=0; sj<STEP; sj++) {
+        //         C[(gid_sy+si) * ldc + gid_sx+sj] += c_sub_acc[si][sj];
+        //     }
+        // }
     }
 }
