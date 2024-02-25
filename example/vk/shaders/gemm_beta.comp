@@ -38,17 +38,6 @@ uint coordToOffset(uint i, uint j, uint stride)
 }
 
 /*
-    const uvec3 gl_WorkGroupSize: contains the size of the workgroup operated on by a compute shader
-    in uvec3 gl_NumWorkGroups: contains the number of workgroups that have been dispatched to a compute shader
-
-    in uvec3 gl_WorkGroupID: contains the index of the workgroup currently being operated on by a compute shader
-    in uvec3 gl_LocalInvocationID: (线程局部下标) contains the index of work item currently being operated on by a compute shader
-
-    in uvec3 gl_GlobalInvocationID: (线程全局下标) contains the global index of work item currently being operated on by a compute shader
-    in uint gl_LocalInvocationIndex: (线程局部一维线性下标，上面的是三维) contains the local linear index of work item currently being operated on by a compute shader
-*/
-
-/*
   分块矩阵乘法
 */
 void main()

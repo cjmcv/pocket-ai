@@ -11,7 +11,7 @@ This framework is designed to help you quickly call vulkan's computing API to do
 
 ## How to use
 
-* Refer to example/vk/vk_engine_example.cpp
+* Refer to example/vk/vk_engine_example.cpp && example/vk/CMakeLists.txt
 
 ## Reference
 

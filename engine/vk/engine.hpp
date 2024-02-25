@@ -44,9 +44,9 @@ class Engine {
 
         void Run(uint32_t *num_xyz, std::vector<Buffer*> &input_buffers, const int push_constant_size, 
                  const void *push_constant, std::vector<Buffer*> &output_buffers) {
-            static int idx = 0;
-            idx++;
-            printf("round idx: %d.\n", idx);
+            // static int idx = 0;
+            // idx++;
+            // printf("round idx: %d.\n", idx);
 
             // The binding order of the buffer needs to be consistent with the one in comp,
             // That is, "i=0" corresponds to the one in comp "binding=0"

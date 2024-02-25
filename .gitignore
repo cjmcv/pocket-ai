@@ -9,6 +9,7 @@ example/*/build-android-armv7
 example/*/bin
 example/*/opencl/lib
 example/*/opencl/lib64
+example/vk/shaders/spv/*
 
 # Prerequisites
 *.d
