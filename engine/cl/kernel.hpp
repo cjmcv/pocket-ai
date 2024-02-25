@@ -11,18 +11,31 @@ namespace cl {
 ////////////////
 struct KernelIOAttri {
     cl_mem_flags mem_flag;
+    bool is_image;      // image true, buffer false
     uint32_t args_size; // 与kernel绑定的函数出入参数大小
 };
 
 struct KernelIOBuffer {
     cl_mem mem;
     void *mapped_ptr;
+
     uint32_t size;
+
+    uint32_t type_size;
+    uint32_t channel;
+    uint32_t height;
+    uint32_t width;
 };
 
 struct KernelParams {
     std::vector<KernelIOAttri> io_attri;
     std::vector<KernelIOBuffer> io_buffer;
+};
+
+struct BufferArgs {
+    uint32_t type_size;
+    uint32_t height;
+    uint32_t width;
 };
 
 typedef void (*pSetParamsFuncs)(ptk::cl::KernelParams *params);
@@ -68,6 +81,7 @@ public:
         cl_int err_code;
         params_->io_buffer.resize(params_->io_attri.size());
         for (uint32_t i=0; i<params_->io_attri.size(); i++) {
+            bool is_image = params_->io_attri[i].is_image;
             KernelIOAttri *io_attri = &params_->io_attri[i];
             KernelIOBuffer *id_buffer = &params_->io_buffer[i];
             if (io_attri->mem_flag != 0) {
@@ -81,7 +95,49 @@ public:
                 id_buffer->mem = NULL;
                 id_buffer->mapped_ptr = NULL;
             }
-            id_buffer->size = size[i];
+            id_buffer->type_size = sizeof(cl_float);
+            id_buffer->channel = 1;
+            id_buffer->height = 1;
+            id_buffer->width = size[i] / id_buffer->type_size;
+
+            id_buffer->size = id_buffer->type_size * id_buffer->channel * id_buffer->height * id_buffer->width;
+        }
+    }
+
+    void CreateBuffer(std::vector<BufferArgs> &args) {
+        cl_int err_code;
+        params_->io_buffer.resize(params_->io_attri.size());
+        for (uint32_t i=0; i<params_->io_attri.size(); i++) {
+            bool is_image = params_->io_attri[i].is_image;
+            KernelIOAttri *io_attri = &params_->io_attri[i];
+            KernelIOBuffer *id_buffer = &params_->io_buffer[i];
+            if (io_attri->mem_flag != 0) {
+                if (is_image) {
+                    cl_image_format img_fmt;
+                    img_fmt.image_channel_order = CL_RGBA; // 默认以4通道图像方式存在，则宽度为原宽度的1/4，高度不变。
+                    img_fmt.image_channel_data_type = CL_FLOAT;
+                    id_buffer->mem = clCreateImage2D(context_, io_attri->mem_flag, &img_fmt, 
+                                                     args[i].width, args[i].height, 0, NULL, &err_code);                    
+                }
+                else {
+                    id_buffer->mem = clCreateBuffer(context_, io_attri->mem_flag, 
+                                                    args[i].type_size * args[i].width * args[i].height, NULL, &err_code);                    
+                }
+
+                CL_CHECK(err_code);
+                CL_CHECK(clSetKernelArg(kernel_, i, io_attri->args_size, (void*)&id_buffer->mem));
+                id_buffer->mapped_ptr = NULL;
+            }
+            else {
+                CL_CHECK(clSetKernelArg(kernel_, i, io_attri->args_size, (void*)&(args[i].type_size)));
+                id_buffer->mem = NULL;
+                id_buffer->mapped_ptr = NULL;
+            }
+            id_buffer->type_size = args[i].type_size;
+            id_buffer->channel = 4; // 默认 RGBA
+            id_buffer->height = args[i].height;
+            id_buffer->width = args[i].width;
+            id_buffer->size = id_buffer->type_size * id_buffer->channel * id_buffer->height * id_buffer->width;
         }
     }
 
@@ -115,8 +171,18 @@ public:
             PTK_LOGE("MapBuffer -> args_id: %d is out of range.\n", args_id);
         }
         cl_int err_code;
+        KernelIOAttri *id_attri = &params_->io_attri[args_id];
         KernelIOBuffer *id_buffer = &params_->io_buffer[args_id];
-        id_buffer->mapped_ptr = clEnqueueMapBuffer(queue_, id_buffer->mem, is_blocking, CL_MAP_WRITE, 0, id_buffer->size, 0, NULL, NULL, &err_code);
+        if (id_attri->is_image) {
+            size_t origin[3] = {0, 0, 0};
+            size_t region[3] = {id_buffer->width, id_buffer->height, 1};
+            size_t row_pitch = id_buffer->width;
+            size_t slice_pitch = id_buffer->width * id_buffer->height;
+            id_buffer->mapped_ptr = clEnqueueMapImage(queue_, id_buffer->mem, is_blocking, CL_MAP_WRITE, origin, region, &row_pitch, &slice_pitch, 0, NULL, NULL, &err_code);
+        }
+        else {
+            id_buffer->mapped_ptr = clEnqueueMapBuffer(queue_, id_buffer->mem, is_blocking, CL_MAP_WRITE, 0, id_buffer->size, 0, NULL, NULL, &err_code);
+        }
         CL_CHECK(err_code);
         return id_buffer->mapped_ptr;
     }

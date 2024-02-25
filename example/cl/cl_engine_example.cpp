@@ -15,29 +15,43 @@ void DotProductHost(const int* src1, const int* src2, uint32_t len, int* dst) {
 
 void SetParams4DotProduct(cl::KernelParams *params) {    
     params->io_attri = {
-        {CL_MEM_READ_ONLY,  sizeof(cl_mem)},
-        {CL_MEM_READ_ONLY,  sizeof(cl_mem)},
-        {0,                 sizeof(uint32_t)},
-        {CL_MEM_WRITE_ONLY, sizeof(cl_mem)}
+        {CL_MEM_READ_ONLY,  false,  sizeof(cl_mem)},
+        {CL_MEM_READ_ONLY,  false,  sizeof(cl_mem)},
+        {0,                 false,  sizeof(uint32_t)},
+        {CL_MEM_WRITE_ONLY, false,  sizeof(cl_mem)}
     };
 }
 
 void SetParams4Gemm(cl::KernelParams *params) {    
     params->io_attri = {
-        {0,                 sizeof(uint32_t)}, // 0
-        {0,                 sizeof(uint32_t)}, // 1
-        {0,                 sizeof(uint32_t)}, // 2
-        {CL_MEM_READ_ONLY,  sizeof(cl_mem)},   // 3
-        {0,                 sizeof(uint32_t)}, // 4
-        {CL_MEM_READ_ONLY,  sizeof(cl_mem)},   // 5
-        {0,                 sizeof(uint32_t)}, // 6
-        {CL_MEM_WRITE_ONLY, sizeof(cl_mem)},   // 7
-        {0,                 sizeof(uint32_t)}  // 8
+        {0,                 false,  sizeof(uint32_t)}, // 0
+        {0,                 false,  sizeof(uint32_t)}, // 1
+        {0,                 false,  sizeof(uint32_t)}, // 2
+        {CL_MEM_READ_ONLY,  false,  sizeof(cl_mem)},   // 3
+        {0,                 false,  sizeof(uint32_t)}, // 4
+        {CL_MEM_READ_ONLY,  false,  sizeof(cl_mem)},   // 5
+        {0,                 false,  sizeof(uint32_t)}, // 6
+        {CL_MEM_WRITE_ONLY, false,  sizeof(cl_mem)},   // 7
+        {0,                 false,  sizeof(uint32_t)}  // 8
+    };
+}
+
+void SetImageParams4Gemm(cl::KernelParams *params) {    
+    params->io_attri = {
+        {0,                 false,  sizeof(uint32_t)}, // 0
+        {0,                 false,  sizeof(uint32_t)}, // 1
+        {0,                 false,  sizeof(uint32_t)}, // 2
+        {CL_MEM_READ_ONLY,  true,   sizeof(cl_mem)},   // 3
+        {0,                 false,  sizeof(uint32_t)}, // 4
+        {CL_MEM_READ_ONLY,  true,   sizeof(cl_mem)},   // 5
+        {0,                 false,  sizeof(uint32_t)}, // 6
+        {CL_MEM_WRITE_ONLY, true,   sizeof(cl_mem)},   // 7
+        {0,                 false,  sizeof(uint32_t)}  // 8
     };
 }
 
 void TestDotProductNoMap(cl::Engine *engine, std::string kernel_name) {
-
+    PTK_LOGS(">>> %s: ", kernel_name.c_str());
     cl::Kernel *kernel = engine->GetKernel("DotProductDevice", false);
 
     size_t num_elements = 2560000;
@@ -45,7 +59,8 @@ void TestDotProductNoMap(cl::Engine *engine, std::string kernel_name) {
     size_t global_work_size = cl::GetRoundUpMultiple(num_elements, local_work_size) * local_work_size;
     // PTK_LOGS("Global Work Size = %zu, Local Work Size = %zu, # of Work Groups = %zu\n\n",
     // global_work_size, local_work_size, global_work_size / local_work_size);
-
+    PTK_LOGS("(%zu). ", global_work_size);
+    
     // Allocate and initialize host arrays.
     int *h_src1 = (int *)malloc(sizeof(cl_int) * num_elements);
     int *h_src2 = (int *)malloc(sizeof(cl_int) * num_elements);
@@ -71,7 +86,7 @@ void TestDotProductNoMap(cl::Engine *engine, std::string kernel_name) {
 
     // Synchronous/blocking read of results, and check accumulated errors
     kernel->ReadBuffer(CL_TRUE, &h_dst4cl, 3);
-    PTK_LOGS("DotProductDevice: %d \n", h_dst4cl);
+    PTK_LOGS(" <<< Out: %d.\n", h_dst4cl);
     kernel->ReleaseBuffer();
 
     if (h_src1)
@@ -81,12 +96,13 @@ void TestDotProductNoMap(cl::Engine *engine, std::string kernel_name) {
 }
 
 void TestDotProduct(cl::Engine *engine, std::string kernel_name) {
-
+    PTK_LOGS(">>> %s: ", kernel_name.c_str());
     cl::Kernel *kernel = engine->GetKernel(kernel_name, true);
 
     size_t num_elements = 2560000;
     size_t local_work_size = 256;
     size_t global_work_size = cl::GetRoundUpMultiple(num_elements, local_work_size) * local_work_size;
+    PTK_LOGS("(%zu). ", global_work_size);
 
     std::vector<size_t> size = {
         sizeof(cl_int) * num_elements,
@@ -110,14 +126,14 @@ void TestDotProduct(cl::Engine *engine, std::string kernel_name) {
     engine->FinishQueue();
 
     cl_int *h_dst4cl_map = (cl_int *)kernel->MapBuffer(CL_TRUE, 3);
-    PTK_LOGS("DotProductDeviceMap: %d \n", *h_dst4cl_map);
+    PTK_LOGS(" <<< Out: %d.\n", *h_dst4cl_map);
     kernel->UnmapBuffer(3);
     kernel->ReleaseBuffer();
 }
 
 
-void TestGemm(cl::Engine *engine, std::string kernel_name, int step, bool transpose_a = false) {
-    PTK_LOGS(">>> %s.\n", kernel_name.c_str());
+void TestGemm(cl::Engine *engine, std::string kernel_name, int step, bool transpose_a, bool use_image = false) {
+    PTK_LOGS(">>> %s: ", kernel_name.c_str());
 
     cl::Kernel *kernel = engine->GetKernel(kernel_name, true);
 
@@ -128,18 +144,39 @@ void TestGemm(cl::Engine *engine, std::string kernel_name, int step, bool transp
     size_t global_work_size[2] =
         {cl::GetRoundUpMultiple(width_b/step, local_work_size[0]) * local_work_size[0],
          cl::GetRoundUpMultiple(height_a/step, local_work_size[1]) * local_work_size[1]};
-    PTK_LOGS("global_work_size: (%zu, %zu).\n", global_work_size[0], global_work_size[1]);
+    PTK_LOGS("(%zu, %zu). ", global_work_size[0], global_work_size[1]);
 
-    uint32_t lda = width_a;
-    if (transpose_a) lda = height_a;
+    if (!use_image) {
+        uint32_t lda = width_a;
+        if (transpose_a) lda = height_a;
 
-    std::vector<size_t> size = {
-        height_a, width_b, width_a,                     // 0-M 1-N 2-K
-        sizeof(cl_float) * height_a * width_a, lda,     // 3-A 4-lda
-        sizeof(cl_float) * height_b * width_b, width_b, // 5-B 6-ldb
-        sizeof(cl_float) * height_a * width_b, width_b  // 7-C 8-ldc
-    };
-    kernel->CreateBuffer(size);
+        std::vector<size_t> size = {
+            height_a, width_b, width_a,                     // 0-M 1-N 2-K
+            sizeof(cl_float) * height_a * width_a, lda,     // 3-A 4-lda
+            sizeof(cl_float) * height_b * width_b, width_b, // 5-B 6-ldb
+            sizeof(cl_float) * height_a * width_b, width_b  // 7-C 8-ldc
+        };  
+        kernel->CreateBuffer(size);      
+    }
+    else {
+        uint32_t lda = width_a;
+        cl::BufferArgs a_arg = {};
+        if (transpose_a) {
+            lda = height_a;
+            a_arg = {sizeof(cl_float), width_a, height_a/4};
+        }
+        else {
+            lda = width_a;
+            a_arg = {sizeof(cl_float), height_a, width_a/4};
+        }
+        std::vector<cl::BufferArgs> args = {
+            {height_a}, {width_b}, {width_a},                 // 0-M 1-N 2-K
+            a_arg, {lda},                                     // 3-A 4-lda
+            {sizeof(cl_float), height_b, width_b/4}, {width_b}, // 5-B 6-ldb
+            {sizeof(cl_float), height_a, width_b/4}, {width_b}  // 7-C 8-ldc
+        };
+        kernel->CreateBuffer(args);
+    }
 
     cl_float *hA_map = (cl_float *)kernel->MapBuffer(CL_TRUE, 3); // A
     cl_float *hB_map = (cl_float *)kernel->MapBuffer(CL_TRUE, 5); // B
@@ -184,7 +221,7 @@ void TestGemm(cl::Engine *engine, std::string kernel_name, int step, bool transp
         }
         
     }
-    PTK_LOGS("GemmMap C out: %f. \n\n", mean / (height_a * width_b));
+    PTK_LOGS(" <<< Out: %f.\n", mean / (height_a * width_b));
     kernel->UnmapBuffer(7);
     kernel->ReleaseBuffer();
     engine->FinishQueue();
@@ -206,10 +243,12 @@ int main(int argc, char **argv) {
     kernels_name.push_back(std::make_tuple("gemm_mobile", "GemmMobileDeviceV3_0", SetParams4Gemm));
     kernels_name.push_back(std::make_tuple("gemm_mobile", "GemmMobileDeviceV3_1", SetParams4Gemm));
     kernels_name.push_back(std::make_tuple("gemm_mobile", "GemmMobileDeviceV3_2", SetParams4Gemm));
+    kernels_name.push_back(std::make_tuple("gemm_mobile", "GemmMobileDeviceV4", SetImageParams4Gemm));
 
     cl::Engine engine;
     engine.Init("./kernels", kernels_name, 0, true);
 
+    PTK_LOGS("\n##############################\n");
     // DotProductCPU
     {
         size_t num_elements = 2560000; 
@@ -223,28 +262,28 @@ int main(int argc, char **argv) {
         }
         // Compute and compare results on host.
         DotProductHost(h_src1, h_src2, num_elements, &h_dst);
-        PTK_LOGS("DotProductHost: %d \n", h_dst);
+        PTK_LOGS(">>> DotProductHost: %d \n", h_dst);
 
         if (h_src1) free(h_src1);
         if (h_src2) free(h_src2);
     }
-    PTK_LOGS("\n##############################\n");
     TestDotProductNoMap(&engine, "DotProductDevice");
     TestDotProduct(&engine, "DotProductDevice");
     
     PTK_LOGS("\n##############################\n");
-    TestGemm(&engine, "GemmDeviceV1", 1);
-    TestGemm(&engine, "GemmDeviceV2", 1);
-    TestGemm(&engine, "GemmDeviceV3", 2);
-    TestGemm(&engine, "GemmDeviceV4", 4);
-    TestGemm(&engine, "GemmDeviceV5_0", 4);
-    TestGemm(&engine, "GemmDeviceV5_1", 4);
-    TestGemm(&engine, "GemmDeviceV5_2", 4);
+    TestGemm(&engine, "GemmDeviceV1", 1, false);
+    TestGemm(&engine, "GemmDeviceV2", 1, false);
+    TestGemm(&engine, "GemmDeviceV3", 2, false);
+    TestGemm(&engine, "GemmDeviceV4", 4, false);
+    TestGemm(&engine, "GemmDeviceV5_0", 4, false);
+    TestGemm(&engine, "GemmDeviceV5_1", 4, false);
+    TestGemm(&engine, "GemmDeviceV5_2", 4, false);
 
     TestGemm(&engine, "GemmMobileDeviceV1", 1, false);
     TestGemm(&engine, "GemmMobileDeviceV2", 4, false);
     TestGemm(&engine, "GemmMobileDeviceV3_0", 4, false);
     TestGemm(&engine, "GemmMobileDeviceV3_1", 4, false);
     TestGemm(&engine, "GemmMobileDeviceV3_2", 4, true);
+    TestGemm(&engine, "GemmMobileDeviceV4", 4, true, true);
     return 0;
 }

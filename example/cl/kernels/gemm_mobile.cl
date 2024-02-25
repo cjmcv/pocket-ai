@@ -195,21 +195,30 @@ __kernel void GemmMobileDeviceV3_2(const int M, const int N, const int K,
 }
 
 // v4 使用纹理内存
+__constant sampler_t default_sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
 __kernel void GemmMobileDeviceV4(const int M, const int N, const int K,
-                           __global const float *A, const int lda,
-                           __global const float *B, const int ldb,
-                           __global float *C, const int ldc) {
-    
+                           __read_only image2d_t A, const int lda,
+                           __read_only image2d_t B, const int ldb,
+                           __write_only image2d_t C, const int ldc) {
+
+    // 用回 gid_x 而非 gid_sx，因为图像按rgba定义，read_imagef按下标读取时会直接跨越4个元素 
+    // 需 STEP 也与 CHANNEL 一致为4
     const int STEP = 4;
     float4 acc[STEP] = {(float4)0, (float4)0, (float4)0, (float4)0};
-    for (int gid_sx = get_global_id(0)*STEP, gid_sy = get_global_id(1)*STEP;
-        gid_sx < N && gid_sy < M; 
-        gid_sx += get_global_size(0)*STEP, gid_sy += get_global_size(1)*STEP) {
+    for (int gid_x = get_global_id(0), gid_y = get_global_id(1);
+        gid_x*STEP < N && gid_y*STEP < M; 
+        gid_x += get_global_size(0), gid_y += get_global_size(1)) {
 
+        // printf(">>>> (%d, %d)-(%d, %d)", N, M, gid_x*STEP, gid_y*STEP);
         for (int k = 0; k < K; k++) {
             float4 Asi, Bsj;
-            Asi = vload4(0, A + k * lda + gid_sy);
-            Bsj = vload4(0, B + k * ldb + gid_sx);
+            // Asi = vload4(0, A + k * lda + gid_y);
+            // Bsj = vload4(0, B + k * ldb + gid_x);
+            Asi = read_imagef(A, default_sampler, (int2)(gid_y, k));
+            Bsj = read_imagef(B, default_sampler, (int2)(gid_x, k));
+
+            // printf("A: (%d, %d)-(%f, %f, %f, %f)\n", gid_y, k, Asi.s0, Asi.s1, Asi.s2, Asi.s3);
+            // printf("B: (%d, %d)-(%f, %f, %f, %f)\n", gid_x, k, Bsj.s0, Bsj.s1, Bsj.s2, Bsj.s3);
 
             acc[0] += Asi.s0 * Bsj;
             acc[1] += Asi.s1 * Bsj;
@@ -217,9 +226,12 @@ __kernel void GemmMobileDeviceV4(const int M, const int N, const int K,
             acc[3] += Asi.s3 * Bsj;
         }
 
-        vstore4(acc[0], 0, C + (gid_sy+0) * ldc + gid_sx);
-        vstore4(acc[1], 0, C + (gid_sy+1) * ldc + gid_sx);
-        vstore4(acc[2], 0, C + (gid_sy+2) * ldc + gid_sx);
-        vstore4(acc[3], 0, C + (gid_sy+3) * ldc + gid_sx);
+        // (int2)(列，行)，一次存4列1行，共回存4列4行
+        // gid_y是按宽度为4个元素进行索引的，需要乘以STEP，转为按1个元素索引。
+        int gid_sy = gid_y * STEP;
+        write_imagef(C, (int2)(gid_x, gid_sy+0), acc[0]);
+        write_imagef(C, (int2)(gid_x, gid_sy+1), acc[1]);
+        write_imagef(C, (int2)(gid_x, gid_sy+2), acc[2]);
+        write_imagef(C, (int2)(gid_x, gid_sy+3), acc[3]);
     }
 }

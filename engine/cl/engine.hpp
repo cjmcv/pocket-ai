@@ -31,9 +31,10 @@ public:
 
         ///////////////////////////
         // Load CL source.
-        // Ò»·İkernelÔ´ÂëÎÄ¼ş£¬¿É°üº¬¶à¸ökernelº¯Êı¡£
-        // ±éÀúÊäÈëµÄËùÓĞkernel²ÎÊı£¬Õë¶ÔµÚÒ»¸öÔªËØ£¬¼´Ô´ÂëÎÄ¼şÃû£¬´´½¨loader£¬
-        // ÖØÃûµÄÖ»È¡Ò»·İ
+        // ä¸€ä»½kernelæºç æ–‡ä»¶ï¼Œå¯åŒ…å«å¤šä¸ªkernelå‡½æ•°ã€‚
+        // éå†è¾“å…¥çš„æ‰€æœ‰kernelå‚æ•°ï¼Œé’ˆå¯¹ç¬¬ä¸€ä¸ªå…ƒç´ ï¼Œå³æºç æ–‡ä»¶åï¼Œåˆ›å»ºloaderï¼Œ
+        // é‡åçš„åªå–ä¸€ä»½
+        PTK_LOGS("Loaded programs: ( ");
         for (uint32_t i=0; i<kernels_params.size(); i++) {
             std::string src_name = std::get<0>(kernels_params[i]);
             std::unordered_map<std::string, KernelLoader *>::iterator it = loaders_map_.find(src_name);
@@ -42,13 +43,17 @@ public:
                 std::string kernel_file_name = kernels_path + "/" + src_name + ".cl";
                 loader->Load(kernel_file_name.c_str());
                 loader->CreateProgram(context_);
-                
                 loaders_map_[src_name] = loader;
-                PTK_LOGS("Loaded programs: %s.\n", src_name.c_str());
+
+                if (i!=0)  PTK_LOGS(", ");
+                PTK_LOGS("%s", src_name.c_str());
             }
         }
+        PTK_LOGS(" )\n");
+
         // printf("%s, %s, %p.\n", std::get<0>(kernels_params[0]).c_str(), std::get<1>(kernels_params[0]).c_str(), std::get<2>(kernels_params[0]));
-        // ÕÒµ½kernelº¯ÊıÃû¶ÔÓ¦µÄÔ´ÂëÎÄ¼şÃû£¬È¡³öloader²¢´´½¨kernel¡£
+        // æ‰¾åˆ°kernelå‡½æ•°åå¯¹åº”çš„æºç æ–‡ä»¶åï¼Œå–å‡ºloaderå¹¶åˆ›å»ºkernelã€‚
+        PTK_LOGS("Registered kernels: ( ");
         for (uint32_t i=0; i<kernels_params.size(); i++) {
             std::string src_name = std::get<0>(kernels_params[i]);
             std::unordered_map<std::string, KernelLoader *>::iterator it = loaders_map_.find(src_name);
@@ -58,8 +63,11 @@ public:
 
             std::string kernel_name = std::get<1>(kernels_params[i]);
             kernels_map_[kernel_name] = it->second->CreateKernel(kernel_name, std::get<2>(kernels_params[i]));
-            PTK_LOGS("Registered kernels: %s.\n", kernel_name.c_str());
+
+            if (i!=0)  PTK_LOGS(", ");  
+            PTK_LOGS("%s", kernel_name.c_str());
         }
+        PTK_LOGS(" )\n");
 
         cl_command_queue_properties properties = 0;
         is_enable_profiling_ = false;

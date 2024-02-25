@@ -163,7 +163,7 @@ void PrintCommandElapsedTime(cl_event ev) {
     // It requires that the CL_QUEUE_PROFILING_ENABLE flag is set in the clCreateCommandQueue function.
     CL_CHECK(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start_time, NULL));
     CL_CHECK(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end_time, NULL));
-    PTK_LOGS("Command elapsed time: %f ms\n", (end_time - start_time)*1e-6);
+    PTK_LOGS("Time: %f ms.", (end_time - start_time)*1e-6);
 }
 
 } // namespace cl
