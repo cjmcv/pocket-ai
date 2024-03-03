@@ -53,7 +53,7 @@ void SetParamsGemm(vk::KernelParams *params) {
 
     params->spec_constant = {
         {0, 16},  // 0,1,2: local_size_x = 16, local_size_y = 1, local_size_z = 1
-        {1, 1}, 
+        {1, 16}, 
         {2, 1},
     };
     params->push_constant_num = 3;

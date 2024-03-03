@@ -1,6 +1,8 @@
 #version 450 core
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_EXT_control_flow_attributes : enable
+#extension GL_EXT_debug_printf : enable
+// #extension GL_EXT_spirv_intrinsics : enable
 
 layout(binding=0) buffer InputA { float data[]; } A;
 layout(binding=1) buffer InputB { float data[]; } B;
@@ -54,7 +56,8 @@ void main() {
     const uint lda = params.K;
     const uint ldb = params.N;
     const uint ldc = params.N;
-
+    // debugPrintfEXT(">>>>>>>>>> kernel %d, %d\n", lda, ldb);
+    
     uvec2 gid = gl_WorkGroupID.xy;
     uvec2 lid = gl_LocalInvocationID.xy;
 
@@ -65,5 +68,6 @@ void main() {
     for (int k = 0; k < params.K; k++) {
         acc += A.data[gid.y * lda + k] * B.data[k * ldb + gid.x];
     }
+    // debugPrintfEXT("acc %f, ", acc);
     C.data[gid.y * ldc + gid.x] = acc;
 }

@@ -50,9 +50,9 @@ public:
         VkApplicationInfo app_info = {};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         app_info.pNext = nullptr;
-        app_info.pApplicationName = "EcasVulkan";
+        app_info.pApplicationName = "ptk";
         app_info.applicationVersion = 0; // VK_MAKE_API_VERSION(0, 1, 0, 0);
-        app_info.pEngineName = "Compute";
+        app_info.pEngineName = "VkCompute";
         app_info.engineVersion = 0; // VK_MAKE_API_VERSION(0, 1, 0, 0);
         app_info.apiVersion = VK_API_VERSION_1_1; // VK_MAKE_API_VERSION(0, 1, 1, 0);
         
@@ -176,6 +176,7 @@ private:
                     is_exist = true;
                     break;
                 }
+                // PTK_LOGS("%s.\n", ie.extensionName);
             }
             if (!is_exist) {
                 PTK_LOGW("[WARNING] extension %s can not be found. \n", e);
@@ -210,6 +211,7 @@ private:
                     is_exist = true;
                     break;
                 }
+                // PTK_LOGS("%s.\n", il.layerName);
             }
             if (!is_exist) {
                 PTK_LOGW("[WARNING] layer %s can not be found. \n", l);
