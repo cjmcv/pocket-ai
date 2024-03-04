@@ -56,7 +56,7 @@ void main()
         outputO.x[0] = vec4(M, N, K, params.Width);
         outputO.x[1] = vec4(gl_WorkGroupSize.x, gSize.y, gSize.z, params.Height);
 
-        if (laneId.x == 0 && laneId.x == 0)
+        if (laneId.x == 0 && laneId.y == 0)
             debugPrintfEXT("hello engine_test(%d, %d)\n", laneId.x, laneId.y);
     }
 }

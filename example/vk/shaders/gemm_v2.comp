@@ -18,24 +18,38 @@ layout(push_constant) uniform Parameters {
    uint K;
 } params;
 
-// v1: 对应 gemm_mobile.cl 中的v1
 void main() {
+        
+    const int STEP = 4;
+
     const uint lda = params.K;
     const uint ldb = params.N;
     const uint ldc = params.N;
     
     uvec2 lid = gl_LocalInvocationID.xy;
-    uint gid_x = gl_WorkGroupID.x * gl_WorkGroupSize.x + lid.x;
-    uint gid_y = gl_WorkGroupID.y * gl_WorkGroupSize.y + lid.y;
+    uint gid_sx = (gl_WorkGroupID.x * gl_WorkGroupSize.x + lid.x) * STEP;
+    uint gid_sy = (gl_WorkGroupID.y * gl_WorkGroupSize.y + lid.y) * STEP;
 
-    // debugPrintfEXT("(%d, %d, %d, %d, %d, %d), ", gl_WorkGroupID.x, gl_WorkGroupID.y, gid_x, gid_y, lid.x, lid.y);
-
-    if (gid_x >= params.N || gid_y >= params.M)
+    if (gid_sx >= params.N || gid_sy >= params.M)
         return;
 
-    float acc = 0;
-    for (int k = 0; k < params.K; k++) {
-        acc += A.data[gid_y * lda + k] * B.data[k * ldb + gid_x];
+    float acc[STEP][STEP];
+    for (int si = 0; si < STEP; si++) {
+        for (int sj = 0; sj < STEP; sj++) {
+            acc[si][sj] = 0; 
+        }
     }
-    C.data[gid_y * ldc + gid_x] = acc;
+    
+    for (int k = 0; k < params.K; k++) {
+        for (int si = 0; si < STEP; si++) {
+            for (int sj = 0; sj < STEP; sj++) {
+                acc[si][sj] += A.data[(gid_sy+si) * lda + k] * B.data[k * ldb + gid_sx + sj];
+            }
+        }
+    }
+    for (int si=0; si<STEP; si++) {
+        for (int sj=0; sj<STEP; sj++) {
+            C.data[(gid_sy+si) * ldc + gid_sx+sj] += acc[si][sj];
+        }
+    }
 }
