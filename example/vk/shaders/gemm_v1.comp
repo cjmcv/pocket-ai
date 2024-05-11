@@ -18,7 +18,7 @@ layout(push_constant) uniform Parameters {
    uint K;
 } params;
 
-// v1: 对应 gemm_mobile.cl 中的v1
+// v1: 朴素实现方式，对应 gemm_mobile.cl 中的v1
 void main() {
     const uint lda = params.K;
     const uint ldb = params.N;

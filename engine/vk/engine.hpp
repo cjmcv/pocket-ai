@@ -2,8 +2,8 @@
 * \brief Engine is the outermost class of engine/vk
 */
 
-#ifndef PTK_ENGINE_VULKAN_ENGINE_HPP_
-#define PTK_ENGINE_VULKAN_ENGINE_HPP_
+#ifndef POCKET_AI_ENGINE_VULKAN_ENGINE_HPP_
+#define POCKET_AI_ENGINE_VULKAN_ENGINE_HPP_
 
 #include <map>
 
@@ -16,7 +16,7 @@
 #include "descriptor_pool.hpp"
 #include "command_buffer.hpp"
 
-namespace ptk {
+namespace pai {
 namespace vk {
 
 struct KernelParams {
@@ -152,7 +152,7 @@ public:
 
         std::unordered_map<std::string, ExecUnit*>::iterator it = exec_map_.find(kernel_name);
         if (it == exec_map_.end()) {
-            // PTK_LOGE("Can not find Op: %s.\n", kernel_name.c_str());
+            // PAI_LOGE("Can not find Op: %s.\n", kernel_name.c_str());
             printf("Can not find Op: %s.\n", kernel_name.c_str());
             return;
         }
@@ -168,6 +168,6 @@ private:
 };
 
 } // namespace vk
-} // namespace ptk
+} // namespace pai
 
-#endif // PTK_ENGINE_VULKAN_ENGINE_HPP_
+#endif // POCKET_AI_ENGINE_VULKAN_ENGINE_HPP_

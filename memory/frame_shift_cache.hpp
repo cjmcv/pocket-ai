@@ -3,14 +3,14 @@
 *     用于处理帧长和帧移大小不一致时的数据缓存逻辑
 */
 
-#ifndef PTK_MEMORY_FRAME_SHIFT_CACHE_HPP_
-#define PTK_MEMORY_FRAME_SHIFT_CACHE_HPP_
+#ifndef POCKET_AI_MEMORY_FRAME_SHIFT_CACHE_HPP_
+#define POCKET_AI_MEMORY_FRAME_SHIFT_CACHE_HPP_
 
 #include <cstdlib>
 #include <cstring>
 #include "util/logger.hpp"
 
-namespace ptk {
+namespace pai {
 namespace memory {
 
 class FrameShiftCache {
@@ -61,5 +61,5 @@ public:
 };
 
 } // memory.
-} // ptk.
-#endif //PTK_UTIL_FRAME_SHIFT_CACHE_HPP_
+} // pai.
+#endif //POCKET_AI_UTIL_FRAME_SHIFT_CACHE_HPP_

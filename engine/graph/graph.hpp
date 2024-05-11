@@ -1,5 +1,5 @@
-#ifndef PTK_ENGINE_GRAPH_MAIN_HPP_
-#define PTK_ENGINE_GRAPH_MAIN_HPP_
+#ifndef POCKET_AI_ENGINE_GRAPH_MAIN_HPP_
+#define POCKET_AI_ENGINE_GRAPH_MAIN_HPP_
 
 #include <string>
 #include <vector>
@@ -9,7 +9,7 @@
 #include "scheduler.hpp"
 #include "../../util/logger.hpp"
 
-namespace ptk {
+namespace pai {
 namespace engine {
 
 class Graph {
@@ -79,7 +79,7 @@ public:
                 if(nodes_iter != nodes_.end())
                     target = nodes_iter->second;
                 else
-                    PTK_LOGE("Can not find node named %s .\n", relation[i][j-1].c_str());
+                    PAI_LOGE("Can not find node named %s .\n", relation[i][j-1].c_str());
                 
                 // Find the output node of the target.
                 Node *n_out = nullptr;
@@ -87,7 +87,7 @@ public:
                 if(nodes_iter != nodes_.end())
                     n_out = nodes_iter->second;
                 else
-                    PTK_LOGE("Can not find node named %s .\n", relation[i][j].c_str());
+                    PAI_LOGE("Can not find node named %s .\n", relation[i][j].c_str());
 
                 // Set output.
                 io_iter = output_map_.find(target);
@@ -148,12 +148,12 @@ public:
             }
             else if (iter->second->input_nodes() == nullptr) {
                 if (input_node_ != nullptr) 
-                    PTK_LOGE("BuildGraph -> Only one input node is allowed.\n");
+                    PAI_LOGE("BuildGraph -> Only one input node is allowed.\n");
                 input_node_ = iter->second;
             }
             else if (iter->second->output_nodes() == nullptr) {
                 if (output_node_ != nullptr) 
-                    PTK_LOGE("BuildGraph -> Only one output node is allowed.\n");
+                    PAI_LOGE("BuildGraph -> Only one output node is allowed.\n");
                 output_node_ = iter->second;
             }
         }
@@ -169,91 +169,91 @@ public:
         SetupInteractTensors();
         SetupIoTensors();
         ReorderTensors();
-        PTK_LOGI("Finish Graph::BuildGraph.\n");
+        PAI_LOGI("Finish Graph::BuildGraph.\n");
     }
     void ShowInfo() {
-        PTK_LOGS("\n>>>>>>>>> Graph ShowInfo >>>>>>>>>\n");
-        PTK_LOGS("Graph: %s.\n", name_.c_str());
-        PTK_LOGS("Input node: %s.\n", input_node_->name().c_str());
-        PTK_LOGS("Output node: %s.\n", output_node_->name().c_str());
+        PAI_LOGS("\n>>>>>>>>> Graph ShowInfo >>>>>>>>>\n");
+        PAI_LOGS("Graph: %s.\n", name_.c_str());
+        PAI_LOGS("Input node: %s.\n", input_node_->name().c_str());
+        PAI_LOGS("Output node: %s.\n", output_node_->name().c_str());
 
         std::map<std::string, Node*>::iterator iter;
         for(iter = nodes_.begin(); iter != nodes_.end(); iter++) {
             Node *n = iter->second;
             // std::vector<Node *> *ins = n->input_nodes();
             // std::vector<Node *> *outs = n->output_nodes();
-            PTK_LOGS("node: %s (%p) -> in: [", n->name().c_str(), n);
+            PAI_LOGS("node: %s (%p) -> in: [", n->name().c_str(), n);
             for (uint32_t i = 0; i<n->input_dims().size(); i++) {
-                PTK_LOGS("%d(", n->input_dims()[i][0]);
+                PAI_LOGS("%d(", n->input_dims()[i][0]);
                 for (uint32_t j=1; j<n->input_dims()[i].size(); j++) {
-                    PTK_LOGS("%d", n->input_dims()[i][j]);
-                    if (j != n->input_dims()[i].size() - 1) PTK_LOGS(",");
+                    PAI_LOGS("%d", n->input_dims()[i][j]);
+                    if (j != n->input_dims()[i].size() - 1) PAI_LOGS(",");
                 }
-                PTK_LOGS(")");
-                if (i != n->input_dims().size() - 1) PTK_LOGS(",");
+                PAI_LOGS(")");
+                if (i != n->input_dims().size() - 1) PAI_LOGS(",");
             }
-            PTK_LOGS("], out: [");
+            PAI_LOGS("], out: [");
             for (uint32_t i = 0; i<n->output_dims().size(); i++) {
-                PTK_LOGS("%d(", n->output_dims()[i][0]);
+                PAI_LOGS("%d(", n->output_dims()[i][0]);
                 for (uint32_t j=1; j<n->output_dims()[i].size(); j++) {
-                    PTK_LOGS("%d", n->output_dims()[i][j]);
-                    if (j != n->output_dims()[i].size() - 1) PTK_LOGS(",");
+                    PAI_LOGS("%d", n->output_dims()[i][j]);
+                    if (j != n->output_dims()[i].size() - 1) PAI_LOGS(",");
                 }
-                PTK_LOGS(")");
-                if (i != n->output_dims().size() - 1) PTK_LOGS(",");
+                PAI_LOGS(")");
+                if (i != n->output_dims().size() - 1) PAI_LOGS(",");
             }
-            PTK_LOGS("]\n");
+            PAI_LOGS("]\n");
         }
-        PTK_LOGS("\n");
+        PAI_LOGS("\n");
         //
-        PTK_LOGS("Node Relationship: \n");
+        PAI_LOGS("Node Relationship: \n");
         for(iter = nodes_.begin(); iter != nodes_.end(); iter++) {
             Node *n = iter->second;
             std::vector<Node *> *ins = n->input_nodes();
             std::vector<Node *> *outs = n->output_nodes();
-            PTK_LOGS("%s -> in: [", n->name().c_str());
+            PAI_LOGS("%s -> in: [", n->name().c_str());
             if (ins != nullptr) {
                 for (uint32_t i=0; i<ins->size(); i++) {
-                    PTK_LOGS("%s", (*ins)[i]->name().c_str());
-                    if (i != ins->size() - 1) PTK_LOGS(", ");
+                    PAI_LOGS("%s", (*ins)[i]->name().c_str());
+                    if (i != ins->size() - 1) PAI_LOGS(", ");
                 }
             }
-            PTK_LOGS("], out: [");
+            PAI_LOGS("], out: [");
             if (outs != nullptr) {
                 for (uint32_t i=0; i<outs->size(); i++) {
-                    PTK_LOGS("%s", (*outs)[i]->name().c_str());
-                    if (i != outs->size() - 1) PTK_LOGS(", ");
+                    PAI_LOGS("%s", (*outs)[i]->name().c_str());
+                    if (i != outs->size() - 1) PAI_LOGS(", ");
                 }
             }
-            PTK_LOGS("].\n");
+            PAI_LOGS("].\n");
         }
-        PTK_LOGS("\n");
+        PAI_LOGS("\n");
         //
-        PTK_LOGS("Tensors: \n");
+        PAI_LOGS("Tensors: \n");
         for(iter = nodes_.begin(); iter != nodes_.end(); iter++) {
             Node *n = iter->second;
             std::vector<BlockingQueuePair *> ins = n->input_queues();
             std::vector<BlockingQueuePair *> outs = n->output_queues();
             if (ins.size() == 0 && outs.size() == 0)
                 continue;
-            PTK_LOGS("%s -> in: [", n->name().c_str());
+            PAI_LOGS("%s -> in: [", n->name().c_str());
             for (uint32_t i = 0; i < ins.size(); i++) {
-                PTK_LOGS("%p(%s)", ins[i], ins[i]->front_name.c_str());
+                PAI_LOGS("%p(%s)", ins[i], ins[i]->front_name.c_str());
                 if (i != ins.size() - 1)
-                    PTK_LOGS(", ");
+                    PAI_LOGS(", ");
             }
-            PTK_LOGS("], out: [");
+            PAI_LOGS("], out: [");
             for (uint32_t i = 0; i < outs.size(); i++) {
-                PTK_LOGS("%p(%s)", outs[i], outs[i]->rear_name.c_str());
+                PAI_LOGS("%p(%s)", outs[i], outs[i]->rear_name.c_str());
                 if (i != outs.size() - 1)
-                    PTK_LOGS(", ");
+                    PAI_LOGS(", ");
             }
-            PTK_LOGS("].\n");
+            PAI_LOGS("].\n");
         }
 
-        PTK_LOGS("\n");
+        PAI_LOGS("\n");
         scheduler_.ShowGroups();
-        PTK_LOGS(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n");
+        PAI_LOGS(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n");
     }
 
     void Start(void *usr) {
@@ -272,12 +272,12 @@ public:
         }
         scheduler_.TasksJoin();
         // EndProfile();
-        PTK_LOGI("Graph::Stop().\n");
+        PAI_LOGI("Graph::Stop().\n");
     }
 
     // Asynchronous function.
     void Feed(Tensor *in) {
-        // PTK_LOGI("Graph Running: %s, %d, %d.\n", name_.c_str(), p->mode, p->num_thread);
+        // PAI_LOGI("Graph Running: %s, %d, %d.\n", name_.c_str(), p->mode, p->num_thread);
         input_node_->input_queues()[0]->Enqueue(in);
         // scheduler_.BfsExecute(input_node_, &in);
     }
@@ -314,7 +314,7 @@ private:
 
             // The number of input shapes and input nodes should be the same.
             if (input_nodes->size() != input_dims.size())
-                PTK_LOGE("SetupInteractTensors -> output_nodes->size() != output_dims.size(): %lld vs %lld.\n",
+                PAI_LOGE("SetupInteractTensors -> output_nodes->size() != output_dims.size(): %lld vs %lld.\n",
                         input_nodes->size(), input_dims.size());
 
             // Check each of input nodes.
@@ -324,7 +324,7 @@ private:
 
                 if (need_match_dims.size() == 1) {
                     if (need_match_dims[0] != input_dims[si]) {
-                        PTK_LOGE("SetupInteractTensors -> Shape check failed (node %s to %s).\n",
+                        PAI_LOGE("SetupInteractTensors -> Shape check failed (node %s to %s).\n",
                                 n->name().c_str(), in_node->name().c_str());
                     }
                 }
@@ -336,12 +336,12 @@ private:
                             is_pass = true;
                     }
                     if (is_pass == false) {
-                        PTK_LOGE("SetupInteractTensors -> Shape check failed (node %s to %s).\n",
+                        PAI_LOGE("SetupInteractTensors -> Shape check failed (node %s to %s).\n",
                                 n->name().c_str(), in_node->name().c_str());
                     }
                 }
                 else {
-                    PTK_LOGE("SetupInteractTensors -> Shape check failed: need_match_dims.size() <= 0 \
+                    PAI_LOGE("SetupInteractTensors -> Shape check failed: need_match_dims.size() <= 0 \
                             (node %s to %s).\n", n->name().c_str(), in_node->name().c_str());
                 }
                 // Check passed and allocate BlockingQueuePair.
@@ -358,9 +358,9 @@ private:
 
     void SetupIoTensors() {
         if (input_node_ == nullptr || output_node_ == nullptr)
-            PTK_LOGE("SetupIoTensors -> Both input and output nodes must exist.\n");
+            PAI_LOGE("SetupIoTensors -> Both input and output nodes must exist.\n");
         if (input_node_->input_dims().size() != 1 || output_node_->output_dims().size() != 1)
-            PTK_LOGE("SetupIoTensors -> Input node has one input, output node has one output.\n");
+            PAI_LOGE("SetupIoTensors -> Input node has one input, output node has one output.\n");
 
         std::vector<int> tensor_shapes;
         BlockingQueuePair *bqp;
@@ -428,6 +428,6 @@ private:
 
 
 } // namespace engine
-} // namespace ptk
+} // namespace pai
 
-#endif // PTK_ENGINE_GRAPH_MAIN_HPP_
+#endif // POCKET_AI_ENGINE_GRAPH_MAIN_HPP_

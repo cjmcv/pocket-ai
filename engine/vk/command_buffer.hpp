@@ -4,8 +4,8 @@
 *     Mainly used for recording commands.
 */
 
-#ifndef PTK_ENGINE_VULKAN_COMMAND_BUFFER_HPP_
-#define PTK_ENGINE_VULKAN_COMMAND_BUFFER_HPP_
+#ifndef POCKET_AI_ENGINE_VULKAN_COMMAND_BUFFER_HPP_
+#define POCKET_AI_ENGINE_VULKAN_COMMAND_BUFFER_HPP_
 
 #include <vulkan/vulkan.h>
 
@@ -15,7 +15,7 @@
 #include "buffer.hpp"
 #include "pipeline.hpp"
 
-namespace ptk {
+namespace pai {
 namespace vk {
 
 class CommandBuffer {
@@ -123,6 +123,6 @@ private:
 };
 
 }  // namespace vk
-}  // namespace ptk
+}  // namespace pai
 
-#endif  // PTK_ENGINE_VULKAN_COMMAND_BUFFER_HPP_
+#endif  // POCKET_AI_ENGINE_VULKAN_COMMAND_BUFFER_HPP_

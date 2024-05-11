@@ -3,14 +3,14 @@
 *        Mainly implemented by thread.
 */
 
-#ifndef PTK_INTERNAL_THREAD_HPP_
-#define PTK_INTERNAL_THREAD_HPP_
+#ifndef POCKET_AI_INTERNAL_THREAD_HPP_
+#define POCKET_AI_INTERNAL_THREAD_HPP_
 
 #include <stdio.h>
 #include <thread>
 #include <memory>
 
-namespace ptk {
+namespace pai {
 namespace thread {
 
 class InternalThread {
@@ -68,6 +68,6 @@ private:
 };
 
 } // namespace thread
-} // namespace ptk
+} // namespace pai
 
-#endif // PTK_INTERNAL_THREAD_HPP_
+#endif // POCKET_AI_INTERNAL_THREAD_HPP_

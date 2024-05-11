@@ -1,9 +1,9 @@
-#ifndef PTK_ENGINE_OPENCL_PLATFORM_HPP_
-#define PTK_ENGINE_OPENCL_PLATFORM_HPP_
+#ifndef POCKET_AI_ENGINE_OPENCL_PLATFORM_HPP_
+#define POCKET_AI_ENGINE_OPENCL_PLATFORM_HPP_
 
 #include "common.hpp"
 
-namespace ptk {
+namespace pai {
 namespace cl {
 
 class Platform {
@@ -39,8 +39,8 @@ public:
         // Get an OpenCL platform.
         CL_CHECK(clGetPlatformIDs(5, NULL, &num_));
         //////////////// platforms info //////////////////
-        PTK_LOGS("\n//////////////// platforms info //////////////////\n");
-        PTK_LOGS("There are ( %d ) platforms that support OpenCL.\n", num_);
+        PAI_LOGS("\n//////////////// platforms info //////////////////\n");
+        PAI_LOGS("There are ( %d ) platforms that support OpenCL.\n", num_);
 
         platforms_ = (cl_platform_id *)malloc(sizeof(cl_platform_id) * num_);
         CL_CHECK(clGetPlatformIDs(num_, platforms_, NULL));
@@ -59,7 +59,7 @@ public:
             CL_CHECK(clGetPlatformInfo(platforms_[i], CL_PLATFORM_VERSION,
                                         ext_size, versions_[i], NULL));
 
-            PTK_LOGS("The name of the platform is <%s> with version <%s>.\n", names_[i], versions_[i]);
+            PAI_LOGS("The name of the platform is <%s> with version <%s>.\n", names_[i], versions_[i]);
         
             if (i != 0) continue;
 
@@ -76,42 +76,42 @@ public:
                 // text info
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_NAME, 0, 0, &length));
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_NAME, length, text_value, 0));
-                PTK_LOGS("=========== CL_DEVICE_NAME: <%s>.\n", text_value);
+                PAI_LOGS("=========== CL_DEVICE_NAME: <%s>.\n", text_value);
 
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_VENDOR, 0, 0, &length));
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_VENDOR, length, text_value, 0));
-                PTK_LOGS("=========== CL_DEVICE_VENDOR: <%s>.\n", text_value);
+                PAI_LOGS("=========== CL_DEVICE_VENDOR: <%s>.\n", text_value);
 
                 // num info
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(num_value), &num_value, &length));
-                PTK_LOGS("=========== CL_DEVICE_MAX_COMPUTE_UNITS: <%d>.\n", num_value);
+                PAI_LOGS("=========== CL_DEVICE_MAX_COMPUTE_UNITS: <%d>.\n", num_value);
 
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(num_value), &num_value, &length));
-                PTK_LOGS("=========== CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: <%d>.\n", num_value);  
+                PAI_LOGS("=========== CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: <%d>.\n", num_value);  
 
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_value), &size_value, &length));
-                PTK_LOGS("=========== CL_DEVICE_MAX_WORK_GROUP_SIZE: <%zu>.\n", size_value);
+                PAI_LOGS("=========== CL_DEVICE_MAX_WORK_GROUP_SIZE: <%zu>.\n", size_value);
                 
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_MAX_WORK_ITEM_SIZES, 0, 0, &length));
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_MAX_WORK_ITEM_SIZES, length, arr_value, 0));
-                PTK_LOGS("=========== CL_DEVICE_MAX_WORK_ITEM_SIZES: <%zu, %zu, %zu>.\n", arr_value[0], arr_value[1], arr_value[2]);
+                PAI_LOGS("=========== CL_DEVICE_MAX_WORK_ITEM_SIZES: <%zu, %zu, %zu>.\n", arr_value[0], arr_value[1], arr_value[2]);
     
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(num_value), &num_value, &length));
-                PTK_LOGS("=========== CL_DEVICE_MAX_CLOCK_FREQUENCY: <%d>.\n", num_value);
+                PAI_LOGS("=========== CL_DEVICE_MAX_CLOCK_FREQUENCY: <%d>.\n", num_value);
 
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_GLOBAL_MEM_CACHE_SIZE, sizeof(long_value), &long_value, &length));
-                PTK_LOGS("=========== CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: <%lu>.\n", long_value);
+                PAI_LOGS("=========== CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: <%lu>.\n", long_value);
 
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(long_value), &long_value, &length));
-                PTK_LOGS("=========== CL_DEVICE_GLOBAL_MEM_SIZE: <%lu>.\n", long_value);
+                PAI_LOGS("=========== CL_DEVICE_GLOBAL_MEM_SIZE: <%lu>.\n", long_value);
 
                 CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(long_value), &long_value, &length));
-                PTK_LOGS("=========== CL_DEVICE_LOCAL_MEM_SIZE: <%lu>.\n", long_value);
+                PAI_LOGS("=========== CL_DEVICE_LOCAL_MEM_SIZE: <%lu>.\n", long_value);
             }
             delete[] text_value;
             delete[] arr_value;
         }
-        PTK_LOGS("//////////////////////////////////////////////\n\n");
+        PAI_LOGS("//////////////////////////////////////////////\n\n");
     }
 
     inline cl_platform_id *platforms() { return platforms_; }
@@ -130,7 +130,7 @@ public:
 
     bool GetDeviceId(uint32_t platform_index, cl_device_id *device_id, int num_device = 1) {
         if (platform_index >= num_)
-            PTK_LOGE("GetDeviceId -> platform_index: %d is out of range.\n", platform_index);
+            PAI_LOGE("GetDeviceId -> platform_index: %d is out of range.\n", platform_index);
 
         CL_CHECK(clGetDeviceIDs(platforms_[platform_index], CL_DEVICE_TYPE_GPU, num_device, device_id, NULL));
         return true;
@@ -145,6 +145,6 @@ private:
 };
 
 } // namespace cl
-} // namespace ptk
+} // namespace pai
 
-#endif //PTK_ENGINE_OPENCL_PLATFORM_HPP_
+#endif //POCKET_AI_ENGINE_OPENCL_PLATFORM_HPP_

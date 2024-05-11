@@ -3,8 +3,8 @@
 *      Create VkShaderModule and VkDescriptorSetLayout based on spir-v code
 */
 
-#ifndef PTK_ENGINE_VULKAN_SHADER_MODULE_HPP_
-#define PTK_ENGINE_VULKAN_SHADER_MODULE_HPP_
+#ifndef POCKET_AI_ENGINE_VULKAN_SHADER_MODULE_HPP_
+#define POCKET_AI_ENGINE_VULKAN_SHADER_MODULE_HPP_
 
 #include <vulkan/vulkan.h>
 
@@ -14,7 +14,7 @@
 #include <math.h>
 #include "common.hpp"
 
-namespace ptk {
+namespace pai {
 namespace vk {
 
 // 
@@ -181,6 +181,6 @@ private:
 };
 
 } // namespace vk
-} // namespace ptk
+} // namespace pai
 
 #endif // UVKC_VULKAN_SHADER_MODULE_H_

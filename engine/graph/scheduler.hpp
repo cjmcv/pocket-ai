@@ -3,8 +3,8 @@
 *        提供节点的调度方案, 多线程管理，包含多线程间数据内存交互
 */
 
-#ifndef PTK_ENGINE_GRAPH_SCHEDULER_HPP_
-#define PTK_ENGINE_GRAPH_SCHEDULER_HPP_
+#ifndef POCKET_AI_ENGINE_GRAPH_SCHEDULER_HPP_
+#define POCKET_AI_ENGINE_GRAPH_SCHEDULER_HPP_
 
 #include <string>
 #include <vector>
@@ -14,7 +14,7 @@
 #include "node.hpp"
 #include "../../util/logger.hpp"
 
-namespace ptk {
+namespace pai {
 namespace engine {
 
 class Scheduler {
@@ -32,7 +32,7 @@ public:
             groups_temp_.resize(init_size);
         }
         if (group_id > groups_temp_.size()) {
-            PTK_LOGE("group_id should be smaller than %lld.\n", groups_temp_.size());
+            PAI_LOGE("group_id should be smaller than %lld.\n", groups_temp_.size());
         }
         groups_temp_[group_id].push_back(node);
     }
@@ -92,34 +92,34 @@ public:
                     groups_[i][j] = iter->second;
                 }
                 else {
-                    PTK_LOGI("BuildGroup -> Can not find node named %s .\n", groups[i][j].c_str());
+                    PAI_LOGI("BuildGroup -> Can not find node named %s .\n", groups[i][j].c_str());
                 }
             }
         }
     }
     void ShowGroups() {
-        PTK_LOGS("Groups: \n");
+        PAI_LOGS("Groups: \n");
         for (uint32_t i = 0; i < groups_.size(); i++) {
             if (groups_[i].size() == 0)
-                PTK_LOGE("ShowGroups -> groups_[%d].size() == 0.\n", i)
+                PAI_LOGE("ShowGroups -> groups_[%d].size() == 0.\n", i)
 
-            PTK_LOGS("%d -> ", i);
+            PAI_LOGS("%d -> ", i);
             for (uint32_t j = 0; j < groups_[i].size(); j++) {
-                PTK_LOGS("%s", ((Node *)groups_[i][j])->name().c_str()); // groups_[i][j]
-                if (j != groups_[i].size() - 1) PTK_LOGS(", ");
+                PAI_LOGS("%s", ((Node *)groups_[i][j])->name().c_str()); // groups_[i][j]
+                if (j != groups_[i].size() - 1) PAI_LOGS(", ");
             }
-            PTK_LOGS("\n");
+            PAI_LOGS("\n");
         }
     }
     inline int group_size() { return groups_.size(); }
     // inline std::vector<std::vector<Node *>> &group_nodes() { return groups_; };
     void TasksSpawn(void *usr) {
         if (groups_.size() == 0) {
-            PTK_LOGE("TasksSpawn -> groups_.size() == 0, please call function BuildGraph first.\n");
+            PAI_LOGE("TasksSpawn -> groups_.size() == 0, please call function BuildGraph first.\n");
         }
 
         std::vector<std::vector<Node *>> &groups = groups_;
-        PTK_LOGI("group size: %lld.\n", groups_.size());
+        PAI_LOGI("group size: %lld.\n", groups_.size());
         for (unsigned i = 0; i < groups.size(); ++i) {
             threads_.emplace_back([this, i, groups, usr]() -> void {
                 std::vector<Tensor *> inputs;
@@ -136,10 +136,10 @@ public:
                         n->RecycleIo();
                     }
                 }
-                PTK_LOGI("groups %d exit.\n", i);
+                PAI_LOGI("groups %d exit.\n", i);
             });
         }
-        // PTK_LOGI("Scheduler::TasksSpawn End.\n");
+        // PAI_LOGI("Scheduler::TasksSpawn End.\n");
     }
 
     void TasksStop()  {
@@ -167,6 +167,6 @@ private:
 };
 
 }  // engine
-}  // ptk
+}  // pai
 
-#endif // PTK_ENGINE_GRAPH_SCHEDULER_HPP_
+#endif // POCKET_AI_ENGINE_GRAPH_SCHEDULER_HPP_

@@ -2,8 +2,8 @@
 * \brief Compute node.
 */
 
-#ifndef PTK_ENGINE_GRAPH_NODE_HPP_
-#define PTK_ENGINE_GRAPH_NODE_HPP_
+#ifndef POCKET_AI_ENGINE_GRAPH_NODE_HPP_
+#define POCKET_AI_ENGINE_GRAPH_NODE_HPP_
 
 #include <string>
 #include <vector>
@@ -12,7 +12,7 @@
 #include "tensor.hpp"
 #include "../../memory/blocking_queue.hpp"
 
-namespace ptk {
+namespace pai {
 namespace engine {
 
 // TODO: 内存管理，内存复用在其内部接allocator
@@ -162,7 +162,7 @@ public:
         // Check id
         for (uint32_t i=1; i<inputs.size(); i++) {
             if (inputs[i]->id() != inputs[0]->id()) {
-                PTK_LOGE("Node::BorrowIo -> The ID of Tensor in the same group is inconsistent.\n");
+                PAI_LOGE("Node::BorrowIo -> The ID of Tensor in the same group is inconsistent.\n");
             }
         }
         // Pass id
@@ -208,6 +208,6 @@ private:
 };
 
 }  // engine
-}  // ptk
+}  // pai
 
-#endif //PTK_ENGINE_GRAPH_NODE_HPP_
+#endif //POCKET_AI_ENGINE_GRAPH_NODE_HPP_

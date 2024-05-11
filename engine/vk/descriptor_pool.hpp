@@ -4,8 +4,8 @@
 *     Centered around VkDescriptorPool, used to create a descriptor set.
 */
 
-#ifndef PTK_ENGINE_VULKAN_DESCRIPTOR_POOL_HPP_
-#define PTK_ENGINE_VULKAN_DESCRIPTOR_POOL_HPP_
+#ifndef POCKET_AI_ENGINE_VULKAN_DESCRIPTOR_POOL_HPP_
+#define POCKET_AI_ENGINE_VULKAN_DESCRIPTOR_POOL_HPP_
 
 #include <vulkan/vulkan.h>
 
@@ -15,7 +15,7 @@
 
 #include "buffer.hpp"
 
-namespace ptk {
+namespace pai {
 namespace vk {
 
 class DescriptorPool {
@@ -92,6 +92,6 @@ private:
 };
 
 }  // namespace vk
-}  // namespace ptk
+}  // namespace pai
 
-#endif  // PTK_ENGINE_VULKAN_DESCRIPTOR_POOL_HPP_
+#endif  // POCKET_AI_ENGINE_VULKAN_DESCRIPTOR_POOL_HPP_

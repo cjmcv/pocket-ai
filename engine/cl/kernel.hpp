@@ -1,9 +1,9 @@
-#ifndef PTK_ENGINE_OPENCL_KERNEL_HPP_
-#define PTK_ENGINE_OPENCL_KERNEL_HPP_
+#ifndef POCKET_AI_ENGINE_OPENCL_KERNEL_HPP_
+#define POCKET_AI_ENGINE_OPENCL_KERNEL_HPP_
 
 #include "common.hpp"
 
-namespace ptk {
+namespace pai {
 namespace cl {
 
 ////////////////
@@ -38,7 +38,7 @@ struct BufferArgs {
     uint32_t width;
 };
 
-typedef void (*pSetParamsFuncs)(ptk::cl::KernelParams *params);
+typedef void (*pSetParamsFuncs)(pai::cl::KernelParams *params);
 
 class Kernel {
 public:
@@ -152,7 +152,7 @@ public:
 
     void WriteBuffer(cl_bool is_blocking, const void *host_ptr, uint32_t args_id) {
         if (args_id > params_->io_buffer.size() - 1) {
-            PTK_LOGE("WriteBuffer -> args_id: %d is out of range.\n", args_id);
+            PAI_LOGE("WriteBuffer -> args_id: %d is out of range.\n", args_id);
         }
         KernelIOBuffer *id_buffer = &params_->io_buffer[args_id];
         CL_CHECK(clEnqueueWriteBuffer(queue_, id_buffer->mem, is_blocking, 0, id_buffer->size, host_ptr, 0, NULL, NULL));
@@ -160,7 +160,7 @@ public:
 
     void ReadBuffer(cl_bool is_blocking, void *host_ptr, uint32_t args_id) {
         if (args_id > params_->io_buffer.size() - 1) {
-            PTK_LOGE("ReadBuffer -> args_id: %d is out of range.\n", args_id);
+            PAI_LOGE("ReadBuffer -> args_id: %d is out of range.\n", args_id);
         }
         KernelIOBuffer *id_buffer = &params_->io_buffer[args_id];
         CL_CHECK(clEnqueueReadBuffer(queue_, id_buffer->mem, is_blocking, 0, id_buffer->size, host_ptr, 0, NULL, NULL));
@@ -168,7 +168,7 @@ public:
 
     void *MapBuffer(cl_bool is_blocking, uint32_t args_id) {
         if (args_id > params_->io_buffer.size() - 1) {
-            PTK_LOGE("MapBuffer -> args_id: %d is out of range.\n", args_id);
+            PAI_LOGE("MapBuffer -> args_id: %d is out of range.\n", args_id);
         }
         cl_int err_code;
         KernelIOAttri *id_attri = &params_->io_attri[args_id];
@@ -189,7 +189,7 @@ public:
 
     void UnmapBuffer(uint32_t args_id) {
         if (args_id > params_->io_buffer.size() - 1) {
-            PTK_LOGE("UnmapBuffer -> args_id: %d is out of range.\n", args_id);
+            PAI_LOGE("UnmapBuffer -> args_id: %d is out of range.\n", args_id);
         }
         KernelIOBuffer *id_buffer = &params_->io_buffer[args_id];
         CL_CHECK(clEnqueueUnmapMemObject(queue_, id_buffer->mem, id_buffer->mapped_ptr, 0, NULL, NULL));
@@ -219,7 +219,7 @@ public:
     bool Load(const char *source_file) {
         program_source_ = LoadProgSource(source_file, "", &program_length_);
         if (program_source_ == NULL) {
-            PTK_LOGE("LoadProgSource %s Failed.\n", source_file); 
+            PAI_LOGE("LoadProgSource %s Failed.\n", source_file); 
             return false;
         }
         return true;
@@ -254,13 +254,13 @@ private:
         // Open the OpenCL source code file
     #ifdef _WIN32   // Windows version
         if (fopen_s(&file_stream, file_name, "rb") != 0) {
-            PTK_LOGS("Can not open the file : %s.\n", file_name);
+            PAI_LOGS("Can not open the file : %s.\n", file_name);
             return NULL;
         }
     #else           // Linux version
         file_stream = fopen(file_name, "rb");
         if (file_stream == 0) {
-            PTK_LOGS("Can not open the file : %s.\n", file_name);
+            PAI_LOGS("Can not open the file : %s.\n", file_name);
             return NULL;
         }
     #endif
@@ -302,6 +302,6 @@ private:
 };
 
 } // namespace cl
-} // namespace ptk
+} // namespace pai
 
-#endif //PTK_ENGINE_OPENCL_KERNEL_HPP_
+#endif //POCKET_AI_ENGINE_OPENCL_KERNEL_HPP_

@@ -6,8 +6,8 @@
 *   It is also used to build queues and commands pool.
 */
 
-#ifndef PTK_ENGINE_VULKAN_DEVICE_HPP_
-#define PTK_ENGINE_VULKAN_DEVICE_HPP_
+#ifndef POCKET_AI_ENGINE_VULKAN_DEVICE_HPP_
+#define POCKET_AI_ENGINE_VULKAN_DEVICE_HPP_
 
 #include <vulkan/vulkan.h>
 
@@ -16,7 +16,7 @@
 #include "buffer.hpp"
 #include "common.hpp"
 
-namespace ptk {
+namespace pai {
 namespace vk {
 
 class Device {
@@ -119,7 +119,7 @@ private:
             }
         }
 
-        PTK_LOGE("Instance::SelectQueueFamily -> Cannot find queue family with required bits.");
+        PAI_LOGE("Instance::SelectQueueFamily -> Cannot find queue family with required bits.");
         return 0;
     }
 
@@ -133,6 +133,6 @@ private:
 };
 
 }  // namespace vk
-}  // namespace ptk
+}  // namespace pai
 
-#endif  // PTK_ENGINE_VULKAN_DEVICE_HPP_
+#endif  // POCKET_AI_ENGINE_VULKAN_DEVICE_HPP_

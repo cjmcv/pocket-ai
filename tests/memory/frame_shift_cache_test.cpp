@@ -8,7 +8,7 @@
 
 namespace {
 
-using namespace ptk::memory;
+using namespace pai::memory;
 
 void FrameShiftCacheTest() {
     int frame_num = 25; //帧长25

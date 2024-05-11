@@ -8,7 +8,7 @@
 
 namespace {
 
-using namespace ptk::memory;
+using namespace pai::memory;
 
 class MyClass {
 public:

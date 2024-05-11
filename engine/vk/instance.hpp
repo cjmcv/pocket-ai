@@ -5,8 +5,8 @@
 *    It can set up set up debugging verification layers and query available physical devices.
 */
 
-#ifndef PTK_ENGINE_VULKAN_INSTANCE_HPP_
-#define PTK_ENGINE_VULKAN_INSTANCE_HPP_
+#ifndef POCKET_AI_ENGINE_VULKAN_INSTANCE_HPP_
+#define POCKET_AI_ENGINE_VULKAN_INSTANCE_HPP_
 
 #include <vulkan/vulkan.h>
 
@@ -15,7 +15,7 @@
 #include <string.h>
 #include "common.hpp"
 
-namespace ptk {
+namespace pai {
 namespace vk {
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallbackFn(
@@ -50,7 +50,7 @@ public:
         VkApplicationInfo app_info = {};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         app_info.pNext = nullptr;
-        app_info.pApplicationName = "ptk";
+        app_info.pApplicationName = "pai";
         app_info.applicationVersion = 0; // VK_MAKE_API_VERSION(0, 1, 0, 0);
         app_info.pEngineName = "VkCompute";
         app_info.engineVersion = 0; // VK_MAKE_API_VERSION(0, 1, 0, 0);
@@ -95,7 +95,7 @@ public:
             if (func != nullptr)
                 func(instance_, debug_report_callback_, NULL);                
             else
-                PTK_LOGE("Could not load vkDestroyDebugReportCallbackEXT.\n");
+                PAI_LOGE("Could not load vkDestroyDebugReportCallbackEXT.\n");
         }
 
         vkDestroyInstance(instance_, /*pAllocator=*/nullptr);
@@ -119,7 +119,7 @@ public:
 
                 ///////////////////////////////////
                 //  Information.
-                PTK_LOGS("\n//////////////// Physical Device: %d //////////////////\n", i);
+                PAI_LOGS("\n//////////////// Physical Device: %d //////////////////\n", i);
                 std::string type;
                 if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_OTHER)
                     type = "VK_PHYSICAL_DEVICE_TYPE_OTHER";
@@ -131,27 +131,27 @@ public:
                     type = "VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU";
                 else if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU)
                     type = "VK_PHYSICAL_DEVICE_TYPE_CPU";
-                PTK_LOGS("device type: %s\n", type.c_str());
-                PTK_LOGS("device name: %s \n", properties.deviceName);
-                PTK_LOGS("api version: %d \n", properties.apiVersion);
-                PTK_LOGS("driver version: %d \n", properties.driverVersion);
-                PTK_LOGS("vendor id: %d \n", properties.vendorID);
-                PTK_LOGS("device id: %d \n", properties.deviceID);
+                PAI_LOGS("device type: %s\n", type.c_str());
+                PAI_LOGS("device name: %s \n", properties.deviceName);
+                PAI_LOGS("api version: %d \n", properties.apiVersion);
+                PAI_LOGS("driver version: %d \n", properties.driverVersion);
+                PAI_LOGS("vendor id: %d \n", properties.vendorID);
+                PAI_LOGS("device id: %d \n", properties.deviceID);
 
                 ///////////////////////////////////
                 // Capability
-                PTK_LOGS("max compute shared memory size: %d\n", properties.limits.maxComputeSharedMemorySize);
-                PTK_LOGS("max workgroup count: [%d, %d, %d]\n", properties.limits.maxComputeWorkGroupCount[0],
+                PAI_LOGS("max compute shared memory size: %d\n", properties.limits.maxComputeSharedMemorySize);
+                PAI_LOGS("max workgroup count: [%d, %d, %d]\n", properties.limits.maxComputeWorkGroupCount[0],
                                                                 properties.limits.maxComputeWorkGroupCount[1], 
                                                                 properties.limits.maxComputeWorkGroupCount[2]);
-                PTK_LOGS("max workgroup invocations: %d\n", properties.limits.maxComputeWorkGroupInvocations);
-                PTK_LOGS("max workgroup size: [%d, %d, %d]\n", properties.limits.maxComputeWorkGroupSize[0],
+                PAI_LOGS("max workgroup invocations: %d\n", properties.limits.maxComputeWorkGroupInvocations);
+                PAI_LOGS("max workgroup size: [%d, %d, %d]\n", properties.limits.maxComputeWorkGroupSize[0],
                                                                 properties.limits.maxComputeWorkGroupSize[1],
                                                                 properties.limits.maxComputeWorkGroupSize[2]);
 
-                PTK_LOGS("memory map alignment: %zu\n", properties.limits.minMemoryMapAlignment);
-                PTK_LOGS("buffer offset alignment: %lu\n", properties.limits.minStorageBufferOffsetAlignment);
-                PTK_LOGS("//////////////////////////////////////////////////////\n\n");
+                PAI_LOGS("memory map alignment: %zu\n", properties.limits.minMemoryMapAlignment);
+                PAI_LOGS("buffer offset alignment: %lu\n", properties.limits.minStorageBufferOffsetAlignment);
+                PAI_LOGS("//////////////////////////////////////////////////////\n\n");
             }
         }
         return devices;
@@ -176,18 +176,18 @@ private:
                     is_exist = true;
                     break;
                 }
-                // PTK_LOGS("%s.\n", ie.extensionName);
+                // PAI_LOGS("%s.\n", ie.extensionName);
             }
             if (!is_exist) {
-                PTK_LOGW("[WARNING] extension %s can not be found. \n", e);
+                PAI_LOGW("[WARNING] extension %s can not be found. \n", e);
             }
         }
 
         // Not all extension are supported.
         if (ret.size() != extensions.size()) {
-            PTK_LOGS("Supported extensions: \n");
+            PAI_LOGS("Supported extensions: \n");
             for (auto ie : ins_exts) {
-                PTK_LOGS("%s.\n", ie.extensionName);
+                PAI_LOGS("%s.\n", ie.extensionName);
             }
         }
         return ret; //  move construct
@@ -211,18 +211,18 @@ private:
                     is_exist = true;
                     break;
                 }
-                // PTK_LOGS("%s.\n", il.layerName);
+                // PAI_LOGS("%s.\n", il.layerName);
             }
             if (!is_exist) {
-                PTK_LOGW("[WARNING] layer %s can not be found. \n", l);
+                PAI_LOGW("[WARNING] layer %s can not be found. \n", l);
             }
         }
 
         // Not all layers are supported.
         if (ret.size() != layers.size()) {
-            PTK_LOGS("Supported layers: \n");
+            PAI_LOGS("Supported layers: \n");
             for (auto il : ins_layers) {
-                PTK_LOGS("%s.\n", il.layerName);
+                PAI_LOGS("%s.\n", il.layerName);
             }
         }
         return ret;
@@ -238,6 +238,6 @@ private:
 };
 
 }  // namespace vk
-}  // namespace ptk
+}  // namespace pai
 
-#endif  // PTK_ENGINE_VULKAN_INSTANCE_HPP_
+#endif  // POCKET_AI_ENGINE_VULKAN_INSTANCE_HPP_

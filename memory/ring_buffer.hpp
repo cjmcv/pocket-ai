@@ -2,8 +2,8 @@
 * \brief RingBuffer with cond.
 */
 
-#ifndef PTK_MEMORY_RINGBUFFER_HPP_
-#define PTK_MEMORY_RINGBUFFER_HPP_
+#ifndef POCKET_AI_MEMORY_RINGBUFFER_HPP_
+#define POCKET_AI_MEMORY_RINGBUFFER_HPP_
 
 #include <thread>
 #include <chrono>
@@ -12,7 +12,7 @@
 
 #include "util/logger.hpp"
 
-namespace ptk {
+namespace pai {
 namespace memory {
 
 // TODO: 可选禁用线程
@@ -21,13 +21,15 @@ public:
     RingBuffer(uint32_t size) {
         data_ = (unsigned char *)malloc(size);
         if (data_ == nullptr) {
-            PTK_LOGE("RingBuffer::RingBuffer:malloc for data fail!n");
+            PAI_LOGE("RingBuffer::RingBuffer:malloc for data fail!n");
         }
 
         start_ = data_;
         end_ = start_ + size;
         capacity_ = size;
 
+        //    <head> empty [tail] data.data.data.data [head] empty <end>
+        // or <head> data.data [head] empty.empty [tail] data.data <end>
         head_ = start_;
         tail_ = start_;
         payload_= 0;
@@ -54,6 +56,7 @@ public:
         }
 
         if(head_ >= tail_) {
+            // tail d.d.d.d head e.e <end>
             if (size <= (end_ - head_)) {
                 memcpy(head_, data, size);
                 head_ += size;
@@ -67,6 +70,8 @@ public:
             }
         }
         else if (head_ < tail_) {
+            // from d.d head e.e.e tail d.d
+            // to   d.d.d head e.e tail d.d
             memcpy(head_, data, size);
             head_ += size;
         }
@@ -80,7 +85,7 @@ public:
     }
 
     bool Read(char *data, const uint32_t size, bool is_blocking = true) {
-        if ((0 == size) || (size > capacity_))
+        if ((0 == size) || (data == nullptr) || (size > capacity_))
             return false;
             
         std::unique_lock <std::mutex> lock(mutex_);
@@ -91,20 +96,22 @@ public:
             else
                 return false;
         }
-        if(head_ >= tail_) {
-            if (data != nullptr) memcpy(data, tail_, size);
+
+        if(head_ > tail_) {
+            memcpy(data, tail_, size);
             tail_ += size;
         }
-        else if (head_ < tail_) {
+        else if (head_ < tail_ || payload_ == capacity_) {
+            // when payload_ == capacity_, head_ will be equal to tail_.
             if (size <= (end_ - tail_)) {
-                if (data != nullptr) memcpy(data, tail_, size);
+                memcpy(data, tail_, size);
                 tail_ += size;
             }
             else {
                 int tmp_size = end_ - tail_;
-                if (data != nullptr) memcpy(data, tail_, tmp_size);
+                memcpy(data, tail_, tmp_size);
                 tail_ = start_; 
-                if (data != nullptr) memcpy(data + tmp_size, tail_, size - tmp_size);
+                memcpy(data + tmp_size, tail_, size - tmp_size);
                 tail_ += size-tmp_size;
             }
         }
@@ -156,5 +163,5 @@ private:
 };
 
 } // memory.
-} // ptk.
-#endif //PTK_MEMORY_RINGBUFFER_HPP_
+} // pai.
+#endif //POCKET_AI_MEMORY_RINGBUFFER_HPP_

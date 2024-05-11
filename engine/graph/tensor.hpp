@@ -3,8 +3,8 @@
 *        数据维度形态等，不涉及具体内存。具体内存Buffer中处理
 */
 
-#ifndef PTK_ENGINE_GRAPH_TENSOR_HPP_
-#define PTK_ENGINE_GRAPH_TENSOR_HPP_
+#ifndef POCKET_AI_ENGINE_GRAPH_TENSOR_HPP_
+#define POCKET_AI_ENGINE_GRAPH_TENSOR_HPP_
 
 #include <string>
 #include <vector>
@@ -13,7 +13,7 @@
 #include "../../util/type.hpp"
 #include "../../util/logger.hpp"
 
-namespace ptk {
+namespace pai {
 namespace engine {
 
 // Tensor 为Tensor的父类，对外数据交互, 隐藏细节，不允许外部构造
@@ -49,7 +49,7 @@ public:
         CheckDimension(in);
         // Check memory type,
         if (mem_loc_ != in->mem_loc()) {
-            PTK_LOGE("Tensor::CloneFrom -> memory type mismatch.\n");
+            PAI_LOGE("Tensor::CloneFrom -> memory type mismatch.\n");
         }
         id_ = in->id();
         memcpy(GetData(), in->GetData(), size_);
@@ -60,7 +60,7 @@ public:
         CheckDimension(out);
         // Check memory type,
         if (mem_loc_ != out->mem_loc()) {
-            PTK_LOGE("Tensor::CopyTo -> memory loc mismatch.\n");
+            PAI_LOGE("Tensor::CopyTo -> memory loc mismatch.\n");
         }
         out->SetId(id_);
         memcpy(out->GetData(), GetData(), size_);
@@ -94,13 +94,13 @@ public:
     }
 
     void Print() {
-        PTK_LOGS("\n====== Tensor %p ======\n", this);
-        PTK_LOGS("\nShape: ");
+        PAI_LOGS("\n====== Tensor %p ======\n", this);
+        PAI_LOGS("\nShape: ");
         for (uint32_t i = 0; i < shape_.size(); i++) {
-            PTK_LOGS("%d, ", shape_[i]);
+            PAI_LOGS("%d, ", shape_[i]);
         }
 
-        PTK_LOGS("\nData: \n");
+        PAI_LOGS("\nData: \n");
         int s[4] = {1, 1, 1, 1};
         memcpy(s + 4 - shape_.size(), &shape_[0], sizeof(uint32_t) * shape_.size());
 
@@ -111,7 +111,7 @@ public:
                 int n_bias = n * s[1] * s[2] * s[3];
                 for (int c = 0; c < s[1]; c++) {
                     int c_bias = c * s[2] * s[3];
-                    PTK_LOGS("(n: %d, c: %d): ", n, c);
+                    PAI_LOGS("(n: %d, c: %d): ", n, c);
                     for (int h = 0; h < s[2]; h++) {
                         int h_bias = h * s[3];
                         for (int w = 0; w < s[3]; w++) {
@@ -163,7 +163,7 @@ private:
     void CheckDimension(Tensor *target) {
         for (uint32_t i=0; i<shape_.size(); i++) {
             if (shape_[i] != target->shape()[i]) {
-                PTK_LOGE("Tensor::CloneFrom -> shape mismatch.\n");
+                PAI_LOGE("Tensor::CloneFrom -> shape mismatch.\n");
             }
         }
     }
@@ -182,6 +182,6 @@ private:
 };
 
 }  // engine
-}  // ptk
+}  // pai
 
-#endif // PTK_ENGINE_GRAPH_TENSOR_HPP_
+#endif // POCKET_AI_ENGINE_GRAPH_TENSOR_HPP_

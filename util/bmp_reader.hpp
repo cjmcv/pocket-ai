@@ -1,5 +1,5 @@
-#ifndef PTK_UTIL_BMP_READER_HPP_
-#define PTK_UTIL_BMP_READER_HPP_
+#ifndef POCKET_AI_UTIL_BMP_READER_HPP_
+#define POCKET_AI_UTIL_BMP_READER_HPP_
 
 #include <fstream>
 #include <vector>
@@ -8,7 +8,7 @@
 
 #include "util/logger.hpp"
 
-namespace ptk {
+namespace pai {
 namespace util {
 
 #pragma pack(push, 1)
@@ -50,7 +50,7 @@ class BmpReader {
 public:
     BmpReader(uint32_t width, uint32_t height, uint32_t channels) {
         if (channels != 3 && channels != 4)
-            PTK_LOGE("BmpReader only supports 3 or 4 channel inputs for now.\n");
+            PAI_LOGE("BmpReader only supports 3 or 4 channel inputs for now.\n");
 
         bmp_info_header_.width = width;
         bmp_info_header_.height = height;
@@ -62,12 +62,12 @@ public:
     BmpReader(const char *fname) {
         std::ifstream inp{fname, std::ios_base::binary};
         if (!inp) {
-            PTK_LOGE("Unable to open the input image file: %s \n.", fname);
+            PAI_LOGE("Unable to open the input image file: %s \n.", fname);
         }
 
         ReadHeaders(inp);
         if (bmp_info_header_.height < 0) {
-            PTK_LOGE("The program can treat only BmpReader images with the origin in the bottom left corner!");
+            PAI_LOGE("The program can treat only BmpReader images with the origin in the bottom left corner!");
         }
 
         // Jump to the pixel data location
@@ -92,7 +92,7 @@ public:
     void Write(const char *fname) {
         std::ofstream of{fname, std::ios_base::binary};
         if (!of) {
-            PTK_LOGE("Unable to open the output image file: %s \n.", fname);
+            PAI_LOGE("Unable to open the output image file: %s \n.", fname);
         }
 
         WriteHeaders(of);
@@ -138,7 +138,7 @@ private:
     void ReadHeaders(std::ifstream &inf) {
         inf.read((char *)&file_header_, sizeof(file_header_));
         if (file_header_.file_type != 0x4D42) {
-            PTK_LOGE("Error! Unrecognized file format.");
+            PAI_LOGE("Error! Unrecognized file format.");
         }
         inf.read((char *)&bmp_info_header_, sizeof(bmp_info_header_));
 
@@ -151,7 +151,7 @@ private:
                 CheckColorHeader(bmp_color_header_);
             }
             else {
-                PTK_LOGE("Error! Unrecognized file format: This file does not seem to contain bit mask information.");
+                PAI_LOGE("Error! Unrecognized file format: This file does not seem to contain bit mask information.");
             }
         }
     }
@@ -171,10 +171,10 @@ private:
             expected_color_header.blue_mask != bmp_color_header.blue_mask ||
             expected_color_header.green_mask != bmp_color_header.green_mask ||
             expected_color_header.alpha_mask != bmp_color_header.alpha_mask) {
-            PTK_LOGE("Unexpected color mask format! The program expects the pixel data to be in the BGRA format");
+            PAI_LOGE("Unexpected color mask format! The program expects the pixel data to be in the BGRA format");
         }
         if (expected_color_header.color_space_type != bmp_color_header.color_space_type) {
-            PTK_LOGE("Unexpected color space type! The program expects sRGB values");
+            PAI_LOGE("Unexpected color space type! The program expects sRGB values");
         }
     }
 
@@ -189,6 +189,6 @@ private:
 };
 
 } // namespace util
-} // namespace ptk
+} // namespace pai
 
-#endif // PTK_UTIL_BMP_READER_HPP_
+#endif // POCKET_AI_UTIL_BMP_READER_HPP_

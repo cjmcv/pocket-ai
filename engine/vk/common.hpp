@@ -2,8 +2,8 @@
 * \brief vulkan common. 
 */
 
-#ifndef PTK_ENGINE_VULKAN_COMMON_HPP_
-#define PTK_ENGINE_VULKAN_COMMON_HPP_
+#ifndef POCKET_AI_ENGINE_VULKAN_COMMON_HPP_
+#define POCKET_AI_ENGINE_VULKAN_COMMON_HPP_
 
 #include "../../util/logger.hpp"
 
@@ -11,14 +11,14 @@
 #define VK_CHECK(f) 	{																			\
     VkResult res = (f);																					\
     if (res != VK_SUCCESS)	{											        						\
-        PTK_LOGE("Fatal : VkResult is %d in %s at line %d\n", res,  __FILE__, __LINE__); \
+        PAI_LOGE("Fatal : VkResult is %d in %s at line %d\n", res,  __FILE__, __LINE__); \
     }																									\
 }
 
-namespace ptk {
+namespace pai {
 namespace vk {
 
 }  // end of namespace vk.
-}  // end of namespace ptk.
+}  // end of namespace pai.
 
-#endif // PTK_ENGINE_VULKAN_COMMON_HPP_
+#endif // POCKET_AI_ENGINE_VULKAN_COMMON_HPP_

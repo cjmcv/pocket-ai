@@ -3,7 +3,7 @@
 #include "engine/vk/engine.hpp"
 #include "prof/timer.hpp"
 
-using namespace ptk;
+using namespace pai;
 
 void SetParamsEngineTest(vk::KernelParams *params) {
     params->buffer_type = {
@@ -43,7 +43,7 @@ void SetParamsGemm(vk::KernelParams *params) {
 }
 
 void TestBaseKernel(vk::Engine *engine, std::string kernel_name) {
-    PTK_LOGS(">>> %s: ", kernel_name.c_str());
+    PAI_LOGS(">>> %s: ", kernel_name.c_str());
 
     uint32_t len = 640 * 640;
     uint32_t size = sizeof(float) * len;
@@ -70,7 +70,7 @@ void TestBaseKernel(vk::Engine *engine, std::string kernel_name) {
         {
             vk::Buffer *buffer = output_buffers[0];
             float *mapped_data = (float *)buffer->MapMemory(0, buffer->buffer_size());
-            PTK_LOGS("<<< Out: (%f, %f, %f, %f) - (%f, %f, %f, %f)\n", 
+            PAI_LOGS("<<< Out: (%f, %f, %f, %f) - (%f, %f, %f, %f)\n", 
                     mapped_data[0], mapped_data[1], mapped_data[2], mapped_data[3], 
                     mapped_data[4], mapped_data[5], mapped_data[6], mapped_data[7]);
             buffer->UnmapMemory();
@@ -84,7 +84,7 @@ void TestBaseKernel(vk::Engine *engine, std::string kernel_name) {
 }
 
 void TestGemm(vk::Engine *engine, std::string kernel_name, int step) {
-    PTK_LOGS(">>> %s: ", kernel_name.c_str());
+    PAI_LOGS(">>> %s: ", kernel_name.c_str());
 
     uint32_t height_a = 960, width_a = 1280;
     uint32_t height_b = 1280, width_b = 640;
@@ -132,7 +132,7 @@ void TestGemm(vk::Engine *engine, std::string kernel_name, int step) {
                 // printf("%f, ", mapped_data[i * width_b + j]);
             }
         }
-        PTK_LOGS(" <<< Out: %f.\n", mean / (height_a * width_b));
+        PAI_LOGS(" <<< Out: %f.\n", mean / (height_a * width_b));
         buffer->UnmapMemory();
     }
 
@@ -149,12 +149,14 @@ int main() {
     shaders_name.push_back(std::make_pair("engine_test", SetParamsEngineTest));
     shaders_name.push_back(std::make_pair("gemm_v1", SetParamsGemm));
     shaders_name.push_back(std::make_pair("gemm_v2", SetParamsGemm));
+    shaders_name.push_back(std::make_pair("gemm_v3", SetParamsGemm));
 
     engine.Init("shaders/spv", shaders_name, 0, true);
 
     TestBaseKernel(&engine, "engine_test");
     TestGemm(&engine, "gemm_v1", 1);
     TestGemm(&engine, "gemm_v2", 4);
+    TestGemm(&engine, "gemm_v3", 4);
 
     engine.Deinit();
 

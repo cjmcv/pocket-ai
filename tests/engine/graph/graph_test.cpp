@@ -10,14 +10,14 @@
 
 namespace {
 
-using namespace ptk;
-using namespace ptk::util;
-using namespace ptk::engine;
+using namespace pai;
+using namespace pai::util;
+using namespace pai::engine;
 
-// #define PRINTF PTK_PRINTF
-#define PRINTF PTK_NO_PRINTF
-// #define DEBUG_CALL PTK_DEBUG_CALL
-#define DEBUG_CALL PTK_DEBUG_NO_CALL
+// #define PRINTF POCKET_AI_PRINTF
+#define PRINTF POCKET_AI_NO_PRINTF
+// #define DEBUG_CALL POCKET_AI_DEBUG_CALL
+#define DEBUG_CALL POCKET_AI_DEBUG_NO_CALL
 
 void Gemm(const int M, const int N, const int K,
             const float *A, const int lda,

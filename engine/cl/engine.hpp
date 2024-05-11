@@ -1,5 +1,5 @@
-#ifndef PTK_ENGINE_OPENCL_ENGINE_HPP_
-#define PTK_ENGINE_OPENCL_ENGINE_HPP_
+#ifndef POCKET_AI_ENGINE_OPENCL_ENGINE_HPP_
+#define POCKET_AI_ENGINE_OPENCL_ENGINE_HPP_
 
 #include <unordered_map>
 #include <string>
@@ -8,7 +8,7 @@
 #include "kernel.hpp"
 #include "platform.hpp"
 
-namespace ptk {
+namespace pai {
 namespace cl {
 
 // One Engine using one device, one context, and one queue.
@@ -34,7 +34,7 @@ public:
         // 一份kernel源码文件，可包含多个kernel函数。
         // 遍历输入的所有kernel参数，针对第一个元素，即源码文件名，创建loader，
         // 重名的只取一份
-        PTK_LOGS("Loaded programs: ( ");
+        PAI_LOGS("Loaded programs: ( ");
         for (uint32_t i=0; i<kernels_params.size(); i++) {
             std::string src_name = std::get<0>(kernels_params[i]);
             std::unordered_map<std::string, KernelLoader *>::iterator it = loaders_map_.find(src_name);
@@ -45,29 +45,29 @@ public:
                 loader->CreateProgram(context_);
                 loaders_map_[src_name] = loader;
 
-                if (i!=0)  PTK_LOGS(", ");
-                PTK_LOGS("%s", src_name.c_str());
+                if (i!=0)  PAI_LOGS(", ");
+                PAI_LOGS("%s", src_name.c_str());
             }
         }
-        PTK_LOGS(" )\n");
+        PAI_LOGS(" )\n");
 
         // printf("%s, %s, %p.\n", std::get<0>(kernels_params[0]).c_str(), std::get<1>(kernels_params[0]).c_str(), std::get<2>(kernels_params[0]));
         // 找到kernel函数名对应的源码文件名，取出loader并创建kernel。
-        PTK_LOGS("Registered kernels: ( ");
+        PAI_LOGS("Registered kernels: ( ");
         for (uint32_t i=0; i<kernels_params.size(); i++) {
             std::string src_name = std::get<0>(kernels_params[i]);
             std::unordered_map<std::string, KernelLoader *>::iterator it = loaders_map_.find(src_name);
             if (it == loaders_map_.end()) {
-                PTK_LOGE("Can not find src file: %s.\n", src_name.c_str());
+                PAI_LOGE("Can not find src file: %s.\n", src_name.c_str());
             }
 
             std::string kernel_name = std::get<1>(kernels_params[i]);
             kernels_map_[kernel_name] = it->second->CreateKernel(kernel_name, std::get<2>(kernels_params[i]));
 
-            if (i!=0)  PTK_LOGS(", ");  
-            PTK_LOGS("%s", kernel_name.c_str());
+            if (i!=0)  PAI_LOGS(", ");  
+            PAI_LOGS("%s", kernel_name.c_str());
         }
-        PTK_LOGS(" )\n");
+        PAI_LOGS(" )\n");
 
         cl_command_queue_properties properties = 0;
         is_enable_profiling_ = false;
@@ -93,7 +93,7 @@ public:
     Kernel *GetKernel(std::string kernel_name, bool is_use_mapped_buffer = false) {
         std::unordered_map<std::string, Kernel *>::iterator it = kernels_map_.find(kernel_name);
         if (it == kernels_map_.end()) {
-            PTK_LOGE("Can not find Kernel: %s.\n", kernel_name.c_str());
+            PAI_LOGE("Can not find Kernel: %s.\n", kernel_name.c_str());
         }
 
         cl::Kernel *kernel = it->second;
@@ -132,6 +132,6 @@ private:
 };
 
 } // namespace cl
-} // namespace ptk
+} // namespace pai
 
-#endif //PTK_ENGINE_OPENCL_ENGINE_HPP_
+#endif //POCKET_AI_ENGINE_OPENCL_ENGINE_HPP_

@@ -4,7 +4,7 @@
 
 #include "engine/cl/engine.hpp"
 
-using namespace ptk;
+using namespace pai;
 
 void DotProductHost(const int* src1, const int* src2, uint32_t len, int* dst) {
     *dst = 0;
@@ -51,15 +51,15 @@ void SetImageParams4Gemm(cl::KernelParams *params) {
 }
 
 void TestDotProductNoMap(cl::Engine *engine, std::string kernel_name) {
-    PTK_LOGS(">>> %s: ", kernel_name.c_str());
+    PAI_LOGS(">>> %s: ", kernel_name.c_str());
     cl::Kernel *kernel = engine->GetKernel("DotProductDevice", false);
 
     size_t num_elements = 2560000;
     size_t local_work_size = 256;
     size_t global_work_size = cl::GetRoundUpMultiple(num_elements, local_work_size) * local_work_size;
-    // PTK_LOGS("Global Work Size = %zu, Local Work Size = %zu, # of Work Groups = %zu\n\n",
+    // PAI_LOGS("Global Work Size = %zu, Local Work Size = %zu, # of Work Groups = %zu\n\n",
     // global_work_size, local_work_size, global_work_size / local_work_size);
-    PTK_LOGS("(%zu). ", global_work_size);
+    PAI_LOGS("(%zu). ", global_work_size);
     
     // Allocate and initialize host arrays.
     int *h_src1 = (int *)malloc(sizeof(cl_int) * num_elements);
@@ -86,7 +86,7 @@ void TestDotProductNoMap(cl::Engine *engine, std::string kernel_name) {
 
     // Synchronous/blocking read of results, and check accumulated errors
     kernel->ReadBuffer(CL_TRUE, &h_dst4cl, 3);
-    PTK_LOGS(" <<< Out: %d.\n", h_dst4cl);
+    PAI_LOGS(" <<< Out: %d.\n", h_dst4cl);
     kernel->ReleaseBuffer();
 
     if (h_src1)
@@ -96,13 +96,13 @@ void TestDotProductNoMap(cl::Engine *engine, std::string kernel_name) {
 }
 
 void TestDotProduct(cl::Engine *engine, std::string kernel_name) {
-    PTK_LOGS(">>> %s: ", kernel_name.c_str());
+    PAI_LOGS(">>> %s: ", kernel_name.c_str());
     cl::Kernel *kernel = engine->GetKernel(kernel_name, true);
 
     size_t num_elements = 2560000;
     size_t local_work_size = 256;
     size_t global_work_size = cl::GetRoundUpMultiple(num_elements, local_work_size) * local_work_size;
-    PTK_LOGS("(%zu). ", global_work_size);
+    PAI_LOGS("(%zu). ", global_work_size);
 
     std::vector<size_t> size = {
         sizeof(cl_int) * num_elements,
@@ -126,14 +126,14 @@ void TestDotProduct(cl::Engine *engine, std::string kernel_name) {
     engine->FinishQueue();
 
     cl_int *h_dst4cl_map = (cl_int *)kernel->MapBuffer(CL_TRUE, 3);
-    PTK_LOGS(" <<< Out: %d.\n", *h_dst4cl_map);
+    PAI_LOGS(" <<< Out: %d.\n", *h_dst4cl_map);
     kernel->UnmapBuffer(3);
     kernel->ReleaseBuffer();
 }
 
 
 void TestGemm(cl::Engine *engine, std::string kernel_name, int step, bool transpose_a, bool use_image = false) {
-    PTK_LOGS(">>> %s: ", kernel_name.c_str());
+    PAI_LOGS(">>> %s: ", kernel_name.c_str());
 
     cl::Kernel *kernel = engine->GetKernel(kernel_name, true);
 
@@ -145,7 +145,7 @@ void TestGemm(cl::Engine *engine, std::string kernel_name, int step, bool transp
     size_t global_work_size[2] =
         {cl::GetRoundUpMultiple(width_b/step, local_work_size[0]) * local_work_size[0],
          cl::GetRoundUpMultiple(height_a/step, local_work_size[1]) * local_work_size[1]};
-    PTK_LOGS("(%zu, %zu). ", global_work_size[0], global_work_size[1]);
+    PAI_LOGS("(%zu, %zu). ", global_work_size[0], global_work_size[1]);
 
     if (!use_image) {
         uint32_t lda = width_a;
@@ -207,16 +207,16 @@ void TestGemm(cl::Engine *engine, std::string kernel_name, int step, bool transp
 
     float mean = 0.f;
     for (uint32_t i = 0; i < height_a; i++) {
-        // PTK_LOGS("\n");
+        // PAI_LOGS("\n");
         for (uint32_t j = 0; j < width_b; j++) {
             mean += hC_map[i * width_b + j];
-            // PTK_LOGS("%f, ", hC_map[i * width_b + j]);
+            // PAI_LOGS("%f, ", hC_map[i * width_b + j]);
             // if (hC_map[i * width_b + j] != 3200)
-            //     PTK_LOGS("%f(%d, %d), ", hC_map[i * width_b + j], i, j);
+            //     PAI_LOGS("%f(%d, %d), ", hC_map[i * width_b + j], i, j);
         }
         
     }
-    PTK_LOGS(" <<< Out: %f.\n", mean / (height_a * width_b));
+    PAI_LOGS(" <<< Out: %f.\n", mean / (height_a * width_b));
     kernel->UnmapBuffer(7);
     kernel->ReleaseBuffer();
     engine->FinishQueue();
@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
     cl::Engine engine;
     engine.Init("./kernels", kernels_name, 0, true);
 
-    PTK_LOGS("\n##############################\n");
+    PAI_LOGS("\n##############################\n");
     // DotProductCPU
     {
         size_t num_elements = 2560000; 
@@ -258,7 +258,7 @@ int main(int argc, char **argv) {
         }
         // Compute and compare results on host.
         DotProductHost(h_src1, h_src2, num_elements, &h_dst);
-        PTK_LOGS(">>> DotProductHost: %d \n", h_dst);
+        PAI_LOGS(">>> DotProductHost: %d \n", h_dst);
 
         if (h_src1) free(h_src1);
         if (h_src2) free(h_src2);
@@ -266,7 +266,7 @@ int main(int argc, char **argv) {
     TestDotProductNoMap(&engine, "DotProductDevice");
     TestDotProduct(&engine, "DotProductDevice");
     
-    PTK_LOGS("\n##############################\n");
+    PAI_LOGS("\n##############################\n");
     TestGemm(&engine, "GemmDeviceV1", 1, false);
     TestGemm(&engine, "GemmDeviceV2", 1, false);
     TestGemm(&engine, "GemmDeviceV3", 2, false);
@@ -282,5 +282,8 @@ int main(int argc, char **argv) {
     TestGemm(&engine, "GemmMobileDeviceV3_2", 4, true);
     TestGemm(&engine, "GemmMobileDeviceV4", 4, true, true);
     TestGemm(&engine, "GemmMobileDeviceV5", 8, true, true);
+
+    engine.Deinit();
+    PAI_LOGS("Exit...\n");
     return 0;
 }

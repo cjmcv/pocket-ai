@@ -3,14 +3,14 @@
 *    Used to manage VkBuffer and VkDeviceMemory bound to it
 */
 
-#ifndef PTK_ENGINE_VULKAN_BUFFER_HPP_
-#define PTK_ENGINE_VULKAN_BUFFER_HPP_
+#ifndef POCKET_AI_ENGINE_VULKAN_BUFFER_HPP_
+#define POCKET_AI_ENGINE_VULKAN_BUFFER_HPP_
 
 #include <vulkan/vulkan.h>
 
 #include "common.hpp"
 
-namespace ptk {
+namespace pai {
 namespace vk {
   
 class Buffer {
@@ -76,7 +76,7 @@ private:
                 desired_memory_properties) == desired_memory_properties))
             return i;
         }
-        PTK_LOGE("Cannot find memory type with required bits.\n");
+        PAI_LOGE("Cannot find memory type with required bits.\n");
         return -1;
     }
     static VkDeviceMemory AllocateMemory(VkDevice device, 
@@ -103,6 +103,6 @@ private:
 };
 
 }  // end of namespace vk
-}  // end of namespace ptk
+}  // end of namespace pai
 
-#endif  // PTK_ENGINE_VULKAN_BUFFER_HPP_
+#endif  // POCKET_AI_ENGINE_VULKAN_BUFFER_HPP_

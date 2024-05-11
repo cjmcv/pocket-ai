@@ -3,14 +3,14 @@
 *      Centered around VkPipeline, the setting of specialization constants is also here
 */
 
-#ifndef PTK_ENGINE_VULKAN_PIPELINE_HPP_
-#define PTK_ENGINE_VULKAN_PIPELINE_HPP_
+#ifndef POCKET_AI_ENGINE_VULKAN_PIPELINE_HPP_
+#define POCKET_AI_ENGINE_VULKAN_PIPELINE_HPP_
 
 #include <vulkan/vulkan.h>
 #include "shader_module.hpp"
 #include "common.hpp"
 
-namespace ptk {
+namespace pai {
 namespace vk {
 
 struct SpecConstant {
@@ -162,6 +162,6 @@ private:
 };
 
 }  // end of namespace vk
-}  // end of namespace ptk
+}  // end of namespace pai
 
-#endif  // PTK_ENGINE_VULKAN_PIPELINE_HPP_
+#endif  // POCKET_AI_ENGINE_VULKAN_PIPELINE_HPP_

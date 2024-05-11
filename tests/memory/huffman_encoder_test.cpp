@@ -11,7 +11,7 @@
 
 namespace {
 
-using namespace ptk::memory;
+using namespace pai::memory;
 
 void HuffmanEncoderTest() {
     srand(time(0));

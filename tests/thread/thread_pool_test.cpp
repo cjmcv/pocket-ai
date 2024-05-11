@@ -4,7 +4,7 @@
 
 namespace {
 
-using namespace ptk::thread;
+using namespace pai::thread;
 
 void CompTest(int32_t *a, int32_t *b, uint32_t len) {
     // printf("%d, ", a[0]);

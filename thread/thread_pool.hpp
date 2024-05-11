@@ -4,8 +4,8 @@
 */
 
 
-#ifndef PTK_THREAD_POOL_HPP_
-#define PTK_THREAD_POOL_HPP_
+#ifndef POCKET_AI_THREAD_POOL_HPP_
+#define POCKET_AI_THREAD_POOL_HPP_
 
 #include <thread>
 #include <queue>
@@ -13,7 +13,7 @@
 #include <functional>
 #include <condition_variable>
 
-namespace ptk {
+namespace pai {
 namespace thread {
 
 class ThreadPool {
@@ -161,6 +161,6 @@ private:
 
 
 } // thread
-} // ptk
+} // pai
 
-#endif // PTK_THREAD_POOL_HPP_
+#endif // POCKET_AI_THREAD_POOL_HPP_

@@ -8,7 +8,7 @@
 
 namespace {
 
-using namespace ptk::memory;
+using namespace pai::memory;
 
 void RingBufferTest() {
     int len = 1000;

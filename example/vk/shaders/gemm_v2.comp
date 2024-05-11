@@ -18,6 +18,7 @@ layout(push_constant) uniform Parameters {
    uint K;
 } params;
 
+// v2: 对应 gemm_mobile.cl 中的 v2，一个线程处理4*4个元素，提高计算访存比
 void main() {
         
     const int STEP = 4;

@@ -8,7 +8,7 @@
 
 namespace {
 
-using namespace ptk::memory;
+using namespace pai::memory;
 
 void AlignAllocTest() {
     EXPECT_EQ(AlignSize(100, 2), 100);

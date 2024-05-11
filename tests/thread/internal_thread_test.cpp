@@ -10,7 +10,7 @@
 
 namespace {
 
-using namespace ptk::thread;
+using namespace pai::thread;
 
 // Producer and consumer
 // You can use BlockingQueue to synchronize.

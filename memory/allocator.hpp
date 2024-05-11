@@ -18,8 +18,8 @@
 
 // TODO: 一级二级搜索链路过长，影响效率，需要优化。可对vector进行划分或采用list
 
-#ifndef PTK_MEMORY_ALLOCATOR_HPP_
-#define PTK_MEMORY_ALLOCATOR_HPP_
+#ifndef POCKET_AI_MEMORY_ALLOCATOR_HPP_
+#define POCKET_AI_MEMORY_ALLOCATOR_HPP_
 
 #include <stdlib.h>
 #include <list>
@@ -30,7 +30,7 @@
 #include "align_alloc.hpp"
 #include "util/logger.hpp"
 
-namespace ptk {
+namespace pai {
 namespace memory {
 
 // 用于关联多处调用点进行复用，使其共用一块内存，以免除拷贝耗时
@@ -81,7 +81,7 @@ public:
     }
 
     void Show() {
-        PTK_LOGS("\n####################################\n");
+        PAI_LOGS("\n####################################\n");
         uint32_t total_size = 0;
         for (uint32_t i=0; i<storage_.size(); i++) {
             Memblock *block = &storage_[i];
@@ -89,21 +89,21 @@ public:
                 total_size += block->size;
             }
         }
-        PTK_LOGS("Allocator(%p), storage size: %lld, total malloc size: %u. ", this, storage_.size(), total_size);
+        PAI_LOGS("Allocator(%p), storage size: %lld, total malloc size: %u. ", this, storage_.size(), total_size);
         for (uint32_t i=0; i<storage_.size(); i++) {
             if (i % 5 == 0)
-                PTK_LOGS("\n");
+                PAI_LOGS("\n");
             Memblock *block = &storage_[i];
-            PTK_LOGS("{%d: %d, %d, %d}", i, block->size, block->group_id, block->tag);
+            PAI_LOGS("{%d: %d, %d, %d}", i, block->size, block->group_id, block->tag);
             if (block->sub_storage.size() != 0)
-                PTK_LOGS("-");
+                PAI_LOGS("-");
             for (uint32_t si=0; si<block->sub_storage.size(); si++) {
                 SubBlock *sub = &block->sub_storage[si];
-                PTK_LOGS("(%p, %d,%d)", sub->ptr, sub->size, sub->tag);
+                PAI_LOGS("(%p, %d,%d)", sub->ptr, sub->size, sub->tag);
             }
-            PTK_LOGS(", ");
+            PAI_LOGS(", ");
         }
-        PTK_LOGS("\n####################################\n");        
+        PAI_LOGS("\n####################################\n");        
     }
 
     void Clear() {
@@ -111,7 +111,7 @@ public:
             Memblock *block = &storage_[i];
             if (block->tag != MEM_TAG_EMPTY) {
                 if (block->tag == MEM_TAG_FULL)
-                   PTK_LOGW("%d,%p still in use.\n", i, block->ptr);
+                   PAI_LOGW("%d,%p still in use.\n", i, block->ptr);
 
                 if (block->is_hold == true)
                     AlignFree(block->ptr);
@@ -164,7 +164,7 @@ public:
     // use binding, no sub block
     void *FastMalloc(uint32_t size, uint32_t group_id, MemBindAttr attr) {
         if (group_id == 0)
-            PTK_LOGW("In the case of group_id == 0, please Call void *FastMalloc(uint32_t size) instead.");
+            PAI_LOGW("In the case of group_id == 0, please Call void *FastMalloc(uint32_t size) instead.");
         // 如果指定了id，则认为走绑定的模式。绑定模式下，不支持block内分段
 
         // head，则直接去查找合适大小且未被分组的内存块，没有就创建
@@ -181,7 +181,7 @@ public:
             if (ptr != nullptr) {
                 return ptr;
             }
-            PTK_LOGE("Can not find group: %d with size: %d \n", group_id, size);
+            PAI_LOGE("Can not find group: %d with size: %d \n", group_id, size);
         }
         // tail, 结束点，同样意味着前面用过head，则直接寻找group_id一致的内存块，否则报错；
         // 在找到需要使用时，将其id号重新置为0，表示关联结束，free后可提供给其他地方使用
@@ -190,7 +190,7 @@ public:
             if (ptr != nullptr) {
                 return ptr;
             }
-            PTK_LOGE("Can not find group: %d with size: %d \n", group_id, size);
+            PAI_LOGE("Can not find group: %d with size: %d \n", group_id, size);
         }
     }
 
@@ -222,7 +222,7 @@ public:
                 }
             }
         }
-        PTK_LOGE("Allocator get wild %p", ptr);
+        PAI_LOGE("Allocator get wild %p", ptr);
         AlignFree(ptr);
     }
 
@@ -361,5 +361,5 @@ private:
 
 
 } // memory.
-} // ptk.
-#endif // PTK_MEMORY_ALLOCATOR_HPP_
+} // pai.
+#endif // POCKET_AI_MEMORY_ALLOCATOR_HPP_

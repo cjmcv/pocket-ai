@@ -1,22 +1,22 @@
-# PTK - Portable ToolKit
+# Pocket AI
 
 A Portable Toolkit for deploying Edge AI and HPC 
 
 <details>
-<summary>ptk::engine</summary>
+<summary>pai::engine</summary>
 
-* [cl](https://github.com/cjmcv/ptk/tree/master/engine/cl): A small computing framework based on opencl. 
+* [cl](https://github.com/cjmcv/pai/tree/master/engine/cl): A small computing framework based on opencl. 
 This framework is designed to help you quickly call Opencl API to do the calculations you need.
 
-* [vk](https://github.com/cjmcv/ptk/tree/master/engine/vk): A small computing framework based on vulkan. 
+* [vk](https://github.com/cjmcv/pai/tree/master/engine/vk): A small computing framework based on vulkan. 
 This framework is designed to help you quickly call vulkan's computing API to do the calculations you need.
 
-* [graph](https://github.com/cjmcv/ptk/tree/master/engine/graph): A small multitasking scheduler that can quickly build efficient pipelines for your multiple tasks.
+* [graph](https://github.com/cjmcv/pai/tree/master/engine/graph): A small multitasking scheduler that can quickly build efficient pipelines for your multiple tasks.
 
 </details>
 
 <details>
-<summary>ptk::memory</summary>
+<summary>pai::memory</summary>
 
 * align_alloc
 * allocator
@@ -28,7 +28,7 @@ This framework is designed to help you quickly call vulkan's computing API to do
 </details>
 
 <details>
-<summary>ptk::thread</summary>
+<summary>pai::thread</summary>
 
 * internal_thread
 * thread_pool
@@ -51,23 +51,21 @@ cd tests && ./build.sh          # linux
 # NOTE
 test -> 单元测试
 
-ptk::engine -> graph / vk / cl / cu
+pai::engine -> graph / vk / cl / infer
 
-ptk::type -> Vector (相同使用方式，添加约束进行加速) / Mat
+pai::type -> Vector (相同使用方式，添加约束进行加速) / Mat
 
-ptk::thread -> pthread（gemmlowp-pthread_everywhere） / InternalThread / ThreadPool
+pai::thread -> pthread（gemmlowp-pthread_everywhere） / InternalThread / ThreadPool
 
-ptk::memory -> Align / RingBuffer / FrameShift / BlockingQueue / MemReuser(内存复用 / 内存分区，用于管理高速缓存的使用) / MemPool(内存池) / Compressor(数组/权重压缩)
+pai::memory -> Align / RingBuffer / FrameShift / BlockingQueue / MemReuser(内存复用 / 内存分区，用于管理高速缓存的使用) / MemPool(内存池) / Compressor(数组/权重压缩)
 
-ptk::prof -> AsmPeakPerf(宏定义代码块) / Timer（gflops） / MemRecorder (直接替换malloc/calloc) 
+pai::prof -> AsmPeakPerf(宏定义代码块) / Timer（gflops） / MemRecorder (直接替换malloc/calloc) 
 
-ptk::util -> basic_marco / Logger / Type / PcmReader / BmpReader
+pai::util -> basic_marco / Logger / Type / PcmReader / BmpReader
 
 scrip -> obfuscator (.a / .hpp)
 
 ---
-
-TODO: 排查thread_pool_test偶发卡住的问题
 
 ## Usage
 
@@ -76,7 +74,7 @@ TODO: 排查thread_pool_test偶发卡住的问题
 如:
 
 ```bash
-#include "ptk/engine/graph/graph.hpp"
-#include "ptk/engine/cl/engine.hpp"
-#include "ptk/engine/vk/engine.hpp"
+#include "pai/engine/graph/graph.hpp"
+#include "pai/engine/cl/engine.hpp"
+#include "pai/engine/vk/engine.hpp"
 ```

@@ -1,5 +1,5 @@
-#ifndef PTK_ENGINE_OPENCL_COMMON_HPP_
-#define PTK_ENGINE_OPENCL_COMMON_HPP_
+#ifndef POCKET_AI_ENGINE_OPENCL_COMMON_HPP_
+#define POCKET_AI_ENGINE_OPENCL_COMMON_HPP_
 
 #include <iostream>
 #include <vector>
@@ -8,7 +8,7 @@
 
 #include "../../util/logger.hpp"
 
-namespace ptk {
+namespace pai {
 namespace cl {
 ////////////////
 // Macro.
@@ -17,7 +17,7 @@ namespace cl {
     do {                                                              \
         cl_int error = condition;                                     \
         if (error != CL_SUCCESS) {                                    \
-            PTK_LOGE("CL_CHECK: %s", ptk::cl::GetErrorString(error)); \
+            PAI_LOGE("CL_CHECK: %s", pai::cl::GetErrorString(error)); \
         }                                                             \
     } while(0);
 
@@ -163,10 +163,10 @@ void PrintCommandElapsedTime(cl_event ev) {
     // It requires that the CL_QUEUE_PROFILING_ENABLE flag is set in the clCreateCommandQueue function.
     CL_CHECK(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start_time, NULL));
     CL_CHECK(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end_time, NULL));
-    PTK_LOGS("Time: %f ms.", (end_time - start_time)*1e-6);
+    PAI_LOGS("Time: %f ms.", (end_time - start_time)*1e-6);
 }
 
 } // namespace cl
-} // namespace ptk
+} // namespace pai
 
-#endif //PTK_ENGINE_OPENCL_COMMON_HPP_
+#endif //POCKET_AI_ENGINE_OPENCL_COMMON_HPP_

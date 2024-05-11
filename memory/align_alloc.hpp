@@ -2,13 +2,13 @@
 * \brief 
 */
 
-#ifndef PTK_MEMORY_ALIGN_ALLOC_UTIL_HPP_
-#define PTK_MEMORY_ALIGN_ALLOC_UTIL_HPP_
+#ifndef POCKET_AI_MEMORY_ALIGN_ALLOC_UTIL_HPP_
+#define POCKET_AI_MEMORY_ALIGN_ALLOC_UTIL_HPP_
 
 #include <stdlib.h>
 #include "util/logger.hpp"
 
-namespace ptk {
+namespace pai {
 namespace memory {
     
 static inline void **AlignPtr(void **ptr, size_t alignment) {
@@ -37,5 +37,5 @@ static inline void AlignFree(void *aligned) {
 }
 
 } // memory.
-} // ptk.
-#endif // PTK_MEMORY_ALIGN_ALLOC_UTIL_HPP_
+} // pai.
+#endif // POCKET_AI_MEMORY_ALIGN_ALLOC_UTIL_HPP_

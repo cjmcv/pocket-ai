@@ -1,4 +1,4 @@
-// TODO: split-k 和 向量化类型，如float4
+// TODO: 分块大小和local_work_size 调整
 
 
 // GEMM 矩阵乘法例子

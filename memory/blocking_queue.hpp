@@ -1,11 +1,11 @@
-#ifndef PTK_MEMORY_BLOCKING_QUEUE_HPP_
-#define PTK_MEMORY_BLOCKING_QUEUE_HPP_
+#ifndef POCKET_AI_MEMORY_BLOCKING_QUEUE_HPP_
+#define POCKET_AI_MEMORY_BLOCKING_QUEUE_HPP_
 
 #include <queue>
 #include <mutex>
 #include <condition_variable>
 
-namespace ptk {
+namespace pai {
 namespace memory {
 
 template <typename T>
@@ -64,6 +64,6 @@ private:
 };
 
 } // namespace memory
-} // namespace ptk
+} // namespace pai
 
-#endif // PTK_MEMORY_BLOCKING_QUEUE_HPP_
+#endif // POCKET_AI_MEMORY_BLOCKING_QUEUE_HPP_
