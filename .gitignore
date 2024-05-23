@@ -1,6 +1,7 @@
 # Folder
 .vscode/
-engine/infer/tools/tflite_cpy/__pycache__
+engine/infer/tools/*/__pycache__
+engine/infer/tools/*/*/__pycache__
 tests/bin
 tests/build-win-x86
 tests/build-x86/
