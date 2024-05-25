@@ -3,37 +3,17 @@ import os
 import sys
 import argparse
 import numpy as np
-from functools import reduce
-import math
 import tflite
 
+CURRENT_PATH = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(CURRENT_PATH + "/../")
+print(sys.path)
+
 #
-from operators.operator import Operator
-from operators.conv2d import Conv2D
+from tflite_exporter.operators.operator import Operator
+from tflite_exporter.operators.conv2d import Conv2D
+import tflite_exporter.common as tfcom
 #
-
-# CURRENT_PATH = os.path.abspath(os.path.dirname(__file__))
-# sys.path.insert(1, os.path.jooin(CURRENT_PATH, "py_infer/"))
-
-BUILTIN_TENSORTYPE2NAME = {
-    tflite.TensorType.UINT8: 'UINT8',
-    tflite.TensorType.INT8: 'INT8',
-    tflite.TensorType.UINT16: 'UINT16',
-    tflite.TensorType.INT16: 'INT16',
-    tflite.TensorType.UINT32: 'UINT32',
-    tflite.TensorType.INT32: 'INT32',
-    tflite.TensorType.FLOAT32: 'FLOAT32',
-}
-
-BUILTIN_TENSORTYPE2SIZE = {
-    tflite.TensorType.UINT8: 1,
-    tflite.TensorType.INT8: 1,
-    tflite.TensorType.UINT16: 2,
-    tflite.TensorType.INT16: 2,
-    tflite.TensorType.UINT32: 4,
-    tflite.TensorType.INT32: 4,
-    tflite.TensorType.FLOAT32: 4,
-}
 
 class Add(Operator):
     def __init__(self, op, op_id):
@@ -96,12 +76,7 @@ BUILDINCODE2OP = {
 }
 
 class TfliteExporter:
-
-    def get_output_tensor_size(self, tensor):
-        size = reduce(math.mul, tensor.ShapeAsNumpy(), 1)
-        size *= BUILTIN_TENSORTYPE2SIZE[tensor.Type()]
-        return size
-
+    
     def create_lifetime(self, index, size):
         # [lower, upper), lifetime of the tensor, marked by operator index
         tensor_lifetime = {
@@ -122,9 +97,6 @@ class TfliteExporter:
             if tensor['index'] == index:
                 tensor['upper'] = i + 1 # for )
 
-    def tensortype2name(self, tensor_type):
-        return BUILTIN_TENSORTYPE2NAME[tensor_type]
-
     def code2op_exporter(self, graph, op_code, op, op_id):
         return BUILDINCODE2OP[op_code.BuiltinCode()](graph, op, op_id)
         
@@ -144,7 +116,7 @@ class TfliteExporter:
                 
     def print_tensor_info(self, graph, tensor_id):
         tensor = graph.Tensors(tensor_id)
-        print("    ", tensor_id, tensor.Name().decode('utf-8'), " -> ", self.tensortype2name(tensor.Type()), tensor.ShapeAsNumpy())
+        print("    ", tensor_id, tensor.Name().decode('utf-8'), " -> ", tfcom.get_tensor_type_name(tensor.Type()), tensor.ShapeAsNumpy())
         
     def print_model_info(self):
         for graph_id in range(self.model.SubgraphsLength()):
@@ -179,13 +151,13 @@ class TfliteExporter:
                 operator = subgraph.Operators(i)
                 
                 op_code = self.model.OperatorCodes(operator.OpcodeIndex())
-                op = self.code2op_exporter(op_code, operator, i)
+                op = self.code2op_exporter(subgraph, op_code, operator, i)
                 print("get", tflite.opcode2name(op.attr["code"]))
                 
                 # 作为该节点的输出，则该节点作为其生命周期的起点（目前认为所有的output tensor都是输出）
                 output_idx = op.attr["output_index"] # if isinstance(output_idx, list):
                 for idx in output_idx:
-                    output_tensor_size = self.get_output_tensor_size(subgraph.Tensors(operator.Outputs(idx)))
+                    output_tensor_size = tfcom.get_tensor_size(subgraph.Tensors(operator.Outputs(idx)))
                     tensor_lifetime = self.create_lifetime(operator.Outputs(idx), output_tensor_size)
                     tensors_lifetime.append(tensor_lifetime)
                     self.tensor_list_update_start(tensors_lifetime, operator.Outputs(idx), i)
@@ -252,10 +224,17 @@ class TfliteExporter:
         fp["params"].write('namespace pai {\n')
         fp["params"].write('namespace infer {\n\n')
         
+        io_tensors = {}
         for op in self.op_exporters:
-            op.export(fp, self.model)
+            op.export(fp, self.model, io_tensors)
             if op.op_id == 1:
                 break
+            
+        for id in io_tensors:
+            print(id, end=": ")
+            for op_id in io_tensors[id]:
+                print(op_id, end=", ")
+            print()
             
         fp["params"].write('\n} // namespace pai')
         fp["params"].write('\n} // namespace infer')
@@ -267,6 +246,8 @@ class TfliteExporter:
         fp["model"].write('\n\n#endif // POCKET_AI_ENGINE_INFERENCE_{0}_STRUCT_HPP_\n'.format(model_tag.upper()))
         fp["model"].close()
         
+        print("\nExport completed.\n")
+        
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='manual to this script')
     parser.add_argument("--model_path", type=str, default="../models/tf_micro_conv_test_model.int8.tflite")
@@ -276,6 +257,6 @@ if __name__ == "__main__":
 
     exporter = TfliteExporter()
     exporter.load_model(args.model_path)
-    # exporter.print_model_info()
-    # exporter.gen_tensor_lifetime()
+    exporter.print_model_info()
+    exporter.gen_tensor_lifetime()
     exporter.export_model(args.output_path, args.model_tag)

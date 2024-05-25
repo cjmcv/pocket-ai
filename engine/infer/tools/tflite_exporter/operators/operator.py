@@ -44,7 +44,14 @@ class Operator:
         shape_str = shape_str + str(shape_as_numpy[len(shape_as_numpy) - 1]) + "}"
         shape_str = "{{ .dims_count = {0}, .dims = {1} }}".format(str(len(shape_as_numpy)), shape_str)
         return shape_str
-        
+    
+    def format_tensor(self, tensor, tensor_id, data_name):
+        shape_str = self.format_tensor_shape(tensor)
+        tensor_str = "{{ .id = {0}, .type = {1}, .shape = {2}, .data = (void *){3} }}"\
+            .format(str(tensor_id), self.format_tensor_type(tensor.Type()), \
+                shape_str, data_name)
+        return tensor_str
+                           
     def format_tensor_type(self, tensor_type):
         if tensor_type is tflite.TensorType.FLOAT32:
             return "kPaiInferFloat32"

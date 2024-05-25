@@ -15,14 +15,14 @@ typedef struct {
 } PaddingValues;
 
 typedef struct {
+    uint32_t op_id;
+
     PaddingValues padding_values;
-    // TODO(starka): This was just "stride", so check that width+height is OK.
     int16_t stride_width;
     int16_t stride_height;
     int16_t dilation_width_factor;
     int16_t dilation_height_factor;
     // uint8_t inference params.
-    // TODO(b/65838351): Use smaller types if appropriate.
     int32_t input_offset;
     int32_t weights_offset;
     int32_t output_offset;
@@ -34,10 +34,6 @@ typedef struct {
     //
     Tensor filter_tensor;
     Tensor bias_tensor;
-    // Shape filter_shape;
-    // int8_t* filter_data;
-    // Shape bias_shape;
-    // int32_t* bias_data;
     //
     Tensor *input_tensor;
     Tensor *output_tensor;
@@ -58,7 +54,7 @@ inline void ConvPerChannel(const ConvPerChannelParams& params,
     const int pad_height = params.padding_values.height;
     const int32_t output_offset = params.output_offset;
 
-    // CHECK TYPE
+    // TODO: CHECK TYPE
     Shape filter_shape = &params.filter_tensor.shape;
     int8_t* filter_data = (int8_t*)params.filter_tensor.data;
 
