@@ -45,6 +45,24 @@ class Operator:
         shape_str = "{{ .dims_count = {0}, .dims = {1} }}".format(str(len(shape_as_numpy)), shape_str)
         return shape_str
         
+    def format_tensor_type(self, tensor_type):
+        if tensor_type is tflite.TensorType.FLOAT32:
+            return "kPaiInferFloat32"
+        elif tensor_type is tflite.TensorType.INT32:
+            return "kPaiInferInt32"
+        elif tensor_type is tflite.TensorType.UINT32:
+            return "kPaiInferUInt32"
+        elif tensor_type is tflite.TensorType.INT16:
+            return "kPaiInferInt16"
+        elif tensor_type is tflite.TensorType.UINT16:
+            return "kPaiInferUInt16"
+        elif tensor_type is tflite.TensorType.INT8:
+            return "kPaiInferInt8"
+        elif tensor_type is tflite.TensorType.UINT8:
+            return "kPaiInferUInt8"
+        else:
+            print("Error: format_tensor_type %d is not supported.\n", tensor_type)
+                
     def format_multiplier(self, data, prefix):
         type_str = "int32_t"
         data_carray = ",".join(str(i) for i in data)

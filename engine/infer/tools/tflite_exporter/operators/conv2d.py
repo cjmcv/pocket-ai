@@ -1,7 +1,6 @@
 
-import sys
+
 import numpy as np
-import math
 import tflite
 
 from operators.operator import Operator
@@ -149,10 +148,11 @@ ConvPerChannelParams conv_params_<op_id> = {
     .quantized_activation_min = <quantized_activation_min>,
     .quantized_activation_max = <quantized_activation_max>,
     //
-    .filter_shape = <filter_shape>,
-    .filter_data = <filter_data>,
-    .bias_shape = <bias_shape>,
-    .bias_data = <bias_data>
+    .filter_tensor = <filter_tensor>,
+    .bias_tensor = <bias_tensor>,
+    //
+    .input_tensor = <input_tensor_ptr>,
+    .output_tensor = <output_tensor_ptr>,
 };
 '''
         op_params = op_params.replace('<op_id>', str(self.op_id))
@@ -160,8 +160,8 @@ ConvPerChannelParams conv_params_<op_id> = {
         input_tensor = self.graph.Tensors(self.op.Inputs(self.attr["input_index"][0]))
         input_height, input_width = input_tensor.ShapeAsNumpy()[1:3]
         
-        
-        weights_tensor = self.graph.Tensors(self.op.Inputs(self.attr["weight_index"]))
+        weights_tensor_id = self.op.Inputs(self.attr["weight_index"])
+        weights_tensor = self.graph.Tensors(weights_tensor_id)
         weights_buffer = model.Buffers(weights_tensor.Buffer())
         if weights_tensor.Type() == tflite.TensorType.FLOAT32:
             weight_data = np.frombuffer(weights_buffer.DataAsNumpy(), dtype=np.float32)
@@ -173,15 +173,18 @@ ConvPerChannelParams conv_params_<op_id> = {
             
         weight_str, weight_var_name = self.format_weight_bias(weight_data, weights_tensor.Type(), "conv_weights")
         fp["params"].write(weight_str)
-        op_params = op_params.replace('<filter_data>', weight_var_name)
-        
+
         weight_shape_str = self.format_tensor_shape(weights_tensor)
-        op_params = op_params.replace('<filter_shape>', weight_shape_str)
+        filter_tensor_str = "{{ .id = {0}, .type = {1}, .shape = {2}, .data = (void *){3} }}"\
+                           .format(str(weights_tensor_id), self.format_tensor_type(weights_tensor.Type()), \
+                               weight_shape_str, weight_var_name)
+        op_params = op_params.replace('<filter_tensor>', filter_tensor_str)
         
         print(weight_data, weight_scale, weight_zero_point)
         weights_height, weights_width = weights_tensor.ShapeAsNumpy()[1:3]
         
         if self.op.InputsLength() > 2:
+            bias_tensor_id = self.op.Inputs(self.attr["bias_index"])
             bias_tensor = self.graph.Tensors(self.op.Inputs(self.attr["bias_index"]))
             bias_buffer = model.Buffers(bias_tensor.Buffer())
             if bias_tensor.Type() == tflite.TensorType.FLOAT32:
@@ -194,11 +197,13 @@ ConvPerChannelParams conv_params_<op_id> = {
                 print("Error: bias_tensor.Type(): %d is unsupported!\n", bias_tensor.Type())
                 
             bias_str, bias_var_name = self.format_weight_bias(bias_data, bias_tensor.Type(), "conv_bias")
-            op_params = op_params.replace('<bias_data>', bias_var_name)
             fp["params"].write(bias_str)
 
-            bias_shape_str = self.format_tensor_shape(bias_tensor)
-            op_params = op_params.replace('<bias_shape>', bias_shape_str)
+            bias_shape_str = self.format_tensor_shape(bias_tensor)    
+            bias_tensor_str = "{{ .id = {0}, .type = {1}, .shape = {2}, .data = (void *){3} }}"\
+                           .format(str(bias_tensor_id), self.format_tensor_type(bias_tensor.Type()), \
+                               bias_shape_str, bias_var_name)
+            op_params = op_params.replace('<bias_tensor>', bias_tensor_str)
         
             print(bias_data, bias_scale, bias_zero_point)
             
