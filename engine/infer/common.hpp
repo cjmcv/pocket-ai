@@ -2,6 +2,7 @@
 #define POCKET_AI_ENGINE_INFERENCE_COMMON_HPP_
 
 #include <iostream>
+#include "types.hpp"
 #include "util/logger.hpp"
 
 namespace pai {
@@ -12,14 +13,6 @@ namespace infer {
 
 #define PAI_DCHECK_EQ(x, y) ((x) == (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
 #define PAI_DCHECK_NE(x, y) ((x) != (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
-
-// Supports up to 5 dimensions.
-static constexpr int kMaxShapeDims = 5;
-
-typedef struct {
-    int32_t dims_count;
-    int32_t dims[kMaxShapeDims];
-} Shape;
 
 inline int Offset(const Shape& shape, int i0, int i1, int i2, int i3) {
   PAI_DCHECK_EQ(shape.dims_count, 4);

@@ -25,12 +25,24 @@ typedef enum {
     kPaiInferInt4,
 } PaiInferType;
 
+// Supports up to 5 dimensions.
+static constexpr int kMaxShapeDims = 5;
+typedef struct {
+    int32_t dims_count;
+    int32_t dims[kMaxShapeDims];
+} Shape;
+
 typedef struct {
     uint32_t id;
     PaiInferType type;
     Shape shape;
     void* data;    
 } Tensor;
+
+typedef struct {
+    int16_t width;
+    int16_t height;
+} PaddingValues;
 
 } // namespace infer
 } // namespace pai

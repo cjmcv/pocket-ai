@@ -4,15 +4,11 @@
 #include <stdint.h>
 #include <algorithm>
 
-#include "../common.hpp"
+#include "engine/infer/common.hpp"
+#include "engine/infer/types.hpp"
 
 namespace pai {
 namespace infer {
-
-typedef struct {
-    int16_t width;
-    int16_t height;
-} PaddingValues;
 
 typedef struct {
     uint32_t op_id;
@@ -41,9 +37,7 @@ typedef struct {
 
 // ref: tflite_micro\tensorflow\lite\kernels\internal\reference\integer_ops: ConvPerChannel
 // Fixed-point per-channel-quantization convolution reference kernel.
-inline void ConvPerChannel(const ConvPerChannelParams& params, 
-                          const Shape& input_shape, const int8_t* input_data,
-                          const Shape& output_shape, int8_t* output_data) {
+inline void ConvPerChannel(const ConvPerChannelParams& params) {
     // Get parameters.
     const int32_t input_offset = params.input_offset;  // r = s(q - Z)
     const int stride_width = params.stride_width;
@@ -55,11 +49,17 @@ inline void ConvPerChannel(const ConvPerChannelParams& params,
     const int32_t output_offset = params.output_offset;
 
     // TODO: CHECK TYPE
-    Shape filter_shape = &params.filter_tensor.shape;
+    const Shape &filter_shape = params.filter_tensor.shape;
     int8_t* filter_data = (int8_t*)params.filter_tensor.data;
 
-    Shape bias_shape = &params.bias_tensor.shape;
+    const Shape &bias_shape = params.bias_tensor.shape;
     int32_t* bias_data = (int32_t*)params.bias_tensor.data;
+
+    const Shape &input_shape = params.input_tensor->shape;
+    int8_t* input_data = (int8_t*)params.input_tensor->data;
+
+    const Shape &output_shape = params.output_tensor->shape;
+    int8_t* output_data = (int8_t*)params.input_tensor->data;
 
     // Set min and max value of the output.
     const int32_t output_activation_min = params.quantized_activation_min;
