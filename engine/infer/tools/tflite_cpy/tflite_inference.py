@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import tensorflow as tf
 
@@ -6,6 +7,8 @@ class TfliteInference:
         print("hello TfliteInference.")
 
     def load_model(self, model_path):
+        if os.path.exists(model_path) is False:
+            print("Error: Can not find", model_path)
         self.interpreter = tf.lite.Interpreter(model_path)
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
