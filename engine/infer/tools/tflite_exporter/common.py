@@ -164,7 +164,8 @@ def export_fused_activation_quant(output_type, op_params):
         print("Error: export_fused_activation_quant -> output type: %d is not supported.\n", output_type)
     return op_params
     
-
+# The scaling factor from input to output (aka the 'real multiplier') can
+# be represented as a fixed point multiplier plus a left shift.
 # tensorflow\lite\kernels\internal\quantization_util.cc#L53  QuantizeMultiplier
 # tensorflow\lite\kernels\kernel_util.cc#L114
 def quantize_multiplier(double_multiplier):

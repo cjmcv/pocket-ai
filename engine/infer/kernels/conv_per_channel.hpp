@@ -50,15 +50,15 @@ inline void ConvPerChannel(const ConvPerChannelParams& params) {
 
     PAI_DCHECK_EQ(params.filter_tensor.type, kPaiInferInt8);
     const Shape &filter_shape = params.filter_tensor.shape;
-    int8_t* filter_data = (int8_t*)params.filter_tensor.data;
+    const int8_t* filter_data = (int8_t*)params.filter_tensor.data;
 
     PAI_DCHECK_EQ(params.bias_tensor.type, kPaiInferInt32);
     const Shape &bias_shape = params.bias_tensor.shape;
-    int32_t* bias_data = (int32_t*)params.bias_tensor.data;
+    const int32_t* bias_data = (int32_t*)params.bias_tensor.data;
 
     PAI_DCHECK_EQ(params.input_tensor->type, kPaiInferInt8);
     const Shape &input_shape = params.input_tensor->shape;
-    int8_t* input_data = (int8_t*)params.input_tensor->data;
+    const int8_t* input_data = (int8_t*)params.input_tensor->data;
 
     PAI_DCHECK_EQ(params.output_tensor->type, kPaiInferInt8);
     const Shape &output_shape = params.output_tensor->shape;

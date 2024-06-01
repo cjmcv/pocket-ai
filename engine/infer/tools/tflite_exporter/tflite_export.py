@@ -15,9 +15,10 @@ from tflite_exporter.operators.operator import Operator
 from tflite_exporter.operators.conv2d import Conv2D
 from tflite_exporter.operators.max_pooling import MaxPooling
 from tflite_exporter.operators.reshape import Reshape
+from tflite_exporter.operators.fully_connected import FullyConnected
 #
 
-ending_debug_op = 3
+ending_debug_op = 4
 
 class Add(Operator):
     def __init__(self, graph, op, op_id):
@@ -35,17 +36,6 @@ class Split(Operator):
         self.attr["output_index"] = []
         for i in range(op.OutputsLength()):
             self.attr["output_index"].append(i)
-    
-class FullyConnected(Operator):
-    def __init__(self, graph, op, op_id):
-        super().__init__(graph, op, op_id)
-        self.attr["code"] = tflite.BuiltinOperator.FULLY_CONNECTED
-        
-        self.attr["input_index"] = [0]
-        self.attr["weight_index"] = 1
-        self.attr["bias_index"] = 2
-        
-        self.attr["output_index"] = [0]
 
 class TransposeConv(Operator):
     def __init__(self, graph, op, op_id):
