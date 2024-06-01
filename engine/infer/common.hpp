@@ -8,9 +8,15 @@
 namespace pai {
 namespace infer {
 
-#define PAI_INFER_ASSERT_FALSE abort()
-// #define PAI_INFER_ASSERT_FALSE (static_cast<void>(0))
+#define ENABLE_PAI_INFER_DEBUG
 
+#ifdef ENABLE_PAI_INFER_DEBUG
+#define PAI_INFER_ASSERT_FALSE abort()
+#else
+#define PAI_INFER_ASSERT_FALSE (static_cast<void>(0))
+#endif
+
+#define PAI_DCHECK(condition) (condition) ? (void)0 : PAI_INFER_ASSERT_FALSE
 #define PAI_DCHECK_EQ(x, y) ((x) == (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
 #define PAI_DCHECK_NE(x, y) ((x) != (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
 #define PAI_DCHECK_GE(x, y) ((x) >= (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
@@ -75,8 +81,50 @@ inline int32_t MultiplyByQuantizedMultiplier(int32_t x, int32_t quantized_multip
 
     return RoundingDivideByPOT(xx, right_shift);
 }
-//////////////
 
+// Data is required to be contiguous, and so many operators can use either the
+// full array flat size or the flat size with one dimension skipped (commonly
+// the depth).
+inline int FlatSizeSkipDim(const Shape& shape, int skip_dim) {
+    const int dims_count = shape.dims_count;
+    PAI_DCHECK(skip_dim >= 0 && skip_dim < dims_count);
+    const auto* dims_data = shape.dims;
+    int flat_size = 1;
+    for (int i = 0; i < dims_count; ++i) {
+        flat_size *= (i == skip_dim) ? 1 : dims_data[i];
+    }
+    return flat_size;
+}
+
+//////////////
+// Debug
+inline void PrintTensr(Tensor &tensor) {
+#ifdef ENABLE_PAI_INFER_DEBUG
+    printf("Tensor:\n");
+    printf("    id: %d", tensor.id);
+    printf("    shape: [");
+    uint32_t num = 1;
+    for (uint32_t i=0; i<tensor.shape.dims_count; i++) {
+        num *= tensor.shape.dims[i];
+        printf("%d ", tensor.shape.dims[i]);
+    }
+    printf("]\n");
+    printf("    data: ");
+    if (tensor.type == kPaiInferFloat32) {
+        float *data = (float *)tensor.data;
+        for (uint32_t i=0; i<num; i++) {
+            printf("%f, ", data[i]);
+        }
+    }
+    else if (tensor.type == kPaiInferInt8 || tensor.type == kPaiInferUInt8) {
+        int8_t *data = (int8_t *)tensor.data;
+        for (uint32_t i=0; i<num; i++) {
+            printf("%d, ", data[i]);
+        }        
+    }
+    printf("\n\n");
+#endif // #ifdef ENABLE_PAI_INFER_DEBUG
+}
 
 } // namespace infer
 } // namespace pai

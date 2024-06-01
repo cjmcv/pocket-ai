@@ -142,7 +142,7 @@ ConvPerChannelParams conv_params_<op_id> = {
             op_params = tfcom.export_fused_activation_float(option, op_params)
         else:
             input_zero_point = input_tensor.Quantization().ZeroPoint(0)
-            op_params = op_params.replace('<input_offset>', str(input_zero_point))
+            op_params = op_params.replace('<input_offset>', str(-input_zero_point)) # tensorflow\lite\micro\kernels\conv_common.cc: ConvParamsQuantized
             output_zero_point = output_tensor.Quantization().ZeroPoint(0)
             op_params = op_params.replace('<output_offset>', str(output_zero_point))
             

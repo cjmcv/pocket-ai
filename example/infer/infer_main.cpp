@@ -2,15 +2,26 @@
 
 #include "conv_test_model.h"
 
+using namespace pai::infer;
 int main() {
-    // TestTfliteCpy();
+    conv_test_model::Init();
     
-    pai::infer::conv_test_model::Init();
 
-    // graph_input_0.data
-    // graph_outnput_0.data
+    int8_t *input_data = (int8_t*)conv_test_model::graph_input_0.data;
+    for (uint32_t i=0; i<conv_test_model::graph_input_0_size; i++)
+        input_data[i] = i % 255;
 
-    pai::infer::conv_test_model::Run();
-    pai::infer::conv_test_model::Deinit();
+    TestTfliteCpy(input_data, conv_test_model::graph_input_0_size);
+
+    conv_test_model::Run();
+
+    // PrintTensr(conv_test_model::graph_input_0);
+    // PrintTensr(conv_test_model::conv_0_output);
+    // PrintTensr(conv_test_model::conv_1_output);
+    // PrintTensr(conv_test_model::maxpooling_2_output);
+    // PrintTensr(conv_test_model::reshape_3_output);
+    PrintTensr(conv_test_model::graph_output_0);
+
+    conv_test_model::Deinit();
     return 0;
 }

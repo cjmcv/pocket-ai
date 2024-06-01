@@ -9,9 +9,11 @@ class TfliteInference:
     def load_model(self, model_path):
         if os.path.exists(model_path) is False:
             print("Error: Can not find", model_path)
-        self.interpreter = tf.lite.Interpreter(model_path)
+        self.interpreter = tf.lite.Interpreter(model_path, experimental_preserve_all_tensors=True)
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
+        # self.tensor_details = self.interpreter.get_tensor_details()
+        # print("tensor_details: ", self.tensor_details)
         self.interpreter.allocate_tensors()
         self.inputs = {}
         self.outputs = {}
@@ -53,8 +55,14 @@ class TfliteInference:
 
         for i in range(len(self.output_details)):
             self.outputs[i] = self.interpreter.get_tensor(self.output_details[i]['index'])
-    ################
 
+        # print("get_tensor shape", self.interpreter.get_tensor(10).shape)
+        # print("get_tensor data", self.interpreter.get_tensor(10).reshape(-1).tolist())
+    ################
+    
+    def debug_tensor(self):
+        self.interpreter.TensorName()
+        
     def fill_random_inputs(self):
         for i in range(len(self.input_details)):
             if(str(self.input_details[i]['dtype']) == "class 'numpy.float32>"):

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "engine/infer/tools/tflite_cpy/tflite_cpy.hpp"
 
-inline int TestTfliteCpy() {
+inline int TestTfliteCpy(void *data, uint32_t data_size) {
     pai::infer::TfliteCpy tflite_cpy;
     std::string work_space = "/home/shared_dir/PocketAI/engine/infer/tools/tflite_cpy/";
     std::string model_path = "/home/shared_dir/PocketAI/example/infer/models/tf_micro_conv_test_model.int8.tflite";
@@ -12,9 +12,9 @@ inline int TestTfliteCpy() {
     uint32_t input_size;
     tflite_cpy.GetInputPtr("serving_default_conv2d_input:0", (void **)&input_data, &input_size);
 
-    for (uint32_t i=0; i<input_size/sizeof(uint8_t); i++)
-        input_data[i] = i % 255;
-
+    if (input_size != data_size) printf("Error: input_size != data_size\n");
+    memcpy(input_data, data, data_size);
+    
     tflite_cpy.Infer();
 
     tflite_cpy.Print("StatefulPartitionedCall:0");

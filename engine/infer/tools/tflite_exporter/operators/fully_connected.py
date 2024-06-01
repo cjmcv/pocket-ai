@@ -5,7 +5,7 @@ import tflite_exporter.common as tfcom
 from tflite_exporter.operators.operator import Operator
 
 class FullyConnected(Operator):
-    header_quant = '#include "engine/infer/kernels/fully_connected_per_channel.hpp"\n'
+    header_quant = '#include "engine/infer/kernels/fully_connected_quant.hpp"\n'
     header_float = '#include "engine/infer/kernels/fully_connected.hpp"\n'
 
     def __init__(self, graph, op, op_id):
@@ -36,7 +36,7 @@ FullyConnectedPerChannelParams fully_connected_params_<op_id> = {
         # ConvParams
         op_params = \
 '''
-FullyConnectedPerChannelParams fully_connected_params_<op_id> = {
+FullyConnectedQuantParams fully_connected_params_<op_id> = {
     .op_id = <op_id>,
     
     .input_offset = <input_offset>,
@@ -103,31 +103,22 @@ FullyConnectedPerChannelParams fully_connected_params_<op_id> = {
             
         assert(output_tensor.Type(), tflite.TensorType.INT8)
         input_zero_point = input_tensor.Quantization().ZeroPoint(0)
-        op_params = op_params.replace('<input_offset>', str(input_zero_point))
+        op_params = op_params.replace('<input_offset>', str(-input_zero_point)) # FullyConnectedParamsQuantized
         output_zero_point = output_tensor.Quantization().ZeroPoint(0)
         op_params = op_params.replace('<output_offset>', str(output_zero_point))
         
         input_scale = input_tensor.Quantization().Scale(0)
         output_scale = output_tensor.Quantization().Scale(0)
-        outputs_multiplier = []
-        outputs_shift = []
-        for ch in range(weight_scale.size):
-            effective_output_scale = input_scale * weight_scale[ch] / output_scale
-            # scale 等效于 multiplier 和 shift，用整型计算代替浮点计算
-            output_multiplier, output_shift = tfcom.quantize_multiplier(effective_output_scale)
-            outputs_multiplier.append(output_multiplier)
-            outputs_shift.append(output_shift)
         
-        m_str = tfcom.format_multiplier(outputs_multiplier, name_prefix + "_outputs_multiplier_" + str(self.id))
-        s_str = tfcom.format_multiplier(outputs_shift, name_prefix + "_output_shift_" + str(self.id))
-        # print("outputs_multiplier:", outputs_multiplier, ", outputs_shift:", outputs_shift) 
-        fp["params"].write(m_str)
-        fp["params"].write(s_str)
-        op_params = op_params.replace('<output_multiplier>', name_prefix + "_outputs_multiplier_" + str(self.id))
-        op_params = op_params.replace('<output_shift>', name_prefix + "_output_shift_" + str(self.id))            
+        assert(weight_scale.size, 1)
+        effective_output_scale = input_scale * weight_scale[0] / output_scale
+        # scale 等效于 multiplier 和 shift，用整型计算代替浮点计算
+        output_multiplier, output_shift = tfcom.quantize_multiplier(effective_output_scale)
+        op_params = op_params.replace('<output_multiplier>', str(output_multiplier))
+        op_params = op_params.replace('<output_shift>', str(output_shift))
         op_params = tfcom.export_fused_activation_quant(output_tensor.Type(), op_params)
             
-        self.oprun_str = "FullyConnectedPerChannel({0}_params_{1});".format(name_prefix, str(self.id))
+        self.oprun_str = "FullyConnected({0}_params_{1});".format(name_prefix, str(self.id))
         
         return op_params
         

@@ -221,12 +221,16 @@ class TfliteExporter:
         fp["params"].write('namespace {0} {{\n\n'.format(model_tag))
         
         # Graph input/output tensors
+        # The inputs and outputs of the graph are taken out in the loadmodel function to self.io_tensors
         fp["model"].write('// graph io tensor\n')
         for id in self.io_tensors:
             tensor = self.io_tensors[id][0]
             tensor_name =  self.io_tensors[id][1]   
             tensor_str = tfcom.format_tensor(tensor, id, 'NULL')
             tensor_str = 'Tensor ' + tensor_name + ' = ' + tensor_str + ';\n'
+            fp["model"].write(tensor_str)
+            
+            tensor_str = 'uint32_t ' + tensor_name + '_size = ' + str(tfcom.get_tensor_size(tensor)) + ';\n'
             fp["model"].write(tensor_str)
         fp["model"].write('\n')
         

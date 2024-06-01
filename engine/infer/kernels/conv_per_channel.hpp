@@ -38,6 +38,13 @@ typedef struct {
 // ref: tflite_micro\tensorflow\lite\kernels\internal\reference\integer_ops: ConvPerChannel
 // Fixed-point per-channel-quantization convolution reference kernel.
 inline void ConvPerChannel(const ConvPerChannelParams& params) {
+
+    // static int fcnt = 0;
+    // fcnt++;
+
+    // if (fcnt == 2)
+    //     std::abort();
+
     // Get parameters.
     const int32_t input_offset = params.input_offset;  // r = s(q - Z)
     const int stride_width = params.stride_width;
@@ -68,6 +75,12 @@ inline void ConvPerChannel(const ConvPerChannelParams& params) {
     const int32_t output_activation_min = params.quantized_activation_min;
     const int32_t output_activation_max = params.quantized_activation_max;
 
+    // printf("%d, (%d, %d), (%d, %d), (%d, %d), %d, (%d, %d).\n",
+    //        input_offset, stride_width, stride_height,
+    //        dilation_width_factor, dilation_height_factor,
+    //        pad_width, pad_height,
+    //        output_offset,
+    //        output_activation_min, output_activation_max);
     // Consistency check.
     PAI_DCHECK_EQ(input_shape.dims_count, 4);
     PAI_DCHECK_EQ(filter_shape.dims_count, 4);

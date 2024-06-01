@@ -123,7 +123,7 @@ public:
         for (uint32_t i=0; i<outputs_.size(); i++) {
             PyObject *args = PyTuple_New(1);
             PyTuple_SetItem(args, 0, Py_BuildValue("i", i));
-            pm_->CallClassMethod(class_name_.c_str(), "get_output", args);
+            ret_obj = pm_->CallClassMethod(class_name_.c_str(), "get_output", args);
             Py_DECREF(args);
 
             PyArrayObject *arr_obj;
@@ -165,7 +165,7 @@ public:
         printf("%s(%s): \n", tensor_attri.c_str(), tensor_name.c_str());
         for (uint32_t i=0; i<target->size/target->type_size; i++) {
             if (target->type_size == 1)
-                printf("%d", ((uint8_t *)target->data)[i]);
+                printf("%d", ((int8_t *)target->data)[i]);
             else
                 printf("%f", ((float_t *)target->data)[i]);
 

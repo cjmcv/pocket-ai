@@ -16,8 +16,8 @@ typedef struct {
     int32_t input_offset;
     int32_t weights_offset;
     int32_t output_offset;
-    int32_t* output_multiplier;
-    int* output_shift;
+    int32_t output_multiplier;
+    int output_shift;
     // uint8_t, etc, activation params.
     int32_t quantized_activation_min;
     int32_t quantized_activation_max;
@@ -28,18 +28,15 @@ typedef struct {
     Tensor *input_tensor;
     Tensor *output_tensor;
 
-} FullyConnectedPerChannelParams;
+} FullyConnectedQuantParams;
 
-// ref: tensorflow\lite\kernels\internal\reference\integer_ops\fully_connected.h: FullyConnectedPerChannel
-// For per-channel functions, since it is defined in quantization spec that
-// weights are symmetric
-// (https://www.tensorflow.org/lite/performance/quantization_spec#symmetric_vs_asymmetric),
-// zero_point (params.weights_offset) is always 0.
-// However, for per-tensor functions, params.weights_offset is still applied for
-// backward compatibility.
-void FullyConnectedPerChannel(const FullyConnectedPerChannelParams& params) {
+// ref: tensorflow\lite\kernels\internal\reference\integer_ops\fully_connected.h: FullyConnected
+void FullyConnected(const FullyConnectedQuantParams& params) {
     const int32_t input_offset = params.input_offset;
+    const int32_t filter_offset = params.weights_offset;
     const int32_t output_offset = params.output_offset;
+    const int32_t output_multiplier = params.output_multiplier;
+    const int output_shift = params.output_shift;
     const int32_t output_activation_min = params.quantized_activation_min;
     const int32_t output_activation_max = params.quantized_activation_max;
 
@@ -63,24 +60,30 @@ void FullyConnectedPerChannel(const FullyConnectedPerChannelParams& params) {
     const int32_t* bias_data = (int32_t*)params.bias_tensor.data;
     const Shape &bias_shape = params.bias_tensor.shape;
 
+    PAI_DCHECK_GE(filter_shape.dims_count, 2);
+    PAI_DCHECK_GE(output_shape.dims_count, 1);
+
     const int filter_dim_count = filter_shape.dims_count;
-    const int batches = output_shape.dims[0];
-    const int output_depth = output_shape.dims[1];
-    PAI_DCHECK_LE(output_depth, filter_shape.dims[filter_dim_count - 2]);
-    const int accum_depth = filter_shape.dims[filter_dim_count - 1];
+    const int output_dim_count = output_shape.dims_count;
+    const int batches = FlatSizeSkipDim(output_shape, output_dim_count - 1); // Expect for the last dimension, the size of all dimensions is combined as batch.
+    const int output_depth = output_shape.dims[output_dim_count - 1]; // The last one is output_depth
+    PAI_DCHECK_LE(output_depth, filter_shape.dims[filter_dim_count - 2]); // output_depth also equal to the second to last dims.
+    const int accum_depth = filter_shape.dims[filter_dim_count - 1]; // The last dim of filter is accum_depth
+
+    // printf("fully_connected: %d, %d, %d, %d", filter_dim_count, batches, output_depth, accum_depth);
     for (int b = 0; b < batches; ++b) {
         for (int out_c = 0; out_c < output_depth; ++out_c) {
             int32_t acc = 0;
             for (int d = 0; d < accum_depth; ++d) {
                 int32_t input_val = input_data[b * accum_depth + d];
                 int32_t filter_val = filter_data[out_c * accum_depth + d];
-                acc += filter_val * (input_val + input_offset);
+                acc += (filter_val + filter_offset) * (input_val + input_offset);
             }
             if (bias_data) {
                 acc += bias_data[out_c];
             }
-            int32_t acc_scaled = MultiplyByQuantizedMultiplier(
-                acc, params.output_multiplier[out_c], params.output_shift[out_c]);
+            int32_t acc_scaled =
+                MultiplyByQuantizedMultiplier(acc, output_multiplier, output_shift);
             acc_scaled += output_offset;
             acc_scaled = std::max(acc_scaled, output_activation_min);
             acc_scaled = std::min(acc_scaled, output_activation_max);
