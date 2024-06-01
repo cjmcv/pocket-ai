@@ -48,7 +48,6 @@ inline void ConvPerChannel(const ConvPerChannelParams& params) {
     const int pad_height = params.padding_values.height;
     const int32_t output_offset = params.output_offset;
 
-    // TODO: CHECK TYPE
     PAI_DCHECK_EQ(params.filter_tensor.type, kPaiInferInt8);
     const Shape &filter_shape = params.filter_tensor.shape;
     int8_t* filter_data = (int8_t*)params.filter_tensor.data;

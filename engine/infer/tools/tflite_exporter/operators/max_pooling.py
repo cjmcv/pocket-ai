@@ -100,3 +100,10 @@ PoolQuantParams pooling_params_<op_id> = {
         
         self.oprun_str = "MaxPool(pooling_params_{0});".format(str(self.id))
         return op_params
+    
+    def export(self, fp, model, io_tensors):
+        if self.is_quant():
+            op_params = self.export_quant(fp, model, io_tensors)
+        else:
+            op_params = self.export_float(fp, model, io_tensors)
+        fp["model"].write(op_params+"\n")

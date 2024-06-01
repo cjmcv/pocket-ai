@@ -14,7 +14,10 @@ import tflite_exporter.common as tfcom
 from tflite_exporter.operators.operator import Operator
 from tflite_exporter.operators.conv2d import Conv2D
 from tflite_exporter.operators.max_pooling import MaxPooling
+from tflite_exporter.operators.reshape import Reshape
 #
+
+ending_debug_op = 3
 
 class Add(Operator):
     def __init__(self, graph, op, op_id):
@@ -32,14 +35,6 @@ class Split(Operator):
         self.attr["output_index"] = []
         for i in range(op.OutputsLength()):
             self.attr["output_index"].append(i)
-        
-class Reshape(Operator):
-    def __init__(self, graph, op, op_id):
-        super().__init__(graph, op, op_id)
-        self.attr["code"] = tflite.BuiltinOperator.RESHAPE
-        
-        self.attr["input_index"] = [0]
-        self.attr["output_index"] = [0]
     
 class FullyConnected(Operator):
     def __init__(self, graph, op, op_id):
@@ -101,6 +96,7 @@ class TfliteExporter:
             assert(self.model.SubgraphsLength() == 1)
             subgraph = self.model.Subgraphs(0)
             
+            # [tensor, tensor_name, tensor_size, 0/1 is allocate memory, op_id0, op_id1, op_id2...]
             self.io_tensors = {}
             for gin_id in range(subgraph.InputsLength()):
                 tensor_id = subgraph.Inputs(gin_id)
@@ -203,7 +199,7 @@ class TfliteExporter:
                 
             if header not in selected_header:
                 selected_header.append(header)
-            if op.op_id() == 2:
+            if op.op_id() == ending_debug_op:
                 break
         for h in selected_header:
             fp.write(h)
@@ -247,7 +243,7 @@ class TfliteExporter:
         # Export params of each op
         for op in self.op_exporters:
             op.export(fp, self.model, self.io_tensors)
-            if op.op_id() == 2:
+            if op.op_id() == ending_debug_op:
                 break
         
         
@@ -263,6 +259,13 @@ class TfliteExporter:
         for id in self.io_tensors:
             tensor_name = self.io_tensors[id][1]
             tensor_size = self.io_tensors[id][2]
+            
+            # If type(tensor_size) is str, tensor_size will be the src tensor of inplace op
+            if type(tensor_size) is str:
+                # fp["model"].write("    // Reshape inplace: {0} <- {1}\n".format(tensor_name, tensor_size))
+                fp["model"].write("    {0}.data = {1}.data; // Inplace\n".format(tensor_name, tensor_size))
+                continue
+                
             if is_malloc is True:
                 tensor_str = "    {0}.data = (void *)malloc({1});".format(tensor_name, str(tensor_size)) + "\n"
                 tensor_str = tensor_str + "    memset({0}.data, 0, {1});".format(tensor_name, str(tensor_size)) + "\n"
@@ -278,6 +281,10 @@ class TfliteExporter:
         for id in self.io_tensors:
             tensor_name = self.io_tensors[id][1]
             tensor_size = self.io_tensors[id][2]
+            if type(tensor_size) is str:
+                fp["model"].write("    // Reshape inplace: {0} <- {1}\n".format(tensor_name, tensor_size))
+                continue
+            
             tensor_str = ";"
             if is_malloc is True:
                 tensor_str = "    free({}.data);".format(tensor_name) + "\n"
@@ -288,7 +295,7 @@ class TfliteExporter:
         fp["model"].write('void Run() {\n')
         for op in self.op_exporters:
             fp["model"].write("    " + op.oprun_str + "\n")
-            if op.op_id() == 2:
+            if op.op_id() == ending_debug_op:
                 break
         fp["model"].write('}\n')
         

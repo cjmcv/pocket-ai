@@ -167,5 +167,12 @@ ConvPerChannelParams conv_params_<op_id> = {
             op_params = tfcom.export_fused_activation_quant(output_tensor.Type(), op_params)
             
         self.oprun_str = "ConvPerChannel(conv_params_{0});".format(str(self.id))
+        
         return op_params
         
+    def export(self, fp, model, io_tensors):
+        if self.is_quant():
+            op_params = self.export_quant(fp, model, io_tensors)
+        else:
+            op_params = self.export_float(fp, model, io_tensors)
+        fp["model"].write(op_params+"\n")
