@@ -10,12 +10,12 @@ sys.path.append(CURRENT_PATH + "/../")
 print(sys.path)
 
 #
-import tflite_exporter.common as tfcom
-from tflite_exporter.operators.operator import Operator
-from tflite_exporter.operators.conv2d import Conv2D
-from tflite_exporter.operators.max_pooling import MaxPooling
-from tflite_exporter.operators.reshape import Reshape
-from tflite_exporter.operators.fully_connected import FullyConnected
+import exporter.common as tfcom
+from exporter.operators.operator import Operator
+from exporter.operators.conv2d import Conv2D
+from exporter.operators.max_pooling import MaxPooling
+from exporter.operators.reshape import Reshape
+from exporter.operators.fully_connected import FullyConnected
 #
 
 ending_debug_op = 4
@@ -135,49 +135,6 @@ class TfliteExporter:
                     self.print_tensor_info(subgraph, op.Outputs(i))
             print("\n#################################\n")
         
-    def gen_tensor_lifetime(self):
-        for graph_id in range(self.model.SubgraphsLength()):
-            subgraph = self.model.Subgraphs(graph_id)
-        
-            tensors_lifetime = []
-            for i in range(subgraph.OperatorsLength()):
-                operator = subgraph.Operators(i)
-                
-                op_code = self.model.OperatorCodes(operator.OpcodeIndex())
-                op = self.code2op_exporter(subgraph, op_code.BuiltinCode(), operator, i)
-                print("get", tflite.opcode2name(op.attr["code"]))
-                
-                # 作为该节点的输出，则该节点作为其生命周期的起点（目前认为所有的output tensor都是输出）
-                output_idx = op.attr["output_index"] # if isinstance(output_idx, list):
-                for idx in output_idx:
-                    output_tensor_size = tfcom.get_tensor_size(subgraph.Tensors(operator.Outputs(idx)))
-                    tensor_lifetime = self.create_lifetime(operator.Outputs(idx), output_tensor_size)
-                    tensors_lifetime.append(tensor_lifetime)
-                    self.tensor_list_update_start(tensors_lifetime, operator.Outputs(idx), i)
-
-                # 作为该节点的输入，则生命周期需包含该节点, 标记为结束点，后续后更晚的再继续更新
-                input_idx = op.attr["input_index"]
-                for idx in input_idx:
-                    self.tensor_list_update_end(tensors_lifetime, operator.Inputs(idx), i) 
-                    
-            ####  
-            tensors_lifetime_selected = []
-            for tensor_lifetime in tensors_lifetime:
-                if tensor_lifetime['upper'] != 1:
-                    tensors_lifetime_selected.append(tensor_lifetime)
-
-            for tensor_lifetime in tensors_lifetime_selected:
-                print(tensor_lifetime)
-
-            # Save to csv
-            file = open("./tensor_lifetime.csv", "w")
-            file.write("id, lower, upper, size\n")
-            for tensor in tensors_lifetime_selected:
-                tensor_result = str(tensor["index"]) + ',' + str(tensor['lower']) + ',' + \
-                                str(tensor['upper']) + ',' + str(tensor['size']) + '\n'
-                file.write(tensor_result)
-            file.close()
-
     def include_op_header(self, fp):
         assert(self.model.SubgraphsLength() == 1)
         selected_header = []
@@ -318,5 +275,4 @@ if __name__ == "__main__":
     exporter = TfliteExporter()
     exporter.load_model(args.model_path)
     exporter.print_model_info()
-    exporter.gen_tensor_lifetime()
     exporter.export_model(args.output_path, args.model_tag)

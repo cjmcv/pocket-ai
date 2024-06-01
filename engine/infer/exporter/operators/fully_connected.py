@@ -1,8 +1,8 @@
 import numpy as np
 import tflite
 
-import tflite_exporter.common as tfcom
-from tflite_exporter.operators.operator import Operator
+import exporter.common as tfcom
+from exporter.operators.operator import Operator
 
 class FullyConnected(Operator):
     header_quant = '#include "engine/infer/kernels/fully_connected_quant.hpp"\n'
