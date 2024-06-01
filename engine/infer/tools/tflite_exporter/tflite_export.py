@@ -10,35 +10,28 @@ sys.path.append(CURRENT_PATH + "/../")
 print(sys.path)
 
 #
+import tflite_exporter.common as tfcom
 from tflite_exporter.operators.operator import Operator
 from tflite_exporter.operators.conv2d import Conv2D
-import tflite_exporter.common as tfcom
+from tflite_exporter.operators.max_pooling import MaxPooling
 #
 
 class Add(Operator):
-    def __init__(self, op, op_id):
-        super().__init__(op, op_id)
+    def __init__(self, graph, op, op_id):
+        super().__init__(graph, op, op_id)
         self.attr["code"] = tflite.BuiltinOperator.ADD
         
         self.attr["input_index"] = [0, 1]
         self.attr["output_index"] = [0]
         
 class Split(Operator):
-    def __init__(self, op, op_id):
-        super().__init__(op, op_id)
+    def __init__(self, graph, op, op_id):
+        super().__init__(op, graph, op_id)
         self.attr["axis_index"] = 0
         self.attr["input_index"] = [1]
         self.attr["output_index"] = []
         for i in range(op.OutputsLength()):
             self.attr["output_index"].append(i)
-        
-class MaxPool2D(Operator):
-    def __init__(self, graph, op, op_id):
-        super().__init__(graph, op, op_id)
-        self.attr["code"] = tflite.BuiltinOperator.MAX_POOL_2D
-        
-        self.attr["input_index"] = [0]
-        self.attr["output_index"] = [0]
         
 class Reshape(Operator):
     def __init__(self, graph, op, op_id):
@@ -69,7 +62,7 @@ class TransposeConv(Operator):
 BUILDINCODE2OP = {
     tflite.BuiltinOperator.SPLIT: Split,
     tflite.BuiltinOperator.CONV_2D: Conv2D,
-    tflite.BuiltinOperator.MAX_POOL_2D: MaxPool2D,
+    tflite.BuiltinOperator.MAX_POOL_2D: MaxPooling,
     tflite.BuiltinOperator.RESHAPE: Reshape,
     tflite.BuiltinOperator.FULLY_CONNECTED: FullyConnected,
     tflite.BuiltinOperator.TRANSPOSE_CONV: TransposeConv,
@@ -97,21 +90,35 @@ class TfliteExporter:
             if tensor['index'] == index:
                 tensor['upper'] = i + 1 # for )
 
-    def code2op_exporter(self, graph, op_code, op, op_id):
-        return BUILDINCODE2OP[op_code.BuiltinCode()](graph, op, op_id)
+    def code2op_exporter(self, graph, code, op, op_id):
+        return BUILDINCODE2OP[code](graph, op, op_id)
         
     def load_model(self, model_path):
         with open(model_path, 'rb') as f:
             buf = f.read()
             self.model = tflite.Model.GetRootAsModel(buf, 0)
             
-            self.op_exporters = []
             assert(self.model.SubgraphsLength() == 1)
             subgraph = self.model.Subgraphs(0)
+            
+            self.io_tensors = {}
+            for gin_id in range(subgraph.InputsLength()):
+                tensor_id = subgraph.Inputs(gin_id)
+                tensor = subgraph.Tensors(tensor_id)
+                in_var_name = "graph_input_" + str(gin_id)
+                self.io_tensors[tensor_id] = [tensor, in_var_name, tfcom.get_tensor_size(tensor)]
+                
+            for gout_id in range(subgraph.OutputsLength()):
+                tensor_id = subgraph.Outputs(gout_id)
+                tensor = subgraph.Tensors(tensor_id)
+                in_var_name = "graph_output_" + str(gout_id)
+                self.io_tensors[tensor_id] = [tensor, in_var_name, tfcom.get_tensor_size(tensor)]
+                
+            self.op_exporters = []    
             for i in range(subgraph.OperatorsLength()):
                 operator = subgraph.Operators(i)
                 op_code = self.model.OperatorCodes(operator.OpcodeIndex())
-                op_exporter = self.code2op_exporter(subgraph, op_code, operator, i)
+                op_exporter = self.code2op_exporter(subgraph, op_code.BuiltinCode(), operator, i)
                 self.op_exporters.append(op_exporter)
                 
     def print_tensor_info(self, graph, tensor_id):
@@ -151,7 +158,7 @@ class TfliteExporter:
                 operator = subgraph.Operators(i)
                 
                 op_code = self.model.OperatorCodes(operator.OpcodeIndex())
-                op = self.code2op_exporter(subgraph, op_code, operator, i)
+                op = self.code2op_exporter(subgraph, op_code.BuiltinCode(), operator, i)
                 print("get", tflite.opcode2name(op.attr["code"]))
                 
                 # 作为该节点的输出，则该节点作为其生命周期的起点（目前认为所有的output tensor都是输出）
@@ -196,7 +203,7 @@ class TfliteExporter:
                 
             if header not in selected_header:
                 selected_header.append(header)
-            if op.op_id == 1:
+            if op.op_id() == 2:
                 break
         for h in selected_header:
             fp.write(h)
@@ -207,6 +214,7 @@ class TfliteExporter:
         model_file = output_path + model_file + ".h"
         
         fp = {}
+        # Header head
         fp["model"] = open(model_file, "w")
         fp["model"].write('#ifndef POCKET_AI_ENGINE_INFERENCE_{0}_STRUCT_HPP_\n'.format(model_tag.upper()))
         fp["model"].write('#define POCKET_AI_ENGINE_INFERENCE_{0}_STRUCT_HPP_\n\n'.format(model_tag.upper()))
@@ -215,7 +223,8 @@ class TfliteExporter:
         fp["model"].write('#include \"{0}\"\n\n'.format(model_params_file))
         self.include_op_header(fp["model"])
         fp["model"].write('\nnamespace pai {\n')
-        fp["model"].write('namespace infer {\n\n')
+        fp["model"].write('namespace infer {\n')
+        fp["model"].write('namespace {0} {{\n\n'.format(model_tag))
         
         fp["params"] = open(model_params_file, "w")
         fp["params"].write('#ifndef POCKET_AI_ENGINE_INFERENCE_{0}_PARAMS_HPP_\n'.format(model_tag.upper()))
@@ -223,24 +232,74 @@ class TfliteExporter:
         fp["params"].write('#include <stdint.h>\n\n')
         fp["params"].write('namespace pai {\n')
         fp["params"].write('namespace infer {\n\n')
+        fp["params"].write('namespace {0} {{\n\n'.format(model_tag))
         
-        io_tensors = {}
+        # Graph input/output tensors
+        fp["model"].write('// graph io tensor\n')
+        for id in self.io_tensors:
+            tensor = self.io_tensors[id][0]
+            tensor_name =  self.io_tensors[id][1]   
+            tensor_str = tfcom.format_tensor(tensor, id, 'NULL')
+            tensor_str = 'Tensor ' + tensor_name + ' = ' + tensor_str + ';\n'
+            fp["model"].write(tensor_str)
+        fp["model"].write('\n')
+        
+        # Export params of each op
         for op in self.op_exporters:
-            op.export(fp, self.model, io_tensors)
-            if op.op_id == 1:
+            op.export(fp, self.model, self.io_tensors)
+            if op.op_id() == 2:
                 break
-            
-        for id in io_tensors:
+        
+        
+        for id in self.io_tensors:
             print(id, end=": ")
-            for op_id in io_tensors[id]:
+            for op_id in self.io_tensors[id]:
                 print(op_id, end=", ")
             print()
             
+        # Set Init
+        is_malloc = True # True / False
+        fp["model"].write('void Init() {\n')
+        for id in self.io_tensors:
+            tensor_name = self.io_tensors[id][1]
+            tensor_size = self.io_tensors[id][2]
+            if is_malloc is True:
+                tensor_str = "    {0}.data = (void *)malloc({1});".format(tensor_name, str(tensor_size)) + "\n"
+                tensor_str = tensor_str + "    memset({0}.data, 0, {1});".format(tensor_name, str(tensor_size)) + "\n"
+            else:
+                base = 0x200000
+                offset = 100
+                tensor_str = "    {0}.data = (void *)({1}+{2});".format(tensor_name, str(base), str(offset)) + "\n"
+            fp["model"].write(tensor_str)
+        fp["model"].write('}\n')
+
+        # Set DeInit
+        fp["model"].write('void Deinit() {\n')
+        for id in self.io_tensors:
+            tensor_name = self.io_tensors[id][1]
+            tensor_size = self.io_tensors[id][2]
+            tensor_str = ";"
+            if is_malloc is True:
+                tensor_str = "    free({}.data);".format(tensor_name) + "\n"
+            fp["model"].write(tensor_str)
+        fp["model"].write('}\n')
+                        
+        # Set Run. The smaller the ID, the earlier it is executed
+        fp["model"].write('void Run() {\n')
+        for op in self.op_exporters:
+            fp["model"].write("    " + op.oprun_str + "\n")
+            if op.op_id() == 2:
+                break
+        fp["model"].write('}\n')
+        
+        # Header tail
+        fp["params"].write('\n} // namespace model_tag')
         fp["params"].write('\n} // namespace pai')
         fp["params"].write('\n} // namespace infer')
         fp["params"].write('\n\n#endif // POCKET_AI_ENGINE_INFERENCE_{0}_PARAMS_HPP_\n'.format(model_tag.upper()))
         fp["params"].close()
         
+        fp["model"].write('\n} // namespace model_tag')
         fp["model"].write('\n} // namespace pai')
         fp["model"].write('\n} // namespace infer')
         fp["model"].write('\n\n#endif // POCKET_AI_ENGINE_INFERENCE_{0}_STRUCT_HPP_\n'.format(model_tag.upper()))

@@ -13,16 +13,19 @@ namespace infer {
 
 #define PAI_DCHECK_EQ(x, y) ((x) == (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
 #define PAI_DCHECK_NE(x, y) ((x) != (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
+#define PAI_DCHECK_GE(x, y) ((x) >= (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
+#define PAI_DCHECK_GT(x, y) ((x) > (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
+#define PAI_DCHECK_LE(x, y) ((x) <= (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
 
 inline int Offset(const Shape& shape, int i0, int i1, int i2, int i3) {
-  PAI_DCHECK_EQ(shape.dims_count, 4);
-  return ((i0 * shape.dims[1] + i1) * shape.dims[2] + i2) * shape.dims[3] + i3;
+    PAI_DCHECK_EQ(shape.dims_count, 4);
+    return ((i0 * shape.dims[1] + i1) * shape.dims[2] + i2) * shape.dims[3] + i3;
 }
 
 inline int Offset(const Shape& shape, int i0, int i1, int i2, int i3, int i4) {
-  PAI_DCHECK_EQ(shape.dims_count, 5);
-  return (((i0 * shape.dims[1] + i1) * shape.dims[2] + i2) * shape.dims[3] + i3) *
-             shape.dims[4] + i4;
+    PAI_DCHECK_EQ(shape.dims_count, 5);
+    return (((i0 * shape.dims[1] + i1) * shape.dims[2] + i2) * shape.dims[3] + i3) *
+              shape.dims[4] + i4;
 }
 
 // Get common shape dim, DCHECKing that they all agree.
@@ -64,13 +67,13 @@ inline int32_t RoundingDivideByPOT(int32_t x, int exponent) {
     return (x >> exponent) + (MaskIfGreaterThan(remainder, threshold) & 1);
 }
 
-inline int32_t MultiplyByQuantizedMultiplier(int32_t x, int32_t quantized_multiplier,
-                                      int shift) {
-  int left_shift = shift > 0 ? shift : 0;
-  int right_shift = shift > 0 ? 0 : -shift;
-  int32_t xx = SaturatingRoundingDoublingHighMul(x * (1 << left_shift), quantized_multiplier);
+// ref: tensorflow\lite\kernels\internal\common.cc: MultiplyByQuantizedMultiplier
+inline int32_t MultiplyByQuantizedMultiplier(int32_t x, int32_t quantized_multiplier, int shift) {
+    int left_shift = shift > 0 ? shift : 0;
+    int right_shift = shift > 0 ? 0 : -shift;
+    int32_t xx = SaturatingRoundingDoublingHighMul(x * (1 << left_shift), quantized_multiplier);
 
-  return RoundingDivideByPOT(xx, right_shift);
+    return RoundingDivideByPOT(xx, right_shift);
 }
 //////////////
 

@@ -11,6 +11,9 @@ OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/apps
 TARGET   := infer_main
 
+CXXFLAGS += -g -O0
+# CXXFLAGS += -O3
+
 CXX := $(CXX_TOOL)
 
 INCLUDE  := -I. \

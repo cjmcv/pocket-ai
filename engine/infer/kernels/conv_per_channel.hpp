@@ -14,10 +14,10 @@ typedef struct {
     uint32_t op_id;
 
     PaddingValues padding_values;
-    int16_t stride_width;
     int16_t stride_height;
-    int16_t dilation_width_factor;
+    int16_t stride_width;
     int16_t dilation_height_factor;
+    int16_t dilation_width_factor;
     // uint8_t inference params.
     int32_t input_offset;
     int32_t weights_offset;
@@ -49,17 +49,21 @@ inline void ConvPerChannel(const ConvPerChannelParams& params) {
     const int32_t output_offset = params.output_offset;
 
     // TODO: CHECK TYPE
+    PAI_DCHECK_EQ(params.filter_tensor.type, kPaiInferInt8);
     const Shape &filter_shape = params.filter_tensor.shape;
     int8_t* filter_data = (int8_t*)params.filter_tensor.data;
 
+    PAI_DCHECK_EQ(params.bias_tensor.type, kPaiInferInt32);
     const Shape &bias_shape = params.bias_tensor.shape;
     int32_t* bias_data = (int32_t*)params.bias_tensor.data;
 
+    PAI_DCHECK_EQ(params.input_tensor->type, kPaiInferInt8);
     const Shape &input_shape = params.input_tensor->shape;
     int8_t* input_data = (int8_t*)params.input_tensor->data;
 
+    PAI_DCHECK_EQ(params.output_tensor->type, kPaiInferInt8);
     const Shape &output_shape = params.output_tensor->shape;
-    int8_t* output_data = (int8_t*)params.input_tensor->data;
+    int8_t* output_data = (int8_t*)params.output_tensor->data;
 
     // Set min and max value of the output.
     const int32_t output_activation_min = params.quantized_activation_min;

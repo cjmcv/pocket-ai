@@ -1,5 +1,3 @@
-
-
 import numpy as np
 import tflite
 
@@ -35,16 +33,17 @@ ConvParams conv_params_<op_id> = {
 '''
     
     def export_quant(self, fp, model, io_tensors):
+        # ConvParams
         op_params = \
 '''
 ConvPerChannelParams conv_params_<op_id> = {
     .op_id = <op_id>,
-    .padding_values = <PaddingValues>,
     
-    .stride_width = <stride_width>,
+    .padding_values = <PaddingValues>,
     .stride_height = <stride_height>,
-    .dilation_width_factor = <dilation_width_factor>,
+    .stride_width = <stride_width>,
     .dilation_height_factor = <dilation_height_factor>,
+    .dilation_width_factor = <dilation_width_factor>,
     
     .input_offset = <input_offset>,
     //.weights_offset = <weights_offset>,
@@ -62,39 +61,18 @@ ConvPerChannelParams conv_params_<op_id> = {
     .output_tensor = <output_tensor_ptr>,
 };
 '''
-        op_params = op_params.replace('<op_id>', str(self.op_id))
+        op_params = op_params.replace('<op_id>', str(self.id))
         
         input_tensor_id = self.op.Inputs(self.attr["input_index"][0])
         input_tensor = self.graph.Tensors(input_tensor_id)
         input_height, input_width = input_tensor.ShapeAsNumpy()[1:3]
         
-        if tfcom.check_value_in_dict(input_tensor_id, io_tensors):
-            in_var_name = io_tensors[input_tensor_id][0]
-            io_tensors[input_tensor_id].append(self.op_id)
-            op_params = op_params.replace('<input_tensor_ptr>', "&"+in_var_name)
-        else:
-            in_var_name = "conv_" + str(self.op_id) + "_input"
-            io_tensors[input_tensor_id] = [in_var_name, tfcom.get_tensor_size(input_tensor), self.op_id]
-            tensor_str = self.format_tensor(input_tensor, input_tensor_id, 'NULL')
-            tensor_str = "Tensor " + in_var_name + " = " + tensor_str + ";\n"
-            op_params = op_params.replace('<input_tensor_ptr>', "&"+in_var_name)
-            fp["model"].write(tensor_str)
-            
+        op_params = tfcom.write_io_tensor('conv', 'input', self.id, input_tensor, input_tensor_id, io_tensors, op_params, fp["model"])
+
         output_tensor_id = self.op.Outputs(self.attr["output_index"][0])
         output_tensor = self.graph.Tensors(output_tensor_id)
         
-        if tfcom.check_value_in_dict(output_tensor_id, io_tensors):
-            out_var_name = io_tensors[input_tensor_id][0]
-            io_tensors[output_tensor_id].append(self.op_id)
-            op_params = op_params.replace('<output_tensor_ptr>', "&"+out_var_name)
-        else:
-            out_var_name = "conv_" + str(self.op_id) + "_output"
-            io_tensors[output_tensor_id] = [out_var_name, tfcom.get_tensor_size(output_tensor), self.op_id]
-            tensor_str = self.format_tensor(output_tensor, output_tensor_id, 'NULL')
-            tensor_str = "Tensor " + out_var_name + " = " + tensor_str + ";\n"
-            # op_params = op_params.replace('<filter_tensor>', filter_tensor_str)
-            op_params = op_params.replace('<output_tensor_ptr>', "&"+out_var_name)
-            fp["model"].write(tensor_str)
+        op_params = tfcom.write_io_tensor('conv', 'output', self.id, output_tensor, output_tensor_id, io_tensors, op_params, fp["model"])
         
         weights_tensor_id = self.op.Inputs(self.attr["weight_index"])
         weights_tensor = self.graph.Tensors(weights_tensor_id)
@@ -107,10 +85,10 @@ ConvPerChannelParams conv_params_<op_id> = {
             weight_zero_point = weights_tensor.Quantization().ZeroPointAsNumpy() #.ZeroPoint(0)
             op_params = op_params.replace('<weights_offset>', str(weight_zero_point))
             
-        weight_str, weight_var_name = self.format_weight_bias(weight_data, weights_tensor.Type(), "conv_weights")
+        weight_str, weight_var_name = tfcom.format_weight_bias(weight_data, weights_tensor.Type(), "conv_weights_" + str(self.id))
         fp["params"].write(weight_str)
 
-        filter_tensor_str = self.format_tensor(weights_tensor, weights_tensor_id, weight_var_name)
+        filter_tensor_str = tfcom.format_tensor(weights_tensor, weights_tensor_id, weight_var_name)
         op_params = op_params.replace('<filter_tensor>', filter_tensor_str)
         
         # print(weight_data, weight_scale, weight_zero_point)
@@ -129,10 +107,10 @@ ConvPerChannelParams conv_params_<op_id> = {
             else:
                 print("Error: bias_tensor.Type(): %d is unsupported!\n", bias_tensor.Type())
                 
-            bias_str, bias_var_name = self.format_weight_bias(bias_data, bias_tensor.Type(), "conv_bias")
+            bias_str, bias_var_name = tfcom.format_weight_bias(bias_data, bias_tensor.Type(), "conv_bias_" + str(self.id))
             fp["params"].write(bias_str)
 
-            bias_tensor_str = self.format_tensor(bias_tensor, bias_tensor_id, bias_var_name)
+            bias_tensor_str = tfcom.format_tensor(bias_tensor, bias_tensor_id, bias_var_name)
             op_params = op_params.replace('<bias_tensor>', bias_tensor_str)
         
             # print(bias_data, bias_scale, bias_zero_point)
@@ -152,8 +130,8 @@ ConvPerChannelParams conv_params_<op_id> = {
         op_params = op_params.replace('<dilation_height_factor>', str(dilation_height_factor))
         
         # Padding
-        self.export_padding_type(option, op_params)
-        padding_size = self.compute_padding_size(option.Padding(), [input_height, input_width],
+        tfcom.export_padding_type(option, op_params)
+        padding_size = tfcom.compute_padding_size(option.Padding(), [input_height, input_width],
                                     [weights_height, weights_width],
                                     [stride_height, stride_width], 
                                     [dilation_height_factor, dilation_width_factor])
@@ -161,7 +139,7 @@ ConvPerChannelParams conv_params_<op_id> = {
         op_params = op_params.replace('<PaddingValues>', padding_size_str)
         
         if output_tensor.Type() is tflite.TensorType.FLOAT32:
-            op_params = self.export_fused_activation_float(option, op_params)
+            op_params = tfcom.export_fused_activation_float(option, op_params)
         else:
             input_zero_point = input_tensor.Quantization().ZeroPoint(0)
             op_params = op_params.replace('<input_offset>', str(input_zero_point))
@@ -175,23 +153,19 @@ ConvPerChannelParams conv_params_<op_id> = {
             for ch in range(weight_scale.size):
                 effective_output_scale = input_scale * weight_scale[ch] / output_scale
                 # scale 等效于 multiplier 和 shift，用整型计算代替浮点计算
-                output_multiplier, output_shift = self.quantize_multiplier(effective_output_scale)
+                output_multiplier, output_shift = tfcom.quantize_multiplier(effective_output_scale)
                 outputs_multiplier.append(output_multiplier)
                 outputs_shift.append(output_shift)
             
-            m_str = self.format_multiplier(outputs_multiplier, "conv_outputs_multiplier")
-            s_str = self.format_multiplier(outputs_shift, "conv_output_shift")
+            m_str = tfcom.format_multiplier(outputs_multiplier, "conv_outputs_multiplier_" + str(self.id))
+            s_str = tfcom.format_multiplier(outputs_shift, "conv_output_shift_" + str(self.id))
             # print("outputs_multiplier:", outputs_multiplier, ", outputs_shift:", outputs_shift) 
             fp["params"].write(m_str)
             fp["params"].write(s_str)
-            op_params = op_params.replace('<output_multiplier>', "conv_outputs_multiplier_" + str(self.op_id))
-            op_params = op_params.replace('<output_shift>', "conv_output_shift_" + str(self.op_id))            
-            op_params = self.export_fused_activation_quant(output_tensor.Type(), op_params)
+            op_params = op_params.replace('<output_multiplier>', "conv_outputs_multiplier_" + str(self.id))
+            op_params = op_params.replace('<output_shift>', "conv_output_shift_" + str(self.id))            
+            op_params = tfcom.export_fused_activation_quant(output_tensor.Type(), op_params)
             
-        fp["model"].write(op_params+"\n")
-                 
-    def export(self, fp, model, io_tensors):
-        if self.is_quant():
-            self.export_quant(fp, model, io_tensors)
-        else:
-            self.export_float(fp, model, io_tensors)
+        self.oprun_str = "ConvPerChannel(conv_params_{0});".format(str(self.id))
+        return op_params
+        

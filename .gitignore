@@ -13,6 +13,7 @@ example/*/build
 example/*/opencl/lib
 example/*/opencl/lib64
 example/vk/shaders/spv/*
+example/*/*.log
 
 # Model files
 example/infer/*_params.h
