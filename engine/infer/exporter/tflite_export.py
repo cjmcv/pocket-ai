@@ -13,12 +13,13 @@ print(sys.path)
 import exporter.common as tfcom
 from exporter.operators.operator import Operator
 from exporter.operators.conv2d import Conv2D
+from exporter.operators.depthwise_conv2d import DepthwiseConv2D
 from exporter.operators.max_pooling import MaxPooling
 from exporter.operators.reshape import Reshape
 from exporter.operators.fully_connected import FullyConnected
 #
 
-ending_debug_op = 4
+ending_debug_op = 5
 
 class Add(Operator):
     def __init__(self, graph, op, op_id):
@@ -45,11 +46,12 @@ class TransposeConv(Operator):
         self.attr["input_index"] = [2]
          
 BUILDINCODE2OP = {
-    tflite.BuiltinOperator.SPLIT: Split,
     tflite.BuiltinOperator.CONV_2D: Conv2D,
+    tflite.BuiltinOperator.DEPTHWISE_CONV_2D: DepthwiseConv2D,
+    tflite.BuiltinOperator.FULLY_CONNECTED: FullyConnected,
     tflite.BuiltinOperator.MAX_POOL_2D: MaxPooling,
     tflite.BuiltinOperator.RESHAPE: Reshape,
-    tflite.BuiltinOperator.FULLY_CONNECTED: FullyConnected,
+    tflite.BuiltinOperator.SPLIT: Split,
     tflite.BuiltinOperator.TRANSPOSE_CONV: TransposeConv,
 }
 
@@ -107,6 +109,9 @@ class TfliteExporter:
                 op_exporter = self.code2op_exporter(subgraph, op_code.BuiltinCode(), operator, i)
                 self.op_exporters.append(op_exporter)
                 
+                if i == ending_debug_op:
+                    break
+                
     def print_tensor_info(self, graph, tensor_id):
         tensor = graph.Tensors(tensor_id)
         print("    ", tensor_id, tensor.Name().decode('utf-8'), " -> ", tfcom.get_tensor_type_name(tensor.Type()), tensor.ShapeAsNumpy())
@@ -161,6 +166,7 @@ class TfliteExporter:
         fp["model"] = open(model_file, "w")
         fp["model"].write('#ifndef POCKET_AI_ENGINE_INFERENCE_{0}_STRUCT_HPP_\n'.format(model_tag.upper()))
         fp["model"].write('#define POCKET_AI_ENGINE_INFERENCE_{0}_STRUCT_HPP_\n\n'.format(model_tag.upper()))
+        fp["model"].write('#include <string.h>\n')
         fp["model"].write('#include "engine/infer/types.hpp"\n')
         fp["model"].write('#include "engine/infer/common.hpp"\n')
         fp["model"].write('#include \"{0}\"\n\n'.format(model_params_file))

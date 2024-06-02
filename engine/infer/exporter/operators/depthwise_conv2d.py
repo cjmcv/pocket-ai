@@ -2,15 +2,16 @@ import numpy as np
 import tflite
 
 import exporter.common as tfcom
+from exporter.operators.conv2d import Conv2D
 from exporter.operators.operator import Operator
 
-class Conv2D(Operator):
-    header_quant = '#include "engine/infer/kernels/conv_per_channel.hpp"\n'
-    header_float = '#include "engine/infer/kernels/conv.hpp"\n'
+class DepthwiseConv2D(Operator):
+    header_quant = '#include "engine/infer/kernels/depthwise_conv_per_channel.hpp"\n'
+    header_float = '#include "engine/infer/kernels/depthwise_conv.hpp"\n'
 
     def __init__(self, graph, op, op_id):
         super().__init__(graph, op, op_id)
-        self.attr["code"] = tflite.BuiltinOperator.CONV_2D
+        self.attr["code"] = tflite.BuiltinOperator.DEPTHWISE_CONV_2D
         
         self.attr["input_index"] = [0]
         self.attr["weight_index"] = 1
@@ -20,7 +21,7 @@ class Conv2D(Operator):
     def export_float(self, fp, model, io_tensors):
         op_params = \
 '''
-ConvParams conv_params_<op_id> = {
+DepthwiseParams conv_params_<op_id> = {
     .padding_values = <PaddingValues>,
     .stride_width = <stride_width>,
     .stride_height = <stride_height>,
@@ -36,7 +37,7 @@ ConvParams conv_params_<op_id> = {
         # ConvParams
         op_params = \
 '''
-ConvPerChannelParams conv_params_<op_id> = {
+DepthwisePerChannelParams depthwise_conv_params_<op_id> = {
     .op_id = <op_id>,
     
     .padding_values = <PaddingValues>,
@@ -44,6 +45,7 @@ ConvPerChannelParams conv_params_<op_id> = {
     .stride_width = <stride_width>,
     .dilation_height_factor = <dilation_height_factor>,
     .dilation_width_factor = <dilation_width_factor>,
+    .depth_multiplier = <depth_multiplier>,
     
     .input_offset = <input_offset>,
     //.weights_offset = <weights_offset>,
@@ -61,10 +63,10 @@ ConvPerChannelParams conv_params_<op_id> = {
     .output_tensor = <output_tensor_ptr>,
 };
 '''
-        name_prefix = 'conv' 
-        self.oprun_str = "ConvPerChannel(conv_params_{0});".format(str(self.id))
+        name_prefix = 'depthwise_conv'
+        self.oprun_str = "DepthwiseConvPerChannel(depthwise_conv_params_{0});".format(str(self.id))
         op_params = op_params.replace('<op_id>', str(self.id))
-
+        
         # io tensors
         op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
         # weight
@@ -74,17 +76,19 @@ ConvPerChannelParams conv_params_<op_id> = {
         op_params, bias_tensor = self.export_bias_quant(name_prefix, model, op_params, fp)
         
         op_opt = self.op.BuiltinOptions()
-        option = tflite.Conv2DOptions()
+        option = tflite.DepthwiseConv2DOptions()
         option.Init(op_opt.Bytes, op_opt.Pos)
         
         stride_width = option.StrideW()
         stride_height = option.StrideH()
         dilation_width_factor = option.DilationWFactor()
         dilation_height_factor = option.DilationHFactor()
+        depth_multiplier = option.DepthMultiplier()
         op_params = op_params.replace('<stride_width>', str(stride_width))
         op_params = op_params.replace('<stride_height>', str(stride_height))
         op_params = op_params.replace('<dilation_width_factor>', str(dilation_width_factor))
         op_params = op_params.replace('<dilation_height_factor>', str(dilation_height_factor))
+        op_params = op_params.replace('<depth_multiplier>', str(depth_multiplier))
         
         # Padding
         tfcom.export_padding_type(option, op_params)

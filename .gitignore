@@ -1,5 +1,6 @@
 # Folder
 .vscode/
+engine/infer/*/*/__pycache__
 engine/infer/*/__pycache__
 engine/infer/tools/*/__pycache__
 engine/infer/tools/*/*/__pycache__

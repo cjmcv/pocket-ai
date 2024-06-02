@@ -26,16 +26,11 @@ ReshapeParams reshape_params_<op_id> = {
     .output_tensor = <output_tensor_ptr>,
 };
 '''
+        name_prefix = 'reshape'
+        self.oprun_str = "Reshape(reshape_params_{0});".format(str(self.id))
         op_params = op_params.replace('<op_id>', str(self.id))
         
-        input_tensor_id = self.op.Inputs(self.attr["input_index"][0])
-        input_tensor = self.graph.Tensors(input_tensor_id)
-        op_params = tfcom.write_io_tensor('reshape', 'input', self.id, input_tensor, input_tensor_id, io_tensors, op_params, fp["model"])
+         # io tensors
+        op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, io_tensors, True, fp)
 
-        output_tensor_id = self.op.Outputs(self.attr["output_index"][0])
-        output_tensor = self.graph.Tensors(output_tensor_id)
-        op_params = tfcom.write_io_tensor('reshape', 'output', self.id, output_tensor, output_tensor_id, io_tensors, op_params, fp["model"], input_tensor_id)
-        
-        self.oprun_str = "Reshape(reshape_params_{0});".format(str(self.id))
         fp["model"].write(op_params+"\n")
-        

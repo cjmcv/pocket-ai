@@ -13,6 +13,8 @@ This framework is designed to help you quickly call vulkan's computing API to do
 
 * [graph](https://github.com/cjmcv/pai/tree/master/engine/graph): A small multitasking scheduler that can quickly build efficient pipelines for your multiple tasks.
 
+* [infer](https://github.com/cjmcv/pai/tree/master/engine/infer): A tiny inference engine for microprocessors, with a library size of only 10K+.
+
 </details>
 
 <details>
@@ -28,10 +30,32 @@ This framework is designed to help you quickly call vulkan's computing API to do
 </details>
 
 <details>
+<summary>pai::prof</summary>
+
+* timer
+
+</details>
+
+<details>
+<summary>pai::signal</summary>
+
+* rfft / irfft
+
+</details>
+
+<details>
 <summary>pai::thread</summary>
 
 * internal_thread
 * thread_pool
+
+</details>
+
+<details>
+<summary>pai::util</summary>
+
+* bmp_reader
+* logger
 
 </details>
 

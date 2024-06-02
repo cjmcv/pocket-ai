@@ -58,18 +58,12 @@ PoolQuantParams pooling_params_<op_id> = {
     .output_tensor = <output_tensor_ptr>,
 };
 '''
+        name_prefix = 'maxpooling'
+        self.oprun_str = "MaxPool(pooling_params_{0});".format(str(self.id))
         op_params = op_params.replace('<op_id>', str(self.id))
-        
-        input_tensor_id = self.op.Inputs(self.attr["input_index"][0])
-        input_tensor = self.graph.Tensors(input_tensor_id)
-        input_height, input_width = input_tensor.ShapeAsNumpy()[1:3]
-        
-        op_params = tfcom.write_io_tensor('maxpooling', 'input', self.id, input_tensor, input_tensor_id, io_tensors, op_params, fp["model"])
 
-        output_tensor_id = self.op.Outputs(self.attr["output_index"][0])
-        output_tensor = self.graph.Tensors(output_tensor_id)
-        
-        op_params = tfcom.write_io_tensor('maxpooling', 'output', self.id, output_tensor, output_tensor_id, io_tensors, op_params, fp["model"])
+        # io tensors
+        op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
         
         op_opt = self.op.BuiltinOptions()
         option = tflite.Pool2DOptions()
@@ -87,6 +81,7 @@ PoolQuantParams pooling_params_<op_id> = {
         
         # Padding
         tfcom.export_padding_type(option, op_params)
+        input_height, input_width = input_tensor.ShapeAsNumpy()[1:3]
         padding_size = tfcom.compute_padding_size(option.Padding(), 
                                                   [input_height, input_width],
                                                   [filter_height, filter_width],
@@ -98,7 +93,6 @@ PoolQuantParams pooling_params_<op_id> = {
         # Actication
         op_params = tfcom.export_fused_activation_quant(output_tensor.Type(), op_params)
         
-        self.oprun_str = "MaxPool(pooling_params_{0});".format(str(self.id))
         return op_params
     
     def export(self, fp, model, io_tensors):

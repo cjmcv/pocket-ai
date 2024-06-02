@@ -2,6 +2,10 @@
 
 使用c++或python调用tflite进行推理，用于核对输出与pai/infer推理库是否一致
 
+# Depends
+pip install tensorflow
+pip install numpy
+
 ## 纯python调用：
 
 ```python

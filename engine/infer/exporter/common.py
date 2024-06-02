@@ -65,36 +65,6 @@ def format_tensor(tensor, tensor_id, data_name):
         .format(str(tensor_id), format_tensor_type(tensor.Type()), \
             shape_str, data_name)
     return tensor_str
-            
-def write_io_tensor(prefix, tag, op_id, tensor, tensor_id, io_tensors, op_params, fp, inplace_id = -1):
-    if tag is 'input':
-        suffix = 'input'
-        target_ptr = '<input_tensor_ptr>'
-    else:
-        suffix = 'output'
-        target_ptr = '<output_tensor_ptr>'
-        
-    if check_value_in_dict(tensor_id, io_tensors):
-        in_var_name = io_tensors[tensor_id][1] # 
-        io_tensors[tensor_id].append(op_id)
-        op_params = op_params.replace(target_ptr, '&'+in_var_name)
-    else:
-        in_var_name = prefix + '_' + str(op_id) + '_' + suffix
-        
-        if inplace_id is not -1:  # For inplace op, Assign input to output.
-            inplace_var_name = io_tensors[inplace_id][1]
-            io_tensors[tensor_id] = [tensor, in_var_name, inplace_var_name, op_id]
-            tensor_str = format_tensor(tensor, tensor_id, inplace_var_name+".data")
-        else:    
-            io_tensors[tensor_id] = [tensor, in_var_name, get_tensor_size(tensor), op_id]
-            tensor_str = format_tensor(tensor, tensor_id, 'NULL')
-            
-        op_params = op_params.replace(target_ptr, '&'+in_var_name)
-        
-        tensor_str = 'Tensor ' + in_var_name + ' = ' + tensor_str + ';\n'
-        fp.write(tensor_str)
-        
-    return op_params
     
 def format_weight_bias(data, type, var_name):
     if type is tflite.TensorType.FLOAT32:
@@ -216,3 +186,9 @@ def compute_padding_size(padding_mode, input_size, kernel_size, stride, dilation
     padding = np.concatenate((pre_padding, post_padding))
 
     return padding.flatten()
+
+def export_multiplier_per_tensor():
+    a =1
+    
+def export_multiplier_per_channel():
+    a =1

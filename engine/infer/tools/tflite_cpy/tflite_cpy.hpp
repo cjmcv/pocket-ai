@@ -72,6 +72,16 @@ public:
         return false;
     }
 
+    bool GetInputPtr(uint32_t input_id, void **data, uint32_t *size) {
+        if (input_id >= inputs_.size()) {
+            printf("Error: input_id %d is out of range %ld.\n", input_id, inputs_.size());
+            return false;
+        }
+        *data = inputs_[input_id]->data;
+        *size = inputs_[input_id]->size;
+        return true;
+    }
+
     bool GetOutputPtr(std::string output_name, void **data, uint32_t *size) {
         for (uint32_t i=0; i<outputs_.size(); i++) {
             FTensor *tensor = outputs_[i];
@@ -85,6 +95,16 @@ public:
 
         printf("Error: Can nopt fine output: %s.\n", output_name.c_str());
         return false;
+    }
+
+    bool GetOutputPtr(uint32_t output_id, void **data, uint32_t *size) {
+        if (output_id >= outputs_.size()) {
+            printf("Error: output_id %d is out of range %ld.\n", output_id, outputs_.size());
+            return false;
+        }
+        *data = outputs_[output_id]->data;
+        *size = outputs_[output_id]->size;
+        return true;
     }
 
     void *GetNpyData(std::string data_path) {
@@ -134,45 +154,11 @@ public:
         }
     }
 
-    void Print(std::string tensor_name) {
-
-        std::string tensor_attri = "";
-        FTensor *target = NULL;
-        for (uint32_t i=0; i<inputs_.size(); i++) {
-            FTensor *tensor = inputs_[i];
-            if (tensor->name == tensor_name) {
-                target = tensor;
-                tensor_attri = "Input Tensor";
-                break;
-            }
-        }
-        if (target == NULL) {
-            for (uint32_t i=0; i<outputs_.size(); i++) {
-                FTensor *tensor = outputs_[i];
-                if (tensor->name == tensor_name) {
-                    target = tensor;
-                    tensor_attri = "Output Tensor";
-                    break;
-                }
-            }
-        }
-
-        if (target == NULL) {
-            printf("Error: Can not find tensor: %s\n", tensor_name.c_str());
-            std::abort();
-        }
-
-        printf("%s(%s): \n", tensor_attri.c_str(), tensor_name.c_str());
-        for (uint32_t i=0; i<target->size/target->type_size; i++) {
-            if (target->type_size == 1)
-                printf("%d", ((int8_t *)target->data)[i]);
-            else
-                printf("%f", ((float_t *)target->data)[i]);
-
-            if (i < target->size/target->type_size-1)
-                printf(", ");    
-        }
-        printf("\n");
+    void PrintTensor(uint32_t tensor_id) {
+        PyObject *args = PyTuple_New(1);
+        PyTuple_SetItem(args, 0, Py_BuildValue("i", tensor_id));
+        PyObject *ret_obj = pm_->CallClassMethod(class_name_.c_str(), "print_tensor", args);
+        Py_DECREF(args);
     }
 
 private:
@@ -200,21 +186,21 @@ private:
         }
         Py_DECREF(args);
 
-        for (size_t i=0; i<inputs_.size(); i++) {
-            FTensor *tensor = inputs_[i];
-            printf("in %s: type_size(%d), dims(%d), [%d, %d, %d, %d, %d, %d]\n", 
-                tensor->name.c_str(), tensor->type_size, tensor->dims, 
-                tensor->shape[0], tensor->shape[1], tensor->shape[2], 
-                tensor->shape[3], tensor->shape[4], tensor->shape[5]);
-        }
+        // for (size_t i=0; i<inputs_.size(); i++) {
+        //     FTensor *tensor = inputs_[i];
+        //     printf("in %s: type_size(%d), dims(%d), [%d, %d, %d, %d, %d, %d]\n", 
+        //         tensor->name.c_str(), tensor->type_size, tensor->dims, 
+        //         tensor->shape[0], tensor->shape[1], tensor->shape[2], 
+        //         tensor->shape[3], tensor->shape[4], tensor->shape[5]);
+        // }
 
-        for (size_t i=0; i<outputs_.size(); i++) {
-            FTensor *tensor = outputs_[i];
-            printf("out %s: type_size(%d), dims(%d), [%d, %d, %d, %d, %d, %d]\n", 
-                tensor->name.c_str(), tensor->type_size, tensor->dims, 
-                tensor->shape[0], tensor->shape[1], tensor->shape[2], 
-                tensor->shape[3], tensor->shape[4], tensor->shape[5]);
-        }
+        // for (size_t i=0; i<outputs_.size(); i++) {
+        //     FTensor *tensor = outputs_[i];
+        //     printf("out %s: type_size(%d), dims(%d), [%d, %d, %d, %d, %d, %d]\n", 
+        //         tensor->name.c_str(), tensor->type_size, tensor->dims, 
+        //         tensor->shape[0], tensor->shape[1], tensor->shape[2], 
+        //         tensor->shape[3], tensor->shape[4], tensor->shape[5]);
+        // }
     }
 
     FTensor *CreateTensor(int type_size, std::string name, PyArrayObject *shape_obj) {

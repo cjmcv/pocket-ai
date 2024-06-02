@@ -18,15 +18,15 @@ class TfliteInference:
         self.inputs = {}
         self.outputs = {}
         for i in range(len(self.input_details)):
-            print("in<", i, ">: ",self.input_details[i]['name'])
+            print("in<{0}>: {1}, id: {2}, shape: {3}".format(i, self.input_details[i]['name'], self.input_details[i]['index'], self.input_details[i]['shape']))
         for i in range(len(self.output_details)):
-            print("out<", i, ">: ",self.output_details[i]['name'])
+            print("out<{0}>: {1}, id: {2}, shape: {3}".format(i, self.output_details[i]['name'], self.output_details[i]['index'], self.output_details[i]['shape']))
     
     def get_io_num(self):
         return len(self.input_details), len(self.output_details)
     
     def get_inputs_detail(self, index):
-        print(self.input_details[index])
+        # print(self.input_details[index])
         if(str(self.input_details[index]['dtype']) == "class 'numpy.float32>"):
             type_size = 4
         else:
@@ -34,7 +34,7 @@ class TfliteInference:
         return type_size, self.input_details[index]['name'], self.input_details[index]['shape']
     
     def get_outputs_detail(self, index):
-        print(self.output_details[index])
+        # print(self.output_details[index])
         if(str(self.output_details[index]['dtype']) == "class 'numpy.float32>"):
             type_size = 4
         else:
@@ -60,8 +60,9 @@ class TfliteInference:
         # print("get_tensor data", self.interpreter.get_tensor(10).reshape(-1).tolist())
     ################
     
-    def debug_tensor(self):
-        self.interpreter.TensorName()
+    def print_tensor(self, tensor_id):
+        print("Tensor id: ", tensor_id, self.interpreter.get_tensor(tensor_id).shape)
+        print("     data: ", self.interpreter.get_tensor(tensor_id).reshape(-1).tolist())
         
     def fill_random_inputs(self):
         for i in range(len(self.input_details)):

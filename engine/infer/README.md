@@ -1,3 +1,6 @@
+# engine/infer
+
+A tiny inference engine for microprocessors, with a library size of only 10K+. 
 
 # Setup
 

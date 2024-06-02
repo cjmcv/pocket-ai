@@ -6,7 +6,6 @@ using namespace pai::infer;
 int main() {
     conv_test_model::Init();
     
-
     int8_t *input_data = (int8_t*)conv_test_model::graph_input_0.data;
     for (uint32_t i=0; i<conv_test_model::graph_input_0_size; i++)
         input_data[i] = i % 255;
