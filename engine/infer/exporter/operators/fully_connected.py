@@ -74,17 +74,7 @@ FullyConnectedQuantParams fully_connected_params_<op_id> = {
         output_zero_point = output_tensor.Quantization().ZeroPoint(0)
         op_params = op_params.replace('<output_offset>', str(output_zero_point))
         
-        input_scale = input_tensor.Quantization().Scale(0)
-        output_scale = output_tensor.Quantization().Scale(0)
-        
-        weight_scale = weights_tensor.Quantization().ScaleAsNumpy()
-        assert(weight_scale.size, 1)
-        effective_output_scale = input_scale * weight_scale[0] / output_scale
-        # scale 等效于 multiplier 和 shift，用整型计算代替浮点计算
-        output_multiplier, output_shift = tfcom.quantize_multiplier(effective_output_scale)
-        op_params = op_params.replace('<output_multiplier>', str(output_multiplier))
-        op_params = op_params.replace('<output_shift>', str(output_shift))
-        
+        op_params = tfcom.export_multiplier_per_tensor(input_tensor, output_tensor, weights_tensor, op_params)
         op_params = tfcom.export_fused_activation_quant(output_tensor.Type(), op_params)
 
         return op_params

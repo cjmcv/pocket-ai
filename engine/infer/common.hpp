@@ -82,6 +82,12 @@ inline int32_t MultiplyByQuantizedMultiplier(int32_t x, int32_t quantized_multip
     return RoundingDivideByPOT(xx, right_shift);
 }
 
+inline int32_t MultiplyByQuantizedMultiplierGreaterThanOne(
+    int32_t x, int32_t quantized_multiplier, int left_shift) {
+  return SaturatingRoundingDoublingHighMul(x * (1 << left_shift),
+                                           quantized_multiplier);
+}
+
 // Data is required to be contiguous, and so many operators can use either the
 // full array flat size or the flat size with one dimension skipped (commonly
 // the depth).
@@ -94,6 +100,43 @@ inline int FlatSizeSkipDim(const Shape& shape, int skip_dim) {
         flat_size *= (i == skip_dim) ? 1 : dims_data[i];
     }
     return flat_size;
+}
+
+
+// A combination of MatchingFlatSize() and FlatSizeSkipDim().
+inline int MatchingFlatSizeSkipDim(const Shape& shape, int skip_dim,
+                                   const Shape& check_shape_0) {
+    const int dims_count = shape.dims_count;
+    for (int i = 0; i < dims_count; ++i) {
+        if (i != skip_dim) {
+            PAI_DCHECK_EQ(shape.dims[i], check_shape_0.dims[i]);
+        }
+    }
+  return FlatSizeSkipDim(shape, skip_dim);
+}
+
+// tensorflow\lite\kernels\internal\common.h: CountLeadingZeros
+template <typename T>
+int CountLeadingZeros(T integer_input) {
+    static_assert(std::is_unsigned<T>::value, "Only unsigned integer types handled.");
+    if (integer_input == 0) {
+        return std::numeric_limits<T>::digits;
+    }
+    #if defined(__GNUC__)
+    if (std::is_same<T, uint32_t>::value) {
+        return __builtin_clz(integer_input);
+    } else if (std::is_same<T, uint64_t>::value) {
+        return __builtin_clzll(integer_input);
+    }
+    #endif
+    const T one_in_leading_positive = static_cast<T>(1)
+                                        << (std::numeric_limits<T>::digits - 1);
+    int leading_zeros = 0;
+    while (integer_input < one_in_leading_positive) {
+        integer_input <<= 1;
+        ++leading_zeros;
+    }
+    return leading_zeros;
 }
 
 //////////////

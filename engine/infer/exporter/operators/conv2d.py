@@ -97,7 +97,6 @@ ConvPerChannelParams conv_params_<op_id> = {
         padding_size_str = '{ .width = ' + str(padding_size[1]) + ", .height = " + str(padding_size[0]) + '}'
         op_params = op_params.replace('<PaddingValues>', padding_size_str)
         
-        weight_scale = weights_tensor.Quantization().ScaleAsNumpy()
         if output_tensor.Type() is tflite.TensorType.FLOAT32:
             op_params = tfcom.export_fused_activation_float(option, op_params)
         else:
@@ -106,24 +105,9 @@ ConvPerChannelParams conv_params_<op_id> = {
             output_zero_point = output_tensor.Quantization().ZeroPoint(0)
             op_params = op_params.replace('<output_offset>', str(output_zero_point))
             
-            input_scale = input_tensor.Quantization().Scale(0)
-            output_scale = output_tensor.Quantization().Scale(0)
-            outputs_multiplier = []
-            outputs_shift = []
-            for ch in range(weight_scale.size):
-                effective_output_scale = input_scale * weight_scale[ch] / output_scale
-                # scale 等效于 multiplier 和 shift，用整型计算代替浮点计算
-                output_multiplier, output_shift = tfcom.quantize_multiplier(effective_output_scale)
-                outputs_multiplier.append(output_multiplier)
-                outputs_shift.append(output_shift)
+            op_params = tfcom.export_multiplier_per_channel(input_tensor, output_tensor, weights_tensor, 
+                                                            name_prefix, self.id, fp, op_params)
             
-            m_str = tfcom.format_multiplier(outputs_multiplier, name_prefix + "_outputs_multiplier_" + str(self.id))
-            s_str = tfcom.format_multiplier(outputs_shift, name_prefix + "_output_shift_" + str(self.id))
-            # print("outputs_multiplier:", outputs_multiplier, ", outputs_shift:", outputs_shift) 
-            fp["params"].write(m_str)
-            fp["params"].write(s_str)
-            op_params = op_params.replace('<output_multiplier>', name_prefix + "_outputs_multiplier_" + str(self.id))
-            op_params = op_params.replace('<output_shift>', name_prefix + "_output_shift_" + str(self.id))            
             op_params = tfcom.export_fused_activation_quant(output_tensor.Type(), op_params)
         
         return op_params

@@ -187,8 +187,38 @@ def compute_padding_size(padding_mode, input_size, kernel_size, stride, dilation
 
     return padding.flatten()
 
-def export_multiplier_per_tensor():
-    a =1
+def export_multiplier_per_tensor(input_tensor, output_tensor, weights_tensor, op_params):
+    input_scale = input_tensor.Quantization().Scale(0)
+    output_scale = output_tensor.Quantization().Scale(0)
+        
+    weight_scale = weights_tensor.Quantization().ScaleAsNumpy()
+    assert(weight_scale.size, 1)
+    effective_output_scale = input_scale * weight_scale[0] / output_scale
+    # scale 等效于 multiplier 和 shift，用整型计算代替浮点计算
+    output_multiplier, output_shift = quantize_multiplier(effective_output_scale)
+    op_params = op_params.replace('<output_multiplier>', str(output_multiplier))
+    op_params = op_params.replace('<output_shift>', str(output_shift))
+    return op_params
     
-def export_multiplier_per_channel():
-    a =1
+def export_multiplier_per_channel(input_tensor, output_tensor, weights_tensor, name_prefix, op_id, fp, op_params):
+    input_scale = input_tensor.Quantization().Scale(0)
+    output_scale = output_tensor.Quantization().Scale(0)
+    weight_scale = weights_tensor.Quantization().ScaleAsNumpy()
+    
+    outputs_multiplier = []
+    outputs_shift = []
+    for ch in range(weight_scale.size):
+        effective_output_scale = input_scale * weight_scale[ch] / output_scale
+        # scale 等效于 multiplier 和 shift，用整型计算代替浮点计算
+        output_multiplier, output_shift = quantize_multiplier(effective_output_scale)
+        outputs_multiplier.append(output_multiplier)
+        outputs_shift.append(output_shift)
+    
+    m_str = format_multiplier(outputs_multiplier, name_prefix + "_outputs_multiplier_" + str(op_id))
+    s_str = format_multiplier(outputs_shift, name_prefix + "_output_shift_" + str(op_id))
+    # print("outputs_multiplier:", outputs_multiplier, ", outputs_shift:", outputs_shift) 
+    fp["params"].write(m_str)
+    fp["params"].write(s_str)
+    op_params = op_params.replace('<output_multiplier>', name_prefix + "_outputs_multiplier_" + str(op_id))
+    op_params = op_params.replace('<output_shift>', name_prefix + "_output_shift_" + str(op_id))
+    return op_params

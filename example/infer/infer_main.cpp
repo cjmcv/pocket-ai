@@ -20,6 +20,7 @@ int main() {
     // PrintTensr(conv_test_model::maxpooling_2_output);
     // PrintTensr(conv_test_model::reshape_3_output);
     PrintTensr(conv_test_model::graph_output_0);
+    // PrintTensr(conv_test_model::fully_connected_2_output);
 
     conv_test_model::Deinit();
     return 0;

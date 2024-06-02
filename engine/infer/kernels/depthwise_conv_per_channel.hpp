@@ -14,10 +14,10 @@ typedef struct {
     uint32_t op_id;
 
     PaddingValues padding_values;
-    int16_t stride_width;
     int16_t stride_height;
-    int16_t dilation_width_factor;
+    int16_t stride_width;
     int16_t dilation_height_factor;
+    int16_t dilation_width_factor;
     int16_t depth_multiplier;
     // uint8_t inference params.
     // TODO(b/65838351): Use smaller types if appropriate.

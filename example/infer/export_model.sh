@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
-# micro_speech_quantized.tflite
 exporter_path=../../engine/infer/exporter/
 python3 ${exporter_path}/tflite_export.py \
-    --model_path "./models/tf_micro_conv_test_model.int8.tflite" \
+    --model_path "./models/micro_speech_quantized.tflite" \
     --output_path "./" \
     --model_tag "conv_test_model"
 

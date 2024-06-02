@@ -14,9 +14,10 @@ import exporter.common as tfcom
 from exporter.operators.operator import Operator
 from exporter.operators.conv2d import Conv2D
 from exporter.operators.depthwise_conv2d import DepthwiseConv2D
+from exporter.operators.fully_connected import FullyConnected
 from exporter.operators.max_pooling import MaxPooling
 from exporter.operators.reshape import Reshape
-from exporter.operators.fully_connected import FullyConnected
+from exporter.operators.softmax import Softmax
 #
 
 ending_debug_op = 5
@@ -51,6 +52,7 @@ BUILDINCODE2OP = {
     tflite.BuiltinOperator.FULLY_CONNECTED: FullyConnected,
     tflite.BuiltinOperator.MAX_POOL_2D: MaxPooling,
     tflite.BuiltinOperator.RESHAPE: Reshape,
+    tflite.BuiltinOperator.SOFTMAX: Softmax,
     tflite.BuiltinOperator.SPLIT: Split,
     tflite.BuiltinOperator.TRANSPOSE_CONV: TransposeConv,
 }
