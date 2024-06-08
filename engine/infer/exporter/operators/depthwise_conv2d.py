@@ -72,7 +72,7 @@ DepthwisePerChannelParams depthwise_conv_params_<op_id> = {
         # weight
         op_params, weights_tensor = self.export_weight_quant(name_prefix, model, op_params, fp)
         # bias
-        assert(self.op.InputsLength(), 2) # bias must exist
+        assert(self.op.InputsLength() == 3) # bias must exist
         op_params, bias_tensor = self.export_bias_quant(name_prefix, model, op_params, fp)
         
         op_opt = self.op.BuiltinOptions()

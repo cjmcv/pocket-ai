@@ -20,7 +20,7 @@ class MaxPooling(Operator):
     def export_float(self, fp, model, io_tensors):
         op_params = \
 '''
-typedef struct {
+PoolParams pooling_params_<op_id> {
     .op_id = <op_id>,
     
     .padding_values = <PaddingValues>,
@@ -34,7 +34,7 @@ typedef struct {
     //
     .input_tensor = <input_tensor_ptr>,
     .output_tensor = <output_tensor_ptr>,
-} PoolQuantParams;
+};
 
 '''
     

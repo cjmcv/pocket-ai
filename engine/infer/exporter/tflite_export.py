@@ -9,28 +9,22 @@ CURRENT_PATH = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(CURRENT_PATH + "/../")
 print(sys.path)
 
-#
+# https://tensorflow.google.cn/lite/guide/op_select_allowlist?hl=zh-cn
 import exporter.common as tfcom
 from exporter.operators.operator import Operator
+from exporter.operators.add import Add
 from exporter.operators.conv2d import Conv2D
 from exporter.operators.depthwise_conv2d import DepthwiseConv2D
 from exporter.operators.fully_connected import FullyConnected
 from exporter.operators.max_pooling import MaxPooling
+from exporter.operators.mean import Mean
 from exporter.operators.pad import Pad
 from exporter.operators.quantize import Quantize
 from exporter.operators.reshape import Reshape
 from exporter.operators.softmax import Softmax
 #
 
-ending_debug_op = 5
-
-class Add(Operator):
-    def __init__(self, graph, op, op_id):
-        super().__init__(graph, op, op_id)
-        self.attr["code"] = tflite.BuiltinOperator.ADD
-        
-        self.attr["input_index"] = [0, 1]
-        self.attr["output_index"] = [0]
+ending_debug_op = 99
         
 class Split(Operator):
     def __init__(self, graph, op, op_id):
@@ -49,10 +43,12 @@ class TransposeConv(Operator):
         self.attr["input_index"] = [2]
          
 BUILDINCODE2OP = {
+    tflite.BuiltinOperator.ADD: Add,
     tflite.BuiltinOperator.CONV_2D: Conv2D,
     tflite.BuiltinOperator.DEPTHWISE_CONV_2D: DepthwiseConv2D,
     tflite.BuiltinOperator.FULLY_CONNECTED: FullyConnected,
     tflite.BuiltinOperator.MAX_POOL_2D: MaxPooling,
+    tflite.BuiltinOperator.MEAN: Mean,
     tflite.BuiltinOperator.PAD: Pad,
     tflite.BuiltinOperator.PADV2: Pad,
     tflite.BuiltinOperator.QUANTIZE: Quantize,
@@ -113,7 +109,7 @@ class TfliteExporter:
             for i in range(subgraph.OperatorsLength()):
                 operator = subgraph.Operators(i)
                 op_code = self.model.OperatorCodes(operator.OpcodeIndex())
-                print('Getting exporter:', tflite.opcode2name(op_code.BuiltinCode()))
+                print('Getting exporter {0}: {1}'.format(i, tflite.opcode2name(op_code.BuiltinCode())))
                 op_exporter = self.code2op_exporter(subgraph, op_code.BuiltinCode(), operator, i)
                 self.op_exporters.append(op_exporter)
                 
@@ -182,6 +178,7 @@ class TfliteExporter:
         fp["model"].write('\nnamespace pai {\n')
         fp["model"].write('namespace infer {\n')
         fp["model"].write('namespace {0} {{\n\n'.format(model_tag))
+        fp["model"].write('void *{0};\n'.format(Operator.g_scratch_bufffer_name))
         
         fp["params"] = open(model_params_file, "w")
         fp["params"].write('#ifndef POCKET_AI_ENGINE_INFERENCE_{0}_PARAMS_HPP_\n'.format(model_tag.upper()))
@@ -211,7 +208,6 @@ class TfliteExporter:
             if op.op_id() == ending_debug_op:
                 break
         
-        
         for id in self.io_tensors:
             print(id, end=": ")
             for op_id in self.io_tensors[id]:
@@ -221,6 +217,11 @@ class TfliteExporter:
         # Set Init
         is_malloc = True # True / False
         fp["model"].write('void Init() {\n')
+        if is_malloc is True:
+            fp["model"].write('    {0} = (void *)malloc({1});\n'.format(Operator.g_scratch_bufffer_name, str(Operator.g_scratch_bufffer_size)))
+        else:
+            fp["model"].write('    {0} = {Please manually set the memory address};\n'.format(Operator.g_scratch_bufffer_name))
+            
         for id in self.io_tensors:
             tensor_name = self.io_tensors[id][1]
             tensor_size = self.io_tensors[id][2]

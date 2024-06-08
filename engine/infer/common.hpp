@@ -82,6 +82,12 @@ inline int32_t MultiplyByQuantizedMultiplier(int32_t x, int32_t quantized_multip
     return RoundingDivideByPOT(xx, right_shift);
 }
 
+inline int32_t MultiplyByQuantizedMultiplierSmallerThanOneExp(
+    int32_t x, int32_t quantized_multiplier, int left_shift) {
+    return RoundingDivideByPOT(
+        SaturatingRoundingDoublingHighMul(x, quantized_multiplier), -left_shift);
+}
+
 inline int32_t MultiplyByQuantizedMultiplierGreaterThanOne(
     int32_t x, int32_t quantized_multiplier, int left_shift) {
     return SaturatingRoundingDoublingHighMul(x * (1 << left_shift),

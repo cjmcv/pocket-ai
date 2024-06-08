@@ -16,11 +16,14 @@ BUILTIN_TENSORTYPEINFO = {
     tflite.TensorType.FLOAT32: [4, 'FLOAT32'],
 }
 
+def get_tensor_element_num(tensor):
+    return reduce(mul, tensor.ShapeAsNumpy(), 1)
+
 def get_tensor_size(tensor):
-    size = reduce(mul, tensor.ShapeAsNumpy(), 1)
+    size = get_tensor_element_num(tensor)
     size *= BUILTIN_TENSORTYPEINFO[tensor.Type()][0]
     return size
-    
+
 def get_tensor_type_name(tensor_type):
     return BUILTIN_TENSORTYPEINFO[tensor_type][1]
 
@@ -192,7 +195,7 @@ def export_multiplier_per_tensor(input_tensor, output_tensor, weights_tensor, op
     output_scale = output_tensor.Quantization().Scale(0)
         
     weight_scale = weights_tensor.Quantization().ScaleAsNumpy()
-    assert(weight_scale.size, 1)
+    assert(weight_scale.size == 1)
     effective_output_scale = input_scale * weight_scale[0] / output_scale
     # scale 等效于 multiplier 和 shift，用整型计算代替浮点计算
     output_multiplier, output_shift = quantize_multiplier(effective_output_scale)

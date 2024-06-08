@@ -63,14 +63,14 @@ FullyConnectedQuantParams fully_connected_params_<op_id> = {
         # weight
         op_params, weights_tensor = self.export_weight_quant(name_prefix, model, op_params, fp)
         # bias
-        assert(self.op.InputsLength(), 2) # bias must exist
+        assert(self.op.InputsLength() == 3) # bias must exist
         op_params, bias_tensor = self.export_bias_quant(name_prefix, model, op_params, fp)
 
 
         input_zero_point = input_tensor.Quantization().ZeroPoint(0)
         op_params = op_params.replace('<input_offset>', str(-input_zero_point)) # FullyConnectedParamsQuantized
         
-        assert(output_tensor.Type(), tflite.TensorType.INT8)
+        assert(output_tensor.Type() == tflite.TensorType.INT8)
         output_zero_point = output_tensor.Quantization().ZeroPoint(0)
         op_params = op_params.replace('<output_offset>', str(output_zero_point))
         

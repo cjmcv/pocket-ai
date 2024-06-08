@@ -56,11 +56,11 @@ PadParams pad_params_<op_id> = {
             constant_values_buffer = model.Buffers(constant_values_tensor.Buffer())
             if input_tensor.Type() is tflite.TensorType.FLOAT32:
                 data = np.frombuffer(constant_values_buffer.DataAsNumpy(), dtype=np.float32)
-                pad_value_str = '{ .fp32_value = ' + data[0] + ', }'
+                pad_value_str = '{ .fp32_value = ' + str(data[0]) + ', }'
                 op_params = op_params.replace('<pad_value>', pad_value_str)
             else:
                 data = np.frombuffer(constant_values_buffer.DataAsNumpy(), dtype=np.int8)
-                pad_value_str = '{ .int8_value = ' + data[0] + ', }'
+                pad_value_str = '{ .int8_value = ' + str(data[0]) + ', }'
                 op_params = op_params.replace('<pad_value>', pad_value_str)                
         elif self.op.InputsLength() == 2:
             if input_tensor.Type() is tflite.TensorType.FLOAT32:
