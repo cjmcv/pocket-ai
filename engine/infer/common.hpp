@@ -141,10 +141,11 @@ int CountLeadingZeros(T integer_input) {
 
 //////////////
 // Debug
-inline void PrintTensr(Tensor &tensor) {
+inline bool CheckTensr(Tensor &tensor, void *ref_data = nullptr) {
+    bool check_pass = true;
+
 #ifdef ENABLE_PAI_INFER_DEBUG
-    printf("Tensor:\n");
-    printf("    id: %d", tensor.id);
+    printf("Tensor id: %d", tensor.id);
     printf("    shape: [");
     uint32_t num = 1;
     for (uint32_t i=0; i<tensor.shape.dims_count; i++) {
@@ -152,21 +153,38 @@ inline void PrintTensr(Tensor &tensor) {
         printf("%d ", tensor.shape.dims[i]);
     }
     printf("]\n");
-    printf("    data: ");
+    printf("     data: ");
     if (tensor.type == kPaiInferFloat32) {
         float *data = (float *)tensor.data;
+        float *ref = (float *)ref_data;
         for (uint32_t i=0; i<num; i++) {
             printf("%f, ", data[i]);
+            if (data[i] > ref[i] + 0.00001f || data[i] < ref[i] - 0.00001f) {
+                check_pass = false;
+                printf("%f[%f], ", data[i], ref[i]);            
+            }
+            else {
+                printf("%f, ", data[i]);
+            }
         }
     }
     else if (tensor.type == kPaiInferInt8 || tensor.type == kPaiInferUInt8) {
         int8_t *data = (int8_t *)tensor.data;
+        int8_t *ref = (int8_t *)ref_data;
         for (uint32_t i=0; i<num; i++) {
-            printf("%d, ", data[i]);
+            if (data[i] != ref[i]) {
+                check_pass = false;
+                printf("%d[%d], ", data[i], ref[i]);                
+            }
+            else {
+                printf("%d, ", data[i]);
+            }
         }        
     }
     printf("\n\n");
 #endif // #ifdef ENABLE_PAI_INFER_DEBUG
+
+    return check_pass;
 }
 
 } // namespace infer

@@ -63,7 +63,10 @@ class TfliteInference:
     def print_tensor(self, tensor_id):
         print("Tensor id: ", tensor_id, self.interpreter.get_tensor(tensor_id).shape)
         print("     data: ", self.interpreter.get_tensor(tensor_id).reshape(-1).tolist())
-        
+
+    def get_tensor(self, tensor_id):
+        return self.interpreter.get_tensor(tensor_id)
+    
     def fill_random_inputs(self):
         for i in range(len(self.input_details)):
             if(str(self.input_details[i]['dtype']) == "class 'numpy.float32>"):

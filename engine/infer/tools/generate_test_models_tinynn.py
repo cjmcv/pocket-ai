@@ -118,14 +118,15 @@ def main_worker(args):
     dummy_input = torch.rand((1, 3, 32, 32))
 
     out_dir = 'gen/tinynn/'
-    if args.is_quant is False:
+    print(args.quant)
+    if args.quant is False:
         save_model(model, dummy_input, out_dir)
     else:
         post_quant(model, dummy_input, out_dir)
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--is_quant', type=bool, default=False)
-
+    parser.add_argument('--quant', action="store_true", default=False)
     args = parser.parse_args()
+    
     main_worker(args)

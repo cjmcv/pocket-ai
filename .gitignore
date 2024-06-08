@@ -21,8 +21,8 @@ example/*/*.log
 example/infer/*_params.h
 example/infer/*_model.h
 example/infer/*.csv
-engine/infer/tools/gen
-engine/infer/tools/datasets
+example/infer/gen
+example/infer/datasets
 
 # Prerequisites
 *.d

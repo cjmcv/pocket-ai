@@ -10,7 +10,9 @@ int main() {
     for (uint32_t i=0; i<conv_test_model::graph_input_0_size; i++)
         input_data[i] = i % 255;
 
-    TestTfliteCpy(input_data, conv_test_model::graph_input_0_size);
+    void *tflite_out;
+    std::string model_path = "./models/micro_speech_quantized.tflite";
+    TestTfliteCpy(model_path, input_data, conv_test_model::graph_input_0_size, 9, &tflite_out);
 
     conv_test_model::Run();
 
@@ -19,9 +21,10 @@ int main() {
     // PrintTensr(conv_test_model::conv_1_output);
     // PrintTensr(conv_test_model::maxpooling_2_output);
     // PrintTensr(conv_test_model::reshape_3_output);
-    PrintTensr(conv_test_model::graph_output_0);
+    bool is_pass = CheckTensr(conv_test_model::graph_output_0, tflite_out);
     // PrintTensr(conv_test_model::fully_connected_2_output);
 
+    printf("Test %s.\n", is_pass==true? "Passed" : "Failed");
     conv_test_model::Deinit();
     return 0;
 }

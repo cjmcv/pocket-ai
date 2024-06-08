@@ -2,13 +2,12 @@
 #include <stdio.h>
 #include "engine/infer/tools/tflite_cpy/tflite_cpy.hpp"
 
-inline int TestTfliteCpy(void *data, uint32_t data_size) {
+inline int TestTfliteCpy(std::string model_path, void *data, uint32_t data_size, uint32_t output_id, void **outdata) {
     pai::infer::TfliteCpy tflite_cpy;
-    std::string work_space = "/home/shared_dir/PocketAI/engine/infer/tools/tflite_cpy/";
-    std::string model_path = "/home/shared_dir/PocketAI/example/infer/models/micro_speech_quantized.tflite";
+    std::string work_space = "../../engine/infer/tools/tflite_cpy/";
     tflite_cpy.Init(work_space, model_path);
 
-    int8_t *input_data;
+    void *input_data;
     uint32_t input_size;
     tflite_cpy.GetInputPtr(0, (void **)&input_data, &input_size);
 
@@ -17,8 +16,7 @@ inline int TestTfliteCpy(void *data, uint32_t data_size) {
     
     tflite_cpy.Infer();
 
-    tflite_cpy.PrintTensor(9);
-    // tflite_cpy.Print("StatefulPartitionedCall:0");
-
+    tflite_cpy.PrintTensor(output_id);
+    *outdata = tflite_cpy.GetTensorData(output_id);
     return 0;
 }

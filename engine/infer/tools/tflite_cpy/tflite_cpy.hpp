@@ -161,6 +161,19 @@ public:
         Py_DECREF(args);
     }
 
+    void *GetTensorData(uint32_t tensor_id) {
+        PyObject *args = PyTuple_New(1);
+        PyTuple_SetItem(args, 0, Py_BuildValue("i", tensor_id));
+        PyObject *ret_obj = pm_->CallClassMethod(class_name_.c_str(), "get_tensor", args);
+
+        PyArrayObject *arr_obj;
+        PyArg_Parse(ret_obj, "O", &arr_obj);
+        void *data = (void *)PyArray_DATA(arr_obj);
+
+        Py_DECREF(args); 
+        return data;       
+    }
+    
 private:
     void CreateIo() {
         PyObject *ret_obj;
