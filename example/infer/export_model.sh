@@ -2,9 +2,9 @@
 
 exporter_path=../../engine/infer/exporter/
 python3 ${exporter_path}/tflite_export.py \
-    --model_path "./models/micro_speech_quantized.tflite" \
+    --model_path "./gen/tinynn/resnet_q.tflite" \
     --output_path "./" \
-    --model_tag "conv_test_model"
+    --model_tag "resnet_q_model"
 
 echo 按任意键继续
 read -n 1

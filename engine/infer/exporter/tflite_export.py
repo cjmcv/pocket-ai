@@ -16,6 +16,8 @@ from exporter.operators.conv2d import Conv2D
 from exporter.operators.depthwise_conv2d import DepthwiseConv2D
 from exporter.operators.fully_connected import FullyConnected
 from exporter.operators.max_pooling import MaxPooling
+from exporter.operators.pad import Pad
+from exporter.operators.quantize import Quantize
 from exporter.operators.reshape import Reshape
 from exporter.operators.softmax import Softmax
 #
@@ -51,6 +53,9 @@ BUILDINCODE2OP = {
     tflite.BuiltinOperator.DEPTHWISE_CONV_2D: DepthwiseConv2D,
     tflite.BuiltinOperator.FULLY_CONNECTED: FullyConnected,
     tflite.BuiltinOperator.MAX_POOL_2D: MaxPooling,
+    tflite.BuiltinOperator.PAD: Pad,
+    tflite.BuiltinOperator.PADV2: Pad,
+    tflite.BuiltinOperator.QUANTIZE: Quantize,
     tflite.BuiltinOperator.RESHAPE: Reshape,
     tflite.BuiltinOperator.SOFTMAX: Softmax,
     tflite.BuiltinOperator.SPLIT: Split,
@@ -108,6 +113,7 @@ class TfliteExporter:
             for i in range(subgraph.OperatorsLength()):
                 operator = subgraph.Operators(i)
                 op_code = self.model.OperatorCodes(operator.OpcodeIndex())
+                print('Getting exporter:', tflite.opcode2name(op_code.BuiltinCode()))
                 op_exporter = self.code2op_exporter(subgraph, op_code.BuiltinCode(), operator, i)
                 self.op_exporters.append(op_exporter)
                 

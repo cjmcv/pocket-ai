@@ -112,7 +112,27 @@ inline int MatchingFlatSizeSkipDim(const Shape& shape, int skip_dim,
             PAI_DCHECK_EQ(shape.dims[i], check_shape_0.dims[i]);
         }
     }
-  return FlatSizeSkipDim(shape, skip_dim);
+    return FlatSizeSkipDim(shape, skip_dim);
+}
+
+inline int GetShapeFlatSize(const Shape& shape) {
+    int buffer_size = 1;
+    for (int i = 0; i < shape.dims_count; i++) {
+        buffer_size *= shape.dims[i];
+    }
+    return buffer_size;
+}
+
+// Flat size calculation, checking that dimensions match with one or more other
+// arrays.
+inline int MatchingFlatSize(const Shape& shape,
+                            const Shape& check_shape_0) {
+    PAI_DCHECK_EQ(shape.dims_count, check_shape_0.dims_count);
+    const int dims_count = shape.dims_count;
+    for (int i = 0; i < dims_count; ++i) {
+        PAI_DCHECK_EQ(shape.dims[i], check_shape_0.dims[i]);
+    }
+    return GetShapeFlatSize(shape);
 }
 
 // tensorflow\lite\kernels\internal\common.h: CountLeadingZeros
