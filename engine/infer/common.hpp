@@ -37,8 +37,8 @@ inline int Offset(const Shape& shape, int i0, int i1, int i2, int i3, int i4) {
 // Get common shape dim, DCHECKing that they all agree.
 inline int MatchingDim(const Shape& shape1, int index1,
                        const Shape& shape2, int index2) {
-  PAI_DCHECK_EQ(shape1.dims[index1], shape2.dims[index2]);
-  return std::min(shape1.dims[index1], shape2.dims[index2]);
+    PAI_DCHECK_EQ(shape1.dims[index1], shape2.dims[index2]);
+    return std::min(shape1.dims[index1], shape2.dims[index2]);
 }
 
 //////////////
@@ -84,7 +84,7 @@ inline int32_t MultiplyByQuantizedMultiplier(int32_t x, int32_t quantized_multip
 
 inline int32_t MultiplyByQuantizedMultiplierGreaterThanOne(
     int32_t x, int32_t quantized_multiplier, int left_shift) {
-  return SaturatingRoundingDoublingHighMul(x * (1 << left_shift),
+    return SaturatingRoundingDoublingHighMul(x * (1 << left_shift),
                                            quantized_multiplier);
 }
 
