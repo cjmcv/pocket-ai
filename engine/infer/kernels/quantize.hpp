@@ -21,7 +21,7 @@ typedef struct {
     Tensor *output_tensor;
 } AffineQuantizationParams;
 
-// tensorflow\lite\kernels\internal\reference\quantize.h: AffineQuantize
+// ref: tensorflow\lite\kernels\internal\reference\quantize.h: AffineQuantize
 // From float to int
 inline void AffineQuantize(const AffineQuantizationParams& params) {
     const int32_t zero_point = params.zero_point;
