@@ -27,7 +27,7 @@ class TfliteInference:
     
     def get_inputs_detail(self, index):
         # print(self.input_details[index])
-        if(str(self.input_details[index]['dtype']) == "class 'numpy.float32>"):
+        if(self.input_details[index]['dtype'] is np.float32):
             type_size = 4
         else:
             type_size = 1
@@ -35,7 +35,7 @@ class TfliteInference:
     
     def get_outputs_detail(self, index):
         # print(self.output_details[index])
-        if(str(self.output_details[index]['dtype']) == "class 'numpy.float32>"):
+        if(self.output_details[index]['dtype'] is np.float32):
             type_size = 4
         else:
             type_size = 1
@@ -69,7 +69,7 @@ class TfliteInference:
     
     def fill_random_inputs(self):
         for i in range(len(self.input_details)):
-            if(str(self.input_details[i]['dtype']) == "class 'numpy.float32>"):
+            if(self.input_details[i]['dtype'] is np.float32):
                 data = np.random.rand(*self.input_details[i]['shape'])
                 data = data.astype(np.float32)
             else:

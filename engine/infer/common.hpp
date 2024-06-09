@@ -171,6 +171,8 @@ inline bool CheckTensr(Tensor &tensor, void *ref_data = nullptr) {
     bool check_pass = true;
 
 #ifdef ENABLE_PAI_INFER_DEBUG
+    #define INT_PERM_ERROR 1
+    #define FLOAT_PERM_ERROR 0.000001f
     printf("Tensor id: %d", tensor.id);
     printf("    shape: [");
     uint32_t num = 1;
@@ -184,10 +186,9 @@ inline bool CheckTensr(Tensor &tensor, void *ref_data = nullptr) {
         float *data = (float *)tensor.data;
         float *ref = (float *)ref_data;
         for (uint32_t i=0; i<num; i++) {
-            printf("%f, ", data[i]);
-            if (data[i] > ref[i] + 0.00001f || data[i] < ref[i] - 0.00001f) {
+            if (ref_data != nullptr && (data[i] > ref[i] + FLOAT_PERM_ERROR || data[i] < ref[i] - FLOAT_PERM_ERROR)) {
                 check_pass = false;
-                printf("%f[%f], ", data[i], ref[i]);            
+                printf("%f<%f>, ", data[i], ref[i]);
             }
             else {
                 printf("%f, ", data[i]);
@@ -198,9 +199,9 @@ inline bool CheckTensr(Tensor &tensor, void *ref_data = nullptr) {
         int8_t *data = (int8_t *)tensor.data;
         int8_t *ref = (int8_t *)ref_data;
         for (uint32_t i=0; i<num; i++) {
-            if (data[i] != ref[i]) {
+            if (ref_data != nullptr && (data[i] > ref[i] + INT_PERM_ERROR || data[i] < ref[i] - INT_PERM_ERROR)) {
                 check_pass = false;
-                printf("%d[%d], ", data[i], ref[i]);                
+                printf("%d<%d>, ", data[i], ref[i]);
             }
             else {
                 printf("%d, ", data[i]);

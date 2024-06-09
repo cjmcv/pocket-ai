@@ -86,6 +86,7 @@ ArithmeticParams add_params_<op_id> {
             op_params = op_params.replace('<requires_broadcast>', "true")
             print(input_tensors[0].ShapeAsNumpy(), input_tensors[1].ShapeAsNumpy())
 
+        # print("input1_offset: ", input_tensors[0].Quantization().ZeroPoint(0))
         op_params = op_params.replace('<input1_offset>', str(-input_tensors[0].Quantization().ZeroPoint(0)))
         op_params = op_params.replace('<input2_offset>', str(-input_tensors[1].Quantization().ZeroPoint(0)))
         op_params = op_params.replace('<output_offset>', str(output_tensors[0].Quantization().ZeroPoint(0)))
@@ -95,7 +96,10 @@ ArithmeticParams add_params_<op_id> {
         twice_max_input_scale = 2 * max(input_tensors[0].Quantization().Scale(0), input_tensors[1].Quantization().Scale(0))
         real_input1_multiplier = input_tensors[0].Quantization().Scale(0) / twice_max_input_scale
         real_input2_multiplier = input_tensors[1].Quantization().Scale(0) / twice_max_input_scale
-        real_output_multiplier = twice_max_input_scale / (1<<left_shift) * output_tensors[0].Quantization().Scale(0)
+        real_output_multiplier = twice_max_input_scale / ((1<<left_shift) * output_tensors[0].Quantization().Scale(0))
+        # print("real_output_multiplier: ", real_output_multiplier, (1<<left_shift), twice_max_input_scale)
+        # print("real_output_multiplier2", twice_max_input_scale / (1<<left_shift))
+        # print("scale: ", output_tensors[0].Quantization().Scale(0))
         
         multiplier, shift = tfcom.quantize_multiplier(real_input1_multiplier)
         op_params = op_params.replace('<input1_multiplier>', str(multiplier))

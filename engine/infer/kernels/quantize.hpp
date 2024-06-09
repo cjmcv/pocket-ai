@@ -27,13 +27,14 @@ inline void AffineQuantize(const AffineQuantizationParams& params) {
     const int32_t zero_point = params.zero_point;
     const double scale = params.scale;
     const int flat_size = MatchingFlatSize(params.input_tensor->shape, params.output_tensor->shape);
+
     static constexpr int32_t min_val = std::numeric_limits<int8_t>::min();
     static constexpr int32_t max_val = std::numeric_limits<int8_t>::max();
 
     PAI_DCHECK_EQ(params.input_tensor->type, kPaiInferFloat32);
     const float *input_data = (float*)params.input_tensor->data;
     PAI_DCHECK_EQ(params.output_tensor->type, kPaiInferInt8);
-    float *output_data = (float*)params.output_tensor->data;
+    int8_t *output_data = (int8_t*)params.output_tensor->data;
 
     for (int i = 0; i < flat_size; i++) {
         const float val = input_data[i];

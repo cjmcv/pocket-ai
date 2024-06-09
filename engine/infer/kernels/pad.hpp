@@ -77,6 +77,23 @@ inline void Pad(const PadParams& params) {
             params.right_padding[i];
     }
 
+//   static int fcnt = 0;
+//   fcnt++;
+
+//   if (fcnt == 2) {
+//     printf("end\n");
+//     std::abort();    
+//   }
+
+  
+//   printf("PadImplabc: %ld.\n", sizeof(T));
+//   printf("%d, %d.\n", params.left_padding_count, params.right_padding_count);
+//   for (int i=0; i<params.left_padding_count; i++)
+//     printf("%d, ", params.left_padding[i]);
+//   printf("\n");
+//   for (int i=0; i<params.right_padding_count; i++)
+//     printf("%d, ", params.right_padding[i]);
+
     const int output_batch = ext_output_shape.dims[0];
     const int output_plane = ext_output_shape.dims[1];
     const int output_height = ext_output_shape.dims[2];
@@ -95,6 +112,10 @@ inline void Pad(const PadParams& params) {
     const int right_w_padding = right_padding_copy[3];
     const int right_d_padding = right_padding_copy[4];
 
+    // printf("a<%d, %d, %d, %d, %d>, ", output_batch, output_plane, output_height, output_width, output_depth);
+    // printf("b<%d, %d, %d, %d, %d>, ", left_b_padding, left_p_padding, left_h_padding, left_w_padding, left_d_padding);
+    // printf("c<%d, %d, %d, %d, %d>, ", right_b_padding, right_p_padding, right_h_padding, right_w_padding, right_d_padding);
+
     T pad_value;
     if (sizeof(T) == 1) {
         PAI_DCHECK_EQ(params.input_tensor->type, kPaiInferInt8);
@@ -107,7 +128,7 @@ inline void Pad(const PadParams& params) {
         pad_value = params.pad_value.fp32_value;
     }
 
-    const T* in_ptr = (T *)params.output_tensor->data;
+    const T* in_ptr = (T *)params.input_tensor->data;
     T* out_ptr = (T *)params.output_tensor->data;
     for (int out_b = 0; out_b < output_batch; ++out_b) {
         for (int out_p = 0; out_p < output_plane; ++out_p) {

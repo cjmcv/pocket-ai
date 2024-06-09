@@ -10,13 +10,13 @@ inline int TestTfliteCpy(std::string model_path, void *data, uint32_t data_size,
     void *input_data;
     uint32_t input_size;
     tflite_cpy.GetInputPtr(0, (void **)&input_data, &input_size);
-
+    printf("input_size: %d.\n", input_size);
     if (input_size != data_size) printf("Error: input_size != data_size\n");
     memcpy(input_data, data, data_size);
     
     tflite_cpy.Infer();
 
-    tflite_cpy.PrintTensor(output_id);
+    // tflite_cpy.PrintTensor(output_id);
     *outdata = tflite_cpy.GetTensorData(output_id);
     return 0;
 }

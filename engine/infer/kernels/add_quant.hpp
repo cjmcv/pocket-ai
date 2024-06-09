@@ -21,13 +21,13 @@ typedef struct {
     int32_t input2_offset;
     int32_t output_offset;
     int32_t output_multiplier;
-    int output_shift;
+    int32_t output_shift;
     // Add / Sub, not Mul, uint8_t inference params.
-    int left_shift;
+    int32_t left_shift;
     int32_t input1_multiplier;
-    int input1_shift;
+    int32_t input1_shift;
     int32_t input2_multiplier;
-    int input2_shift;
+    int32_t input2_shift;
 
     // TODO(b/158622529): Union the following activation params.
     // uint8_t, etc, activation params.

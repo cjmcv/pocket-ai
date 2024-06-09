@@ -56,7 +56,7 @@ MeanOrSumQuantParams mean_params_<op_id> {
     .num_axis = <num_axis>,
     .axis = <axis>,
     
-    .temp_buffer = <temp_buffer>,  // The same size as the output
+    .temp_buffer = <temp_buffer>,  // output_size * sizeof(int32_t)
     //
     .input_tensor = <input_tensor_ptr>,
     .output_tensor = <output_tensor_ptr>,
@@ -65,12 +65,14 @@ MeanOrSumQuantParams mean_params_<op_id> {
         name_prefix = 'mean'
         self.oprun_str = "MeanOrSumQuant(mean_params_{0});".format(str(self.id))
         op_params = op_params.replace('<op_id>', str(self.id))
-        op_params = op_params.replace('<is_compute_sum>', 'False')
+        op_params = op_params.replace('<is_compute_sum>', 'false')
         
         # io tensors
         op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
         axis_tensor = self.graph.Tensors(self.op.Inputs(self.attr["axis_index"][0]))
-        
+        assert(input_tensor.Type() == tflite.TensorType.INT8)
+        assert(output_tensor.Type() == tflite.TensorType.INT8)
+                
         # ref: tensorflow\lite\micro\kernels\reduce_common.cc: PrepareMeanOrSumHelper
         real_multiplier = input_tensor.Quantization().Scale(0) / output_tensor.Quantization().Scale(0)
         multiplier, shift = tfcom.quantize_multiplier(real_multiplier)
@@ -95,8 +97,8 @@ MeanOrSumQuantParams mean_params_<op_id> {
         #
         output_size = tfcom.get_tensor_element_num(output_tensor)
         if output_size > Operator.g_scratch_bufffer_size:
-            Operator.g_scratch_bufffer_size = output_size
-        op_params = op_params.replace('<temp_buffer>', '(void *)' + Operator.g_scratch_bufffer_name + ', // ' + str(output_size))
+            Operator.g_scratch_bufffer_size = output_size * 4 # sizeof(int32_t)
+        op_params = op_params.replace('<temp_buffer>', '(void **)&' + Operator.g_scratch_bufffer_name + ', // ' + str(output_size*4))
 
         return op_params
     

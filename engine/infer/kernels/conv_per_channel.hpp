@@ -161,8 +161,6 @@ inline void ConvPerChannel(const ConvPerChannelParams& params) {
                     if (bias_data) {
                         acc += bias_data[out_channel];
                     }
-                    // acc = MultiplyByQuantizedMultiplier(
-                    //     acc, output_multiplier[out_channel], output_shift[out_channel]);
                     acc = MultiplyByQuantizedMultiplier(
                         acc, params.output_multiplier[out_channel], params.output_shift[out_channel]);
                     acc += output_offset;

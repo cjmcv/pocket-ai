@@ -24,7 +24,6 @@ typedef struct {
 // ref: tensorflow\lite\kernels\internal\reference\dequantize.h: Dequantize
 // From int to float
 // Dequantizes into a float without rounding.
-template <typename InputT, typename OutputT>
 inline void Dequantize(const DequantizationParams& params) {
 
     PAI_DCHECK_EQ(params.input_tensor->type, kPaiInferInt8);

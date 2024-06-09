@@ -30,12 +30,37 @@ typedef struct {
     int32_t num_axis;
     int32_t axis[kMaxNumberOfAxis];
     
-    void* temp_buffer;
+    void **temp_buffer;
     //
     Tensor *input_tensor;
     Tensor *output_tensor;
 } MeanOrSumQuantParams;
 
+
+// ref: tensorflow\lite\kernels\internal\types.h: NextIndex
+// Gets next index to iterate through a multidimensional array.
+inline bool NextIndex(const int num_dims, const int* dims, int* current) {
+    if (num_dims == 0) {
+        return false;
+    }
+    PAI_DCHECK(dims != nullptr);
+    PAI_DCHECK(current != nullptr);
+    int carry = 1;
+    for (int idx = num_dims - 1; idx >= 0; --idx) {
+        int current_val = current[idx] + carry;
+        PAI_DCHECK_GE(dims[idx], current_val);
+        if (dims[idx] == current_val) {
+            current[idx] = 0;
+        } else {
+            current[idx] = current_val;
+            carry = 0;
+            break;
+        }
+    }
+    return (carry == 0);
+}
+
+// ref: tensorflow\lite\kernels\internal\types.h: ReducedOutputOffset
 // Gets offset of index if reducing on axis. When reducing, the flattened offset
 // will not change, if the input index changes on the given axis. For example,
 // if you have a 3D tensor and you are reducing to 2D by eliminating axis 0,
@@ -69,7 +94,6 @@ inline size_t ReducedOutputOffset(const int num_dims, const int* dims,
     }
     return offset;
 }
-
 
 // A generic reduce method that can be used for reduce_sum, reduce_mean, etc.
 // This method iterates through input data and reduce elements along the
@@ -173,7 +197,7 @@ inline bool MeanOrSumQuant(const MeanOrSumQuantParams &params) {
 
     const int32_t* axis = params.axis;
     const int num_axis_dimensions = params.num_axis;
-    int32_t* temp_sum = (int32_t*)params.temp_buffer;
+    int32_t* temp_sum = (int32_t*)(*params.temp_buffer);
 
     int temp_index[kMaxNumberOfAxis];
     int resolved_axis[kMaxNumberOfReducedAxis];

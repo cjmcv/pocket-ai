@@ -217,6 +217,12 @@ def export_multiplier_per_channel(input_tensor, output_tensor, weights_tensor, n
         outputs_multiplier.append(output_multiplier)
         outputs_shift.append(output_shift)
     
+    # 卷积核数量与scale的数量不同，且scale的数量为1，则表示该算子是per tensor量化的，需要转为per channel的方式，只是每个channel的值是一样的
+    if (weights_tensor.ShapeAsNumpy()[0] != len(weight_scale)) and (len(weight_scale) == 1):
+        for ch in range(weights_tensor.ShapeAsNumpy()[0] - 1):
+            outputs_multiplier.append(outputs_multiplier[0])
+            outputs_shift.append(outputs_shift[0])
+            
     m_str = format_multiplier(outputs_multiplier, name_prefix + "_outputs_multiplier_" + str(op_id))
     s_str = format_multiplier(outputs_shift, name_prefix + "_output_shift_" + str(op_id))
     # print("outputs_multiplier:", outputs_multiplier, ", outputs_shift:", outputs_shift) 
