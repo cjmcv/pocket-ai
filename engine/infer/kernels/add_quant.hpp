@@ -45,10 +45,10 @@ typedef struct {
 
     Tensor *input_tensor[2];
     Tensor *output_tensor;
-} ArithmeticParams;
+} ArithmeticQuantParams;
 
 // ref: tensorflow\lite\kernels\internal\reference\integer_ops\add.h: AddFunc
-inline int8_t AddFunc(int8_t x, int8_t y, const ArithmeticParams& params) {
+inline int8_t AddFunc(int8_t x, int8_t y, const ArithmeticQuantParams& params) {
     const int32_t input1_val = params.input1_offset + x;
     const int32_t input2_val = params.input2_offset + y;
     const int32_t shifted_input1_val = input1_val * (1 << params.left_shift);
@@ -73,7 +73,7 @@ inline int8_t AddFunc(int8_t x, int8_t y, const ArithmeticParams& params) {
 // Broadcasting is not supported for now.
 // https://github.com/Tencent/ncnn/wiki/binaryop-broadcasting
 // ref: tensorflow\lite\kernels\internal\reference\integer_ops\add.h
-inline void AddQuant(const ArithmeticParams& params) {
+inline void AddQuant(const ArithmeticQuantParams& params) {
 
     PAI_DCHECK_EQ(params.input_tensor[0]->type, kPaiInferInt8);
     const Shape& input1_shape = params.input_tensor[0]->shape;
@@ -87,8 +87,11 @@ inline void AddQuant(const ArithmeticParams& params) {
     const Shape& output_shape = params.output_tensor->shape;
     int8_t* output_data = (int8_t*)params.output_tensor->data;
 
-    int size = GetShapeFlatSize(output_shape);
-    for (int i = 0; i < size; ++i) {
+    int flat_size = GetShapeFlatSize(output_shape);
+    PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input1_shape));
+    PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input2_shape));
+
+    for (int i = 0; i < flat_size; ++i) {
         output_data[i] = AddFunc(input1_data[i], input2_data[i], params);
     }
 }

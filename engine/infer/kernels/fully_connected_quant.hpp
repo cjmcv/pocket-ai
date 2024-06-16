@@ -1,5 +1,5 @@
-#ifndef POCKET_AI_ENGINE_INFERENCE_KERNELS_FULLY_CONNECTED_PER_CHANNEL_HPP_
-#define POCKET_AI_ENGINE_INFERENCE_KERNELS_FULLY_CONNECTED_PER_CHANNEL_HPP_
+#ifndef POCKET_AI_ENGINE_INFERENCE_KERNELS_FULLY_CONNECTED_QUANT_HPP_
+#define POCKET_AI_ENGINE_INFERENCE_KERNELS_FULLY_CONNECTED_QUANT_HPP_
 
 #include <stdint.h>
 #include <algorithm>
@@ -31,7 +31,7 @@ typedef struct {
 } FullyConnectedQuantParams;
 
 // ref: tensorflow\lite\kernels\internal\reference\integer_ops\fully_connected.h: FullyConnected
-void FullyConnected(const FullyConnectedQuantParams& params) {
+void FullyConnectedQuant(const FullyConnectedQuantParams& params) {
     const int32_t input_offset = params.input_offset;
     const int32_t filter_offset = params.weights_offset;
     const int32_t output_offset = params.output_offset;
@@ -96,4 +96,4 @@ void FullyConnected(const FullyConnectedQuantParams& params) {
 } // namespace infer
 } // namespace pai
 
-#endif // POCKET_AI_ENGINE_INFERENCE_KERNELS_FULLY_CONNECTED_PER_CHANNEL_HPP_
+#endif // POCKET_AI_ENGINE_INFERENCE_KERNELS_FULLY_CONNECTED_QUANT_HPP_

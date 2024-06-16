@@ -19,30 +19,66 @@ class Mean(Operator):
         self.attr["axis_index"] = [1]
         self.attr["output_index"] = [0]
     
+    def export_common(self, fp, model, io_tensors, name_prefix, op_params):
+        op_params = op_params.replace('<op_id>', str(self.id))
+        
+        # io tensors
+        op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
+        axis_tensor = self.graph.Tensors(self.op.Inputs(self.attr["axis_index"][0]))
+        
+        num_output_elements = tfcom.get_tensor_element_num(output_tensor)
+        op_params = op_params.replace('<num_output_elements>', str(num_output_elements))
+        num_axis = tfcom.get_tensor_element_num(axis_tensor)
+        op_params = op_params.replace('<num_axis>', str(num_axis))
+        
+        axis_tensor_buffer = model.Buffers(axis_tensor.Buffer())
+        axis_data = np.frombuffer(axis_tensor_buffer.DataAsNumpy(), dtype=np.int32)
+        axis_data_str = "{"
+        for i in range(len(axis_data) - 1):
+            axis_data_str = axis_data_str + str(axis_data[i]) + ", "
+        axis_data_str = axis_data_str + str(axis_data[len(axis_data) - 1]) + "}"
+        op_params = op_params.replace('<axis>', axis_data_str)
+        #
+        output_size = tfcom.get_tensor_element_num(output_tensor)
+        if output_size > Operator.g_scratch_bufffer_size:
+            Operator.g_scratch_bufffer_size = output_size * 4 # sizeof(int32_t) / sizeof(float)
+        op_params = op_params.replace('<temp_buffer>', '(void **)&' + Operator.g_scratch_bufffer_name + ', // ' + str(output_size*4))
+
+        return op_params, input_tensor, output_tensor
+    
     def export_float(self, fp, model, io_tensors):
         op_params = \
 '''
-typedef struct {
+MeanOrSumParams mean_params_<op_id> {
     .op_id = <op_id>,
+
+    .is_compute_sum = <is_compute_sum>,
+
+    .num_output_elements = <num_output_elements>,
+    .num_axis = <num_axis>,
+    .axis = <axis>,
     
-    .padding_values = <PaddingValues>,
-    .stride_width = <stride_width>,
-    .stride_height = <stride_height>,
-    .filter_width = <filter_width>,
-    .filter_height = <filter_height>,
-    // uint8_t, etc, activation params.
-    .float_activation_min = <float_activation_min>,
-    .float_activation_max = <float_activation_max>
+    .temp_buffer = <temp_buffer>,  // output_size * sizeof(float)
     //
     .input_tensor = <input_tensor_ptr>,
     .output_tensor = <output_tensor_ptr>,
-} PoolQuantParams;
+};
 '''
-    
+        name_prefix = 'mean'
+        self.oprun_str = "MeanOrSum(mean_params_{0});".format(str(self.id))
+        op_params = op_params.replace('<is_compute_sum>', 'false')
+
+        op_params, input_tensor, output_tensor = \
+            self.export_common(fp, model, io_tensors, name_prefix, op_params)
+            
+        assert(input_tensor.Type() == tflite.TensorType.FLOAT32)
+        assert(output_tensor.Type() == tflite.TensorType.FLOAT32)
+        return op_params
+        
     def export_quant(self, fp, model, io_tensors):
         op_params = \
 '''
-MeanOrSumQuantParams mean_params_<op_id> {
+MeanOrSumQuantParams mean_q_params_<op_id> {
     .op_id = <op_id>,
 
     .is_compute_sum = <is_compute_sum>,
@@ -63,13 +99,12 @@ MeanOrSumQuantParams mean_params_<op_id> {
 };
 '''
         name_prefix = 'mean'
-        self.oprun_str = "MeanOrSumQuant(mean_params_{0});".format(str(self.id))
-        op_params = op_params.replace('<op_id>', str(self.id))
+        self.oprun_str = "MeanOrSumQuant(mean_q_params_{0});".format(str(self.id))
         op_params = op_params.replace('<is_compute_sum>', 'false')
-        
-        # io tensors
-        op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
-        axis_tensor = self.graph.Tensors(self.op.Inputs(self.attr["axis_index"][0]))
+
+        op_params, input_tensor, output_tensor = \
+            self.export_common(fp, model, io_tensors, name_prefix, op_params)
+            
         assert(input_tensor.Type() == tflite.TensorType.INT8)
         assert(output_tensor.Type() == tflite.TensorType.INT8)
                 
@@ -82,24 +117,6 @@ MeanOrSumQuantParams mean_params_<op_id> {
         op_params = op_params.replace('<input_zero_point>', str(input_tensor.Quantization().ZeroPoint(0)))
         op_params = op_params.replace('<output_zero_point>', str(output_tensor.Quantization().ZeroPoint(0)))
         
-        num_output_elements = tfcom.get_tensor_element_num(output_tensor)
-        op_params = op_params.replace('<num_output_elements>', str(num_output_elements))
-        num_axis = tfcom.get_tensor_element_num(axis_tensor)
-        op_params = op_params.replace('<num_axis>', str(num_axis))
-        
-        axis_tensor_buffer = model.Buffers(axis_tensor.Buffer())
-        axis_data = np.frombuffer(axis_tensor_buffer.DataAsNumpy(), dtype=np.int32)
-        axis_data_str = "{"
-        for i in range(len(axis_data) - 1):
-            axis_data_str = axis_data_str + str(axis_data[i]) + ", "
-        axis_data_str = axis_data_str + str(axis_data[len(axis_data) - 1]) + "}"
-        op_params = op_params.replace('<axis>', axis_data_str)
-        #
-        output_size = tfcom.get_tensor_element_num(output_tensor)
-        if output_size > Operator.g_scratch_bufffer_size:
-            Operator.g_scratch_bufffer_size = output_size * 4 # sizeof(int32_t)
-        op_params = op_params.replace('<temp_buffer>', '(void **)&' + Operator.g_scratch_bufffer_name + ', // ' + str(output_size*4))
-
         return op_params
     
     def export(self, fp, model, io_tensors):

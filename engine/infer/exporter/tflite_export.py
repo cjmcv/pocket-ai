@@ -173,6 +173,7 @@ class TfliteExporter:
         fp["model"].write('#ifndef POCKET_AI_ENGINE_INFERENCE_{0}_STRUCT_HPP_\n'.format(model_tag.upper()))
         fp["model"].write('#define POCKET_AI_ENGINE_INFERENCE_{0}_STRUCT_HPP_\n\n'.format(model_tag.upper()))
         fp["model"].write('#include <string.h>\n')
+        fp["model"].write('#include <float.h>\n')
         fp["model"].write('#include "engine/infer/types.hpp"\n')
         fp["model"].write('#include "engine/infer/common.hpp"\n')
         fp["model"].write('#include \"{0}\"\n\n'.format(model_params_file))

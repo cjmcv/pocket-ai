@@ -70,10 +70,10 @@ DepthwisePerChannelParams depthwise_conv_params_<op_id> = {
         # io tensors
         op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
         # weight
-        op_params, weights_tensor = self.export_weight_quant(name_prefix, model, op_params, fp)
+        op_params, weights_tensor = self.export_weight(self.is_quant(), name_prefix, model, op_params, fp)
         # bias
         assert(self.op.InputsLength() == 3) # bias must exist
-        op_params, bias_tensor = self.export_bias_quant(name_prefix, model, op_params, fp)
+        op_params, bias_tensor = self.export_bias(self.is_quant(), name_prefix, model, op_params, fp)
         
         op_opt = self.op.BuiltinOptions()
         option = tflite.DepthwiseConv2DOptions()

@@ -22,29 +22,44 @@ class Add(Operator):
     def export_float(self, fp, model, io_tensors):
         op_params = \
 '''
-typedef struct {
+ArithmeticParams add_params_<op_id> {
     .op_id = <op_id>,
+    .requires_broadcast = <requires_broadcast>,
     
-    .padding_values = <PaddingValues>,
-    .stride_width = <stride_width>,
-    .stride_height = <stride_height>,
-    .filter_width = <filter_width>,
-    .filter_height = <filter_height>,
-    // uint8_t, etc, activation params.
     .float_activation_min = <float_activation_min>,
-    .float_activation_max = <float_activation_max>
+    .float_activation_max = <float_activation_max>,
     //
-    .input_tensor = <input_tensor_ptr>,
+    .input_tensor = {<input_tensor_ptr>, <input_tensor_ptr1>},
     .output_tensor = <output_tensor_ptr>,
-} PoolQuantParams;
-
+};
 '''
+        name_prefix = 'add'
+        self.oprun_str = "Add(add_params_{0});".format(str(self.id))
+        op_params = op_params.replace('<op_id>', str(self.id))
+
+        # io tensors
+        op_params, input_tensors, output_tensors = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
+        assert(len(input_tensors) == 2)
+        # ref: tensorflow\lite\micro\kernels\add_common.cc: CalculateOpDataAdd
+        if (input_tensors[0].ShapeAsNumpy().any() == input_tensors[1].ShapeAsNumpy().any()):
+            op_params = op_params.replace('<requires_broadcast>', "false")
+        else:
+            op_params = op_params.replace('<requires_broadcast>', "true")
+            print(input_tensors[0].ShapeAsNumpy(), input_tensors[1].ShapeAsNumpy())
+            
+        op_opt = self.op.BuiltinOptions()
+        option = tflite.AddOptions()
+        option.Init(op_opt.Bytes, op_opt.Pos)
+
+        assert(output_tensors[0].Type() == tflite.TensorType.FLOAT32)
+        op_params = tfcom.export_fused_activation_float(option, op_params)
+        return op_params
     
     def export_quant(self, fp, model, io_tensors):
         # PoolParams
         op_params = \
 '''
-ArithmeticParams add_params_<op_id> {
+ArithmeticQuantParams add_q_params_<op_id> {
     .op_id = <op_id>,
     
     .requires_broadcast = <requires_broadcast>,
@@ -70,15 +85,12 @@ ArithmeticParams add_params_<op_id> {
 };
 '''
         name_prefix = 'add'
-        self.oprun_str = "AddQuant(add_params_{0});".format(str(self.id))
+        self.oprun_str = "AddQuant(add_q_params_{0});".format(str(self.id))
         op_params = op_params.replace('<op_id>', str(self.id))
 
         # io tensors
         op_params, input_tensors, output_tensors = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
-
-        # print('hello', input_tensors, len(input_tensors), "::", output_tensors)
         assert(len(input_tensors) == 2)
-        
         # ref: tensorflow\lite\micro\kernels\add_common.cc: CalculateOpDataAdd
         if (input_tensors[0].ShapeAsNumpy().any() == input_tensors[1].ShapeAsNumpy().any()):
             op_params = op_params.replace('<requires_broadcast>', "false")

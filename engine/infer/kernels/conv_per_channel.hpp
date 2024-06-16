@@ -12,7 +12,7 @@ namespace infer {
 
 typedef struct {
     uint32_t op_id;
-
+    // common
     PaddingValues padding_values;
     int16_t stride_height;
     int16_t stride_width;

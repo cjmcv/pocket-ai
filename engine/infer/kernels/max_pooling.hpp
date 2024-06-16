@@ -1,5 +1,5 @@
-#ifndef POCKET_AI_ENGINE_INFERENCE_KERNELS_MAX_POOLING_QUANT_HPP_
-#define POCKET_AI_ENGINE_INFERENCE_KERNELS_MAX_POOLING_QUANT_HPP_
+#ifndef POCKET_AI_ENGINE_INFERENCE_KERNELS_MAX_POOLING_HPP_
+#define POCKET_AI_ENGINE_INFERENCE_KERNELS_MAX_POOLING_HPP_
 
 #include <stdint.h>
 #include <algorithm>
@@ -18,31 +18,25 @@ typedef struct {
     int stride_width;
     int filter_height;
     int filter_width;
-    // uint8_t, etc, activation params.
-    int32_t quantized_activation_min;
-    int32_t quantized_activation_max;
+    // float activation params.
+    float float_activation_min;
+    float float_activation_max;
     //
     Tensor *input_tensor;
     Tensor *output_tensor;
-} PoolQuantParams;
+} PoolParams;
 
-// ref: tensorflow\lite\kernels\internal\reference\integer_ops: MaxPool
-inline void MaxPoolQuant(const PoolQuantParams& params) {
-    PAI_DCHECK_LE(params.quantized_activation_min,
-                    params.quantized_activation_max);
-    PAI_DCHECK_GE(params.quantized_activation_min,
-                    std::numeric_limits<int8_t>::min());
-    PAI_DCHECK_LE(params.quantized_activation_max,
-                    std::numeric_limits<int8_t>::max());
-
-    PAI_DCHECK_EQ(params.input_tensor->type, kPaiInferInt8);
-    int8_t* input_data = (int8_t*)params.input_tensor->data;
+// ref: tensorflow\lite\kernels\internal\reference\pooling.h: MaxPool
+inline void MaxPool(const PoolParams& params) {
+    
+    PAI_DCHECK_EQ(params.input_tensor->type, kPaiInferFloat32);
+    const float* input_data = (float*)params.input_tensor->data;
     Shape &input_shape = params.input_tensor->shape;
 
-    PAI_DCHECK_EQ(params.output_tensor->type, kPaiInferInt8);
-    int8_t* output_data = (int8_t*)params.output_tensor->data;
+    PAI_DCHECK_EQ(params.output_tensor->type, kPaiInferFloat32);
+    float* output_data = (float*)params.output_tensor->data;
     Shape &output_shape = params.output_tensor->shape;
-
+    
     PAI_DCHECK_EQ(input_shape.dims_count, 4);
     PAI_DCHECK_EQ(output_shape.dims_count, 4);
     const int batches = MatchingDim(input_shape, 0, output_shape, 0);
@@ -69,7 +63,7 @@ inline void MaxPoolQuant(const PoolQuantParams& params) {
                 const int filter_y_start = std::max(0, -in_y_origin);
                 const int filter_y_end =
                     std::min(params.filter_height, input_height - in_y_origin);
-                int8_t max = std::numeric_limits<int8_t>::lowest();
+                float max = std::numeric_limits<float>::lowest();
                 for (int filter_y = filter_y_start; filter_y < filter_y_end;
                     ++filter_y) {
                     for (int filter_x = filter_x_start; filter_x < filter_x_end;
@@ -81,10 +75,9 @@ inline void MaxPoolQuant(const PoolQuantParams& params) {
                         input_data[Offset(input_shape, batch, in_y, in_x, channel)]);
                     }
                 }
-                max = std::max<int8_t>(max, params.quantized_activation_min);
-                max = std::min<int8_t>(max, params.quantized_activation_max);
                 output_data[Offset(output_shape, batch, out_y, out_x, channel)] =
-                    static_cast<int8_t>(max);
+                    ActivationFunctionWithMinMax(max, params.float_activation_min,
+                                                params.float_activation_max);
                 }
             }
         }
@@ -95,4 +88,4 @@ inline void MaxPoolQuant(const PoolQuantParams& params) {
 } // namespace infer
 } // namespace pai
 
-#endif // POCKET_AI_ENGINE_INFERENCE_KERNELS_CONV_PER_CHANNEL_HPP_
+#endif // POCKET_AI_ENGINE_INFERENCE_KERNELS_MAX_POOLING_HPP_

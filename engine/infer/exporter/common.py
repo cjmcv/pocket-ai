@@ -107,7 +107,7 @@ def export_fused_activation_float(option, op_params):
     faf = option.FusedActivationFunction()
     if faf is tflite.ActivationFunctionType.RELU:
         op_params = op_params.replace('<float_activation_min>', str(0))
-        op_params = op_params.replace('<float_activation_max>', 'kTfLiteActRelu')
+        op_params = op_params.replace('<float_activation_max>', 'FLT_MAX')
     elif faf is tflite.ActivationFunctionType.RELU6:
         op_params = op_params.replace('<float_activation_min>', str(0))
         op_params = op_params.replace('<float_activation_max>', str(6))
@@ -115,8 +115,8 @@ def export_fused_activation_float(option, op_params):
         op_params = op_params.replace('<float_activation_min>', str(-1))
         op_params = op_params.replace('<float_activation_max>', str(1))
     else:
-        op_params = op_params.replace('<float_activation_min>', str(sys.float_info.min))
-        op_params = op_params.replace('<float_activation_max>', str(sys.float_info.max))
+        op_params = op_params.replace('<float_activation_min>', '-FLT_MAX')
+        op_params = op_params.replace('<float_activation_max>', 'FLT_MAX')
     return op_params
     
 # tensorflow/lite/kernels/kernel_util.cc#L244    CalculateActivationRangeQuantized

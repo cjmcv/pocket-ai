@@ -17,26 +17,52 @@ class FullyConnected(Operator):
         self.attr["bias_index"] = 2
         self.attr["output_index"] = [0]
     
+    def export_common(self, fp, model, io_tensors, name_prefix, op_params):
+        op_params = op_params.replace('<op_id>', str(self.id))
+        # io tensors
+        op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
+        # weight
+        op_params, weights_tensor = self.export_weight(self.is_quant(), name_prefix, model, op_params, fp)
+        # bias
+        assert(self.op.InputsLength() == 3) # bias must exist
+        op_params, bias_tensor = self.export_bias(self.is_quant(), name_prefix, model, op_params, fp)
+
+        return op_params, input_tensor, output_tensor, weights_tensor
+    
     def export_float(self, fp, model, io_tensors):
         op_params = \
 '''
-FullyConnectedPerChannelParams fully_connected_params_<op_id> = {
-    .padding_values = <PaddingValues>,
-    .stride_width = <stride_width>,
-    .stride_height = <stride_height>,
-    .dilation_width_factor = <dilation_width_factor>,
-    .dilation_height_factor = <dilation_height_factor>,
-
+FullyConnectedParams fully_connected_params_<op_id> = {
+    .op_id = <op_id>,
+    
     .float_activation_min = <float_activation_min>,
     .float_activation_max = <float_activation_max>,
+
+    .filter_tensor = <filter_tensor>,
+    .bias_tensor = <bias_tensor>,
+    //
+    .input_tensor = <input_tensor_ptr>,
+    .output_tensor = <output_tensor_ptr>,
 };
 '''
+        name_prefix = 'fully_connected'
+        self.oprun_str = "FullyConnected({0}_params_{1});".format(name_prefix, str(self.id))
+        op_params, input_tensor, output_tensor, weights_tensor = \
+            self.export_common(fp, model, io_tensors, name_prefix, op_params)
+            
+        op_opt = self.op.BuiltinOptions()
+        option = tflite.FullyConnectedOptions()
+        option.Init(op_opt.Bytes, op_opt.Pos)
+        
+        assert(output_tensor.Type() == tflite.TensorType.FLOAT32)
+        op_params = tfcom.export_fused_activation_float(option, op_params)
+        return op_params
     
     def export_quant(self, fp, model, io_tensors):
         # ConvParams
         op_params = \
 '''
-FullyConnectedQuantParams fully_connected_params_<op_id> = {
+FullyConnectedQuantParams fully_connected_q_params_<op_id> = {
     .op_id = <op_id>,
     
     .input_offset = <input_offset>,
@@ -55,17 +81,10 @@ FullyConnectedQuantParams fully_connected_params_<op_id> = {
     .output_tensor = <output_tensor_ptr>,
 };
 '''     
-        name_prefix = 'fully_connected'
-        self.oprun_str = "FullyConnected({0}_params_{1});".format(name_prefix, str(self.id))
-        op_params = op_params.replace('<op_id>', str(self.id))
-        # io tensors
-        op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
-        # weight
-        op_params, weights_tensor = self.export_weight_quant(name_prefix, model, op_params, fp)
-        # bias
-        assert(self.op.InputsLength() == 3) # bias must exist
-        op_params, bias_tensor = self.export_bias_quant(name_prefix, model, op_params, fp)
-
+        name_prefix = 'fully_connected_q'
+        self.oprun_str = "FullyConnectedQuant({0}_params_{1});".format(name_prefix, str(self.id))
+        op_params, input_tensor, output_tensor, weights_tensor = \
+            self.export_common(fp, model, io_tensors, name_prefix, op_params)
 
         input_zero_point = input_tensor.Quantization().ZeroPoint(0)
         op_params = op_params.replace('<input_offset>', str(-input_zero_point)) # FullyConnectedParamsQuantized

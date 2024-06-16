@@ -83,16 +83,20 @@ class Operator:
             return op_params, input_tensors[0], output_tensors[0]
         return op_params, input_tensors, output_tensors
     
-    def export_weight_quant(self, name_prefix, model, op_params, fp):
+    def export_weight(self, is_quant, name_prefix, model, op_params, fp):
         weights_tensor_id = self.op.Inputs(self.attr["weight_index"])
         weights_tensor = self.graph.Tensors(weights_tensor_id)
         weights_buffer = model.Buffers(weights_tensor.Buffer())
-        assert(weights_tensor.Type() == tflite.TensorType.INT8)
         
-        weight_data = np.frombuffer(weights_buffer.DataAsNumpy(), dtype=np.int8)
-        # weight_scale = weights_tensor.Quantization().ScaleAsNumpy() # .Scale(0)
-        weight_zero_point = weights_tensor.Quantization().ZeroPointAsNumpy() #.ZeroPoint(0)
-        op_params = op_params.replace('<weights_offset>', str(weight_zero_point))
+        if is_quant:
+            assert(weights_tensor.Type() == tflite.TensorType.INT8)
+            weight_data = np.frombuffer(weights_buffer.DataAsNumpy(), dtype=np.int8)
+            # weight_scale = weights_tensor.Quantization().ScaleAsNumpy() # .Scale(0)
+            weight_zero_point = weights_tensor.Quantization().ZeroPointAsNumpy() #.ZeroPoint(0)
+            op_params = op_params.replace('<weights_offset>', str(weight_zero_point))
+        else:
+            assert(weights_tensor.Type() == tflite.TensorType.FLOAT32)
+            weight_data = np.frombuffer(weights_buffer.DataAsNumpy(), dtype=np.float32)
             
         weight_str, weight_var_name = tfcom.format_weight_bias(weight_data, weights_tensor.Type(), name_prefix + "_weights_" + str(self.id))
         fp["params"].write(weight_str)
@@ -102,14 +106,18 @@ class Operator:
         
         return op_params, weights_tensor
     
-    def export_bias_quant(self, name_prefix, model, op_params, fp):
+    def export_bias(self, is_quant, name_prefix, model, op_params, fp):
         bias_tensor_id = self.op.Inputs(self.attr["bias_index"])
         bias_tensor = self.graph.Tensors(bias_tensor_id)
         bias_buffer = model.Buffers(bias_tensor.Buffer())
 
-        assert(bias_tensor.Type() == tflite.TensorType.INT32)
-        bias_data = np.frombuffer(bias_buffer.DataAsNumpy(), dtype=np.int32) 
-
+        if is_quant:
+            assert(bias_tensor.Type() == tflite.TensorType.INT32)
+            bias_data = np.frombuffer(bias_buffer.DataAsNumpy(), dtype=np.int32) 
+        else:
+            assert(bias_tensor.Type() == tflite.TensorType.FLOAT32)
+            bias_data = np.frombuffer(bias_buffer.DataAsNumpy(), dtype=np.float32) 
+            
         bias_str, bias_var_name = tfcom.format_weight_bias(bias_data, bias_tensor.Type(), name_prefix + "_bias_" + str(self.id))
         fp["params"].write(bias_str)
 

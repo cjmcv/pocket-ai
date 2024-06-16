@@ -165,14 +165,23 @@ int CountLeadingZeros(T integer_input) {
     return leading_zeros;
 }
 
+inline float ActivationFunctionWithMinMax(float x, float output_activation_min,
+                                          float output_activation_max) {
+    using std::max;
+    using std::min;
+    return min(max(x, output_activation_min), output_activation_max);
+}
+
 //////////////
 // Debug
 inline bool CheckTensr(Tensor &tensor, void *ref_data = nullptr) {
     bool check_pass = true;
 
 #ifdef ENABLE_PAI_INFER_DEBUG
-    #define INT_PERM_ERROR 1
-    #define FLOAT_PERM_ERROR 0.000001f
+    int threshold_level = 1;
+    int level_cnt[10] = {0};
+    static int error_int_level[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    static float error_float_level[10] = {0.000001f, 0.000005f, 0.000010f, 0.000050f, 0.000100f, 0.000500f, 0.001000f, 1.000000f, 10.000000f, 100.000000f};
     printf("Tensor id: %d", tensor.id);
     printf("    shape: [");
     uint32_t num = 1;
@@ -186,9 +195,16 @@ inline bool CheckTensr(Tensor &tensor, void *ref_data = nullptr) {
         float *data = (float *)tensor.data;
         float *ref = (float *)ref_data;
         for (uint32_t i=0; i<num; i++) {
-            if (ref_data != nullptr && (data[i] > ref[i] + FLOAT_PERM_ERROR || data[i] < ref[i] - FLOAT_PERM_ERROR)) {
-                check_pass = false;
-                printf("%f<%f>, ", data[i], ref[i]);
+            if (ref_data != nullptr) {
+                for (uint32_t ci=0; ci<10; ci++)
+                    if (data[i] > ref[i] + error_float_level[ci] || data[i] < ref[i] - error_float_level[ci])
+                        level_cnt[ci]++;
+                        
+                if (data[i] > ref[i] + error_float_level[threshold_level] || 
+                    data[i] < ref[i] - error_float_level[threshold_level])
+                    printf("%f<%f>, ", data[i], ref[i]);
+                else
+                    printf("%f, ", data[i]);
             }
             else {
                 printf("%f, ", data[i]);
@@ -199,16 +215,44 @@ inline bool CheckTensr(Tensor &tensor, void *ref_data = nullptr) {
         int8_t *data = (int8_t *)tensor.data;
         int8_t *ref = (int8_t *)ref_data;
         for (uint32_t i=0; i<num; i++) {
-            if (ref_data != nullptr && (data[i] > ref[i] + INT_PERM_ERROR || data[i] < ref[i] - INT_PERM_ERROR)) {
-                check_pass = false;
-                printf("%d<%d>, ", data[i], ref[i]);
+            if (ref_data != nullptr) {
+                for (uint32_t ci=0; ci<10; ci++)
+                    if (data[i] > ref[i] + error_int_level[ci] || data[i] < ref[i] - error_int_level[ci])
+                        level_cnt[ci]++;
+                if (data[i] > ref[i] + error_int_level[threshold_level] || 
+                    data[i] < ref[i] - error_int_level[threshold_level])
+                    printf("%d<%d>, ", data[i], ref[i]);
+                else
+                    printf("%d, ", data[i]);          
             }
             else {
                 printf("%d, ", data[i]);
             }
-        }        
+        }
     }
-    printf("\n\n");
+    
+    // Print Result
+    int zero_index = 0;
+    printf("\n\nLength: %d.\n", num);
+    printf("Recorded data error: [");
+    for (uint32_t ci=0; ci<10; ci++) {
+        printf("%d ", level_cnt[ci]);
+        if (level_cnt[ci] != 0)
+            zero_index = ci;
+    }
+    printf("]\n");
+    if (tensor.type == kPaiInferFloat32) {
+        printf("Error range: %f(id %d)\n", error_float_level[zero_index], zero_index);
+        if (zero_index >= 5)
+            check_pass = false;
+    }
+    else {
+        printf("Error range: %d(id %d)\n", error_int_level[zero_index], zero_index);
+        if (zero_index >= 2)
+            check_pass = false;   
+    }
+    printf("\n");
+    
 #endif // #ifdef ENABLE_PAI_INFER_DEBUG
 
     return check_pass;

@@ -17,49 +17,7 @@ class MaxPooling(Operator):
         self.attr["input_index"] = [0]
         self.attr["output_index"] = [0]
     
-    def export_float(self, fp, model, io_tensors):
-        op_params = \
-'''
-PoolParams pooling_params_<op_id> {
-    .op_id = <op_id>,
-    
-    .padding_values = <PaddingValues>,
-    .stride_width = <stride_width>,
-    .stride_height = <stride_height>,
-    .filter_width = <filter_width>,
-    .filter_height = <filter_height>,
-    // uint8_t, etc, activation params.
-    .float_activation_min = <float_activation_min>,
-    .float_activation_max = <float_activation_max>
-    //
-    .input_tensor = <input_tensor_ptr>,
-    .output_tensor = <output_tensor_ptr>,
-};
-
-'''
-    
-    def export_quant(self, fp, model, io_tensors):
-        # PoolParams
-        op_params = \
-'''
-PoolQuantParams pooling_params_<op_id> = {
-    .op_id = <op_id>,
-    
-    .padding_values = <PaddingValues>,
-    .stride_height = <stride_height>,
-    .stride_width = <stride_width>,
-    .filter_height = <filter_height>,
-    .filter_width = <filter_width>,
-    // uint8_t, etc, activation params.
-    .quantized_activation_min = <quantized_activation_min>,
-    .quantized_activation_max = <quantized_activation_max>,
-    //
-    .input_tensor = <input_tensor_ptr>,
-    .output_tensor = <output_tensor_ptr>,
-};
-'''
-        name_prefix = 'maxpooling'
-        self.oprun_str = "MaxPool(pooling_params_{0});".format(str(self.id))
+    def export_common(self, fp, model, io_tensors, name_prefix, op_params):
         op_params = op_params.replace('<op_id>', str(self.id))
 
         # io tensors
@@ -90,7 +48,67 @@ PoolQuantParams pooling_params_<op_id> = {
         padding_size_str = '{ .width = ' + str(padding_size[1]) + ", .height = " + str(padding_size[0]) + '}'
         op_params = op_params.replace('<PaddingValues>', padding_size_str)
         
+        return op_params, input_tensor, output_tensor, option
+    
+    def export_float(self, fp, model, io_tensors):
+        op_params = \
+'''
+PoolParams pooling_params_<op_id> {
+    .op_id = <op_id>,
+    
+    .padding_values = <PaddingValues>,
+    .stride_height = <stride_height>,
+    .stride_width = <stride_width>,
+    .filter_height = <filter_height>,
+    .filter_width = <filter_width>,
+    // float activation params.
+    .float_activation_min = <float_activation_min>,
+    .float_activation_max = <float_activation_max>,
+    //
+    .input_tensor = <input_tensor_ptr>,
+    .output_tensor = <output_tensor_ptr>,
+};
+'''
+        name_prefix = 'maxpooling'
+        self.oprun_str = "MaxPool(pooling_params_{0});".format(str(self.id))
+        
+        op_params, input_tensor, output_tensor, option = \
+            self.export_common(fp, model, io_tensors, name_prefix, op_params)
+            
         # Actication
+        assert(output_tensor.Type() == tflite.TensorType.FLOAT32)
+        op_params = tfcom.export_fused_activation_float(option, op_params)
+        
+        return op_params
+    
+    def export_quant(self, fp, model, io_tensors):
+        # PoolParams
+        op_params = \
+'''
+PoolQuantParams pooling_q_params_<op_id> = {
+    .op_id = <op_id>,
+    
+    .padding_values = <PaddingValues>,
+    .stride_height = <stride_height>,
+    .stride_width = <stride_width>,
+    .filter_height = <filter_height>,
+    .filter_width = <filter_width>,
+    // uint8_t, etc, activation params.
+    .quantized_activation_min = <quantized_activation_min>,
+    .quantized_activation_max = <quantized_activation_max>,
+    //
+    .input_tensor = <input_tensor_ptr>,
+    .output_tensor = <output_tensor_ptr>,
+};
+'''
+        name_prefix = 'maxpooling'
+        self.oprun_str = "MaxPoolQuant(pooling_q_params_{0});".format(str(self.id))
+        
+        op_params, input_tensor, output_tensor, option = \
+            self.export_common(fp, model, io_tensors, name_prefix, op_params)
+            
+        # Actication
+        assert(output_tensor.Type() == tflite.TensorType.INT8)
         op_params = tfcom.export_fused_activation_quant(output_tensor.Type(), op_params)
         
         return op_params
