@@ -33,22 +33,13 @@ typedef struct {
     // uint8_t, etc, activation params.
     int32_t quantized_activation_min;
     int32_t quantized_activation_max;
-    // // float activation params.
-    // float float_activation_min;
-    // float float_activation_max;
-    // // int64_t activation params.
-    // int64_t int64_activation_min;
-    // int64_t int64_activation_max;
-    // // int16_t activation params.
-    // int16_t int16_activation_min;
-    // int16_t int16_activation_max;
 
     Tensor *input_tensor[2];
     Tensor *output_tensor;
-} ArithmeticQuantParams;
+} AddQuantParams;
 
 // ref: tensorflow\lite\kernels\internal\reference\integer_ops\add.h: AddFunc
-inline int8_t AddFunc(int8_t x, int8_t y, const ArithmeticQuantParams& params) {
+inline int8_t AddFunc(int8_t x, int8_t y, const AddQuantParams& params) {
     const int32_t input1_val = params.input1_offset + x;
     const int32_t input2_val = params.input2_offset + y;
     const int32_t shifted_input1_val = input1_val * (1 << params.left_shift);
@@ -73,20 +64,21 @@ inline int8_t AddFunc(int8_t x, int8_t y, const ArithmeticQuantParams& params) {
 // Broadcasting is not supported for now.
 // https://github.com/Tencent/ncnn/wiki/binaryop-broadcasting
 // ref: tensorflow\lite\kernels\internal\reference\integer_ops\add.h
-inline void AddQuant(const ArithmeticQuantParams& params) {
+inline void AddQuant(const AddQuantParams& params) {
 
     PAI_DCHECK_EQ(params.input_tensor[0]->type, kPaiInferInt8);
-    const Shape& input1_shape = params.input_tensor[0]->shape;
     const int8_t* input1_data = (int8_t*)params.input_tensor[0]->data;
+    const Shape& input1_shape = params.input_tensor[0]->shape;
 
     PAI_DCHECK_EQ(params.input_tensor[1]->type, kPaiInferInt8);
-    const Shape& input2_shape = params.input_tensor[1]->shape;
     const int8_t* input2_data = (int8_t*)params.input_tensor[1]->data;
+    const Shape& input2_shape = params.input_tensor[1]->shape;
 
     PAI_DCHECK_EQ(params.output_tensor->type, kPaiInferInt8);
-    const Shape& output_shape = params.output_tensor->shape;
     int8_t* output_data = (int8_t*)params.output_tensor->data;
+    const Shape& output_shape = params.output_tensor->shape;
 
+    PAI_DCHECK_EQ(params.requires_broadcast, false);
     int flat_size = GetShapeFlatSize(output_shape);
     PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input1_shape));
     PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input2_shape));

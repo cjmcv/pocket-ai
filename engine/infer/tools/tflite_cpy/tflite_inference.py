@@ -1,4 +1,5 @@
 import os
+import argparse
 import numpy as np
 import tensorflow as tf
 
@@ -67,6 +68,15 @@ class TfliteInference:
     def get_tensor(self, tensor_id):
         return self.interpreter.get_tensor(tensor_id)
     
+    def fill_one2inputs(self):
+        for i in range(len(self.input_details)):
+            if(self.input_details[i]['dtype'] is np.float32):
+                data = np.ones(self.input_details[i]['shape'], np.float32)
+            else:
+                data = np.ones(self.input_details[i]['shape'], np.int8)
+            self.inputs[i] = data
+        return self.inputs
+        
     def fill_random_inputs(self):
         for i in range(len(self.input_details)):
             if(self.input_details[i]['dtype'] is np.float32):
@@ -76,7 +86,6 @@ class TfliteInference:
                 data = np.random.randint(0, 255, self.input_details[i]['shape'])
                 data = data.astype(np.int8)
             self.inputs[i] = data
-
         return self.inputs
     
     ################
@@ -88,14 +97,27 @@ class TfliteInference:
         return data
     
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', type=str, default="./models/tf_micro_conv_test_model.int8.tflite")
+    parser.add_argument('--input_one', action="store_true", default=False)
+    parser.add_argument('--tensor_id', type=int, default=-1)
+    args = parser.parse_args()
+    
     infer = TfliteInference()
-
-    infer.load_model("../models/tf_micro_conv_test_model.int8.tflite")
-    input = infer.fill_random_inputs()
+    infer.load_model(args.model)
+    if args.input_one is True:
+        input = infer.fill_one2inputs()
+        # print("input:", input)
+    else:
+        input = infer.fill_random_inputs()
+        print("input:", input)
+    
     infer.run()
     output = infer.get_output(0)
 
-    print(input)
-    print(output)
+    if (args.tensor_id == -1):
+        print("output:", output)
+    else:
+        print(infer.print_tensor(args.tensor_id))
 
             

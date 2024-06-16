@@ -16,7 +16,9 @@ from exporter.operators.add import Add
 from exporter.operators.conv2d import Conv2D
 from exporter.operators.depthwise_conv2d import DepthwiseConv2D
 from exporter.operators.dequantize import Dequantize
+from exporter.operators.div import Div
 from exporter.operators.fully_connected import FullyConnected
+from exporter.operators.hard_swish import HardSwish
 from exporter.operators.max_pooling import MaxPooling
 from exporter.operators.mean import Mean
 from exporter.operators.pad import Pad
@@ -48,7 +50,9 @@ BUILDINCODE2OP = {
     tflite.BuiltinOperator.CONV_2D: Conv2D,
     tflite.BuiltinOperator.DEPTHWISE_CONV_2D: DepthwiseConv2D,
     tflite.BuiltinOperator.DEQUANTIZE: Dequantize,
+    tflite.BuiltinOperator.DIV: Div,
     tflite.BuiltinOperator.FULLY_CONNECTED: FullyConnected,
+    tflite.BuiltinOperator.HARD_SWISH: HardSwish,
     tflite.BuiltinOperator.MAX_POOL_2D: MaxPooling,
     tflite.BuiltinOperator.MEAN: Mean,
     tflite.BuiltinOperator.PAD: Pad,

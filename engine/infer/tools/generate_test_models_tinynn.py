@@ -110,7 +110,8 @@ def post_quant(model, dummy_input, out_dir):
         converter.convert()
             
 def main_worker(args):
-    model = tm.resnet18(weights=None)
+    # model = tm.resnet18(weights=None)
+    model = tm.mobilenet_v3_small(weights=None)
     # model = tmq.resnet18(weights=None)
     # model = tmq.resnet18(weights=ResNet18_QuantizedWeights, quantize=True)
     # model = VisionTransformer(image_size=32, patch_size=2, num_layers = 20, num_heads = 1, hidden_dim = 5, mlp_dim = 10)

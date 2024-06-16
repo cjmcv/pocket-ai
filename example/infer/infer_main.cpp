@@ -2,11 +2,12 @@
 
 #include "resnet_q_model.h"
 
+// micro_speech_quantized / tf_micro_conv_test_model.int8 / resnet_q / resnet / mobilenetv3_q / mobilenetv3
+
 using namespace pai::infer;
 namespace model = resnet_q_model;
 
 int main() {
-
     // engine/infer
     model::Init();
     int8_t *input_data = (int8_t*)model::graph_input_0.data;

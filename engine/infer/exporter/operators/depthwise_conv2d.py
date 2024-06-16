@@ -17,54 +17,8 @@ class DepthwiseConv2D(Operator):
         self.attr["weight_index"] = 1
         self.attr["bias_index"] = 2
         self.attr["output_index"] = [0]
-    
-    def export_float(self, fp, model, io_tensors):
-        op_params = \
-'''
-DepthwiseParams conv_params_<op_id> = {
-    .padding_values = <PaddingValues>,
-    .stride_width = <stride_width>,
-    .stride_height = <stride_height>,
-    .dilation_width_factor = <dilation_width_factor>,
-    .dilation_height_factor = <dilation_height_factor>,
-
-    .float_activation_min = <float_activation_min>,
-    .float_activation_max = <float_activation_max>,
-};
-'''
-    
-    def export_quant(self, fp, model, io_tensors):
-        # ConvParams
-        op_params = \
-'''
-DepthwisePerChannelParams depthwise_conv_params_<op_id> = {
-    .op_id = <op_id>,
-    
-    .padding_values = <PaddingValues>,
-    .stride_height = <stride_height>,
-    .stride_width = <stride_width>,
-    .dilation_height_factor = <dilation_height_factor>,
-    .dilation_width_factor = <dilation_width_factor>,
-    .depth_multiplier = <depth_multiplier>,
-    
-    .input_offset = <input_offset>,
-    //.weights_offset = <weights_offset>,
-    .output_offset = <output_offset>,
-    .output_multiplier = <output_multiplier>,
-    .output_shift = <output_shift>,
-    // 
-    .quantized_activation_min = <quantized_activation_min>,
-    .quantized_activation_max = <quantized_activation_max>,
-    //
-    .filter_tensor = <filter_tensor>,
-    .bias_tensor = <bias_tensor>,
-    //
-    .input_tensor = <input_tensor_ptr>,
-    .output_tensor = <output_tensor_ptr>,
-};
-'''
-        name_prefix = 'depthwise_conv'
-        self.oprun_str = "DepthwiseConvPerChannel(depthwise_conv_params_{0});".format(str(self.id))
+        
+    def export_common(self, fp, model, io_tensors, name_prefix, op_params):
         op_params = op_params.replace('<op_id>', str(self.id))
         
         # io tensors
@@ -100,19 +54,84 @@ DepthwisePerChannelParams depthwise_conv_params_<op_id> = {
                                     [dilation_height_factor, dilation_width_factor])
         padding_size_str = '{ .width = ' + str(padding_size[1]) + ", .height = " + str(padding_size[0]) + '}'
         op_params = op_params.replace('<PaddingValues>', padding_size_str)
+        return op_params, input_tensor, output_tensor, weights_tensor, option
+    
+    def export_float(self, fp, model, io_tensors):
+        op_params = \
+'''
+DepthwiseParams depthwise_conv_params_<op_id> = {
+    .padding_values = <PaddingValues>,
+    .stride_height = <stride_height>,
+    .stride_width = <stride_width>,
+    .dilation_height_factor = <dilation_height_factor>,
+    .dilation_width_factor = <dilation_width_factor>,
+    .depth_multiplier = <depth_multiplier>,
+    
+    .float_activation_min = <float_activation_min>,
+    .float_activation_max = <float_activation_max>,
+    //
+    .filter_tensor = <filter_tensor>,
+    .bias_tensor = <bias_tensor>,
+    //
+    .input_tensor = <input_tensor_ptr>,
+    .output_tensor = <output_tensor_ptr>,
+};
+'''
+        name_prefix = 'depthwise_conv'
+        self.oprun_str = "DepthwiseConv(depthwise_conv_params_{0});".format(str(self.id))
+
+        op_params, input_tensor, output_tensor, weights_tensor, option = \
+            self.export_common(fp, model, io_tensors, name_prefix, op_params)
+
+        assert(output_tensor.Type() == tflite.TensorType.FLOAT32)
+        op_params = tfcom.export_fused_activation_float(option, op_params)
+        return op_params
+    
+    def export_quant(self, fp, model, io_tensors):
+        # ConvParams
+        op_params = \
+'''
+DepthwisePerChannelParams depthwise_conv_q_params_<op_id> = {
+    .op_id = <op_id>,
+    
+    .padding_values = <PaddingValues>,
+    .stride_height = <stride_height>,
+    .stride_width = <stride_width>,
+    .dilation_height_factor = <dilation_height_factor>,
+    .dilation_width_factor = <dilation_width_factor>,
+    .depth_multiplier = <depth_multiplier>,
+    
+    .input_offset = <input_offset>,
+    //.weights_offset = <weights_offset>,
+    .output_offset = <output_offset>,
+    .output_multiplier = <output_multiplier>,
+    .output_shift = <output_shift>,
+    // 
+    .quantized_activation_min = <quantized_activation_min>,
+    .quantized_activation_max = <quantized_activation_max>,
+    //
+    .filter_tensor = <filter_tensor>,
+    .bias_tensor = <bias_tensor>,
+    //
+    .input_tensor = <input_tensor_ptr>,
+    .output_tensor = <output_tensor_ptr>,
+};
+'''
+        name_prefix = 'depthwise_conv'
+        self.oprun_str = "DepthwiseConvPerChannel(depthwise_conv_q_params_{0});".format(str(self.id))
+
+        op_params, input_tensor, output_tensor, weights_tensor, option = \
+            self.export_common(fp, model, io_tensors, name_prefix, op_params)
         
-        if output_tensor.Type() is tflite.TensorType.FLOAT32:
-            op_params = tfcom.export_fused_activation_float(option, op_params)
-        else:
-            input_zero_point = input_tensor.Quantization().ZeroPoint(0)
-            op_params = op_params.replace('<input_offset>', str(-input_zero_point)) # tensorflow\lite\micro\kernels\conv_common.cc: ConvParamsQuantized
-            output_zero_point = output_tensor.Quantization().ZeroPoint(0)
-            op_params = op_params.replace('<output_offset>', str(output_zero_point))
+        assert(output_tensor.Type() == tflite.TensorType.INT8)
+        input_zero_point = input_tensor.Quantization().ZeroPoint(0)
+        op_params = op_params.replace('<input_offset>', str(-input_zero_point)) # tensorflow\lite\micro\kernels\conv_common.cc: ConvParamsQuantized
+        output_zero_point = output_tensor.Quantization().ZeroPoint(0)
+        op_params = op_params.replace('<output_offset>', str(output_zero_point))
             
-            op_params = tfcom.export_multiplier_per_channel(input_tensor, output_tensor, weights_tensor, 
-                                                            name_prefix, self.id, fp, op_params)       
-            op_params = tfcom.export_fused_activation_quant(output_tensor.Type(), op_params)
-        
+        op_params = tfcom.export_multiplier_per_channel(input_tensor, output_tensor, weights_tensor, 
+                                                        name_prefix, self.id, fp, op_params)       
+        op_params = tfcom.export_fused_activation_quant(output_tensor.Type(), op_params)
         return op_params
         
     def export(self, fp, model, io_tensors):

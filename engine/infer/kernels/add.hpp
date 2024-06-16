@@ -23,10 +23,10 @@ typedef struct {
 
     Tensor *input_tensor[2];
     Tensor *output_tensor;
-} ArithmeticParams;
+} AddParams;
 
 // ref: tensorflow\lite\kernels\internal\reference\add.h: Add
-inline void Add(const ArithmeticParams& params) {
+inline void Add(const AddParams& params) {
 
     PAI_DCHECK_EQ(params.input_tensor[0]->type, kPaiInferFloat32);
     const Shape& input1_shape = params.input_tensor[0]->shape;
@@ -43,6 +43,7 @@ inline void Add(const ArithmeticParams& params) {
     float activation_min = params.float_activation_min;
     float activation_max = params.float_activation_max;
 
+    PAI_DCHECK_EQ(params.requires_broadcast, false);
     int flat_size = GetShapeFlatSize(output_shape);
     PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input1_shape));
     PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input2_shape));

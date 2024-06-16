@@ -59,7 +59,6 @@ FullyConnectedParams fully_connected_params_<op_id> = {
         return op_params
     
     def export_quant(self, fp, model, io_tensors):
-        # ConvParams
         op_params = \
 '''
 FullyConnectedQuantParams fully_connected_q_params_<op_id> = {

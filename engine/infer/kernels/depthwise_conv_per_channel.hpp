@@ -90,14 +90,7 @@ inline void DepthwiseConvPerChannel(const DepthwisePerChannelParams& params) {
     const int output_height = output_shape.dims[1];
     const int output_width = output_shape.dims[2];
     PAI_DCHECK_EQ(output_depth, input_depth * depth_multiplier);
-
-    if (bias_data) {
-        int buffer_size = 1;
-        for (int i = 0; i < bias_shape.dims_count; i++) {
-            buffer_size *= bias_shape.dims[i];
-        }
-        PAI_DCHECK_EQ(buffer_size, output_depth);
-    }
+    PAI_DCHECK_EQ(GetShapeFlatSize(bias_shape), output_depth);
 
     for (int batch = 0; batch < batches; ++batch) {
         for (int out_y = 0; out_y < output_height; ++out_y) {
