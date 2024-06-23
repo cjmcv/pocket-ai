@@ -114,7 +114,7 @@ def main_worker(args):
     model = tm.mobilenet_v3_small(weights=None)
     # model = tmq.resnet18(weights=None)
     # model = tmq.resnet18(weights=ResNet18_QuantizedWeights, quantize=True)
-    # model = VisionTransformer(image_size=32, patch_size=2, num_layers = 20, num_heads = 1, hidden_dim = 5, mlp_dim = 10)
+    # model = tm.VisionTransformer(image_size=32, patch_size=2, num_layers = 20, num_heads = 1, hidden_dim = 5, mlp_dim = 10)
     # model.load_state_dict(torch.load(DEFAULT_STATE_DICT))
     dummy_input = torch.rand((1, 3, 32, 32))
 

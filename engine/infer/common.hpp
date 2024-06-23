@@ -195,7 +195,7 @@ inline bool CheckTensr(Tensor &tensor, void *ref_data = nullptr) {
     bool check_pass = true;
 
 #ifdef ENABLE_PAI_INFER_DEBUG
-    int threshold_level = 1;
+    int threshold_level = 0;
     int level_cnt[10] = {0};
     static int error_int_level[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     static float error_float_level[10] = {0.000001f, 0.000005f, 0.000010f, 0.000050f, 0.000100f, 0.000500f, 0.001000f, 1.000000f, 10.000000f, 100.000000f};

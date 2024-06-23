@@ -41,12 +41,15 @@ DivParams div_params_<op_id> {
         op_params, input_tensors, output_tensors = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
         assert(len(input_tensors) == 2)
         # ref: tensorflow\lite\micro\kernels\add_common.cc: CalculateOpDataAdd
-        if (input_tensors[0].ShapeAsNumpy().any() == input_tensors[1].ShapeAsNumpy().any()):
+        if ((input_tensors[0].ShapeAsNumpy() == input_tensors[1].ShapeAsNumpy()).all()):
             op_params = op_params.replace('<requires_broadcast>', "false")
         else:
             op_params = op_params.replace('<requires_broadcast>', "true")
-            print(input_tensors[0].ShapeAsNumpy(), input_tensors[1].ShapeAsNumpy())
-            
+            # print(input_tensors[0].ShapeAsNumpy(), input_tensors[1].ShapeAsNumpy())
+        
+        self.check_and_export_const_tensor(self.attr["input_index"][0], np.float32, model, name_prefix, io_tensors, fp)
+        self.check_and_export_const_tensor(self.attr["input_index"][1], np.float32, model, name_prefix, io_tensors, fp)
+          
         op_opt = self.op.BuiltinOptions()
         option = tflite.DivOptions()
         option.Init(op_opt.Bytes, op_opt.Pos)
@@ -87,12 +90,15 @@ DivQuantParams div_q_params_<op_id> {
         assert(len(input_tensors) == 2)
         
         # ref: tensorflow\lite\micro\kernels\div_common.cc: CalculateOpDataDiv + EvalQuantized
-        if (input_tensors[0].ShapeAsNumpy().any() == input_tensors[1].ShapeAsNumpy().any()):
+        if ((input_tensors[0].ShapeAsNumpy() == input_tensors[1].ShapeAsNumpy()).all()):
             op_params = op_params.replace('<requires_broadcast>', "false")
         else:
             op_params = op_params.replace('<requires_broadcast>', "true")
-            print(input_tensors[0].ShapeAsNumpy(), input_tensors[1].ShapeAsNumpy())
+            # print(input_tensors[0].ShapeAsNumpy(), input_tensors[1].ShapeAsNumpy())
 
+        self.check_and_export_const_tensor(self.attr["input_index"][0], np.int8, model, name_prefix, io_tensors, fp)
+        self.check_and_export_const_tensor(self.attr["input_index"][1], np.int8, model, name_prefix, io_tensors, fp)
+        
         op_params = op_params.replace('<input1_offset>', str(-input_tensors[0].Quantization().ZeroPoint(0)))
         op_params = op_params.replace('<input2_offset>', str(-input_tensors[1].Quantization().ZeroPoint(0)))
         op_params = op_params.replace('<output_offset>', str(output_tensors[0].Quantization().ZeroPoint(0)))

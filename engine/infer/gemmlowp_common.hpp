@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include "common.hpp"
-#include "gemmlowp/fixedpoint.h"
+#include "engine/infer/kernels/gemmlowp/fixedpoint.h"
 
 #include "types.hpp"
 #include "util/logger.hpp"

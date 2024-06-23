@@ -37,13 +37,13 @@ class Operator:
             else:
                 target_ptr = '<output_tensor_ptr{0}>'.format(write_id)
             
+        # 如果已经生成过，则直接写入； 如果之前没生成过，则生成后写入
         if tfcom.check_value_in_dict(tensor_id, io_tensors):
             in_var_name = io_tensors[tensor_id][1] # 
             io_tensors[tensor_id].append(self.id)
             op_params = op_params.replace(target_ptr, '&'+in_var_name)
         else:
             in_var_name = prefix + '_' + str(self.id) + '_' + suffix
-            
             if inplace_id != -1:  # For inplace op, Assign input to output.
                 inplace_var_name = io_tensors[inplace_id][1]
                 io_tensors[tensor_id] = [tensor, in_var_name, inplace_var_name, self.id]
@@ -83,6 +83,21 @@ class Operator:
             return op_params, input_tensors[0], output_tensors[0]
         return op_params, input_tensors, output_tensors
     
+    def check_and_export_const_tensor(self, tensor_id, type, model, name_prefix, io_tensors, fp):
+        input_tensor_id = self.op.Inputs(tensor_id)
+        input_tensor = self.graph.Tensors(input_tensor_id)
+        # in_var_name = io_tensors[input_tensor_id][1] # 会在export_io_tensors中生成
+        input_buffer = model.Buffers(input_tensor.Buffer())
+        # 检查是否为常量tensor, 是常量tensor则把其数据导出为数组，把该数据变量名在io_tensors进行指定，会在初始化的时候进行指定赋值。
+        # print("check const", input_buffer.DataIsNone())
+        if (input_buffer.DataIsNone() == False):
+            input_data = np.frombuffer(input_buffer.DataAsNumpy(), dtype=type)
+            weight_str, weight_var_name = tfcom.format_weight_bias(input_data, input_tensor.Type(), "constant_" + name_prefix + "_" + str(self.id))
+            fp["params"].write(weight_str)
+            
+            io_tensors[input_tensor_id][2] = weight_var_name # 2号位对应size / inplace对象 / constant标记
+        #
+        
     def export_weight(self, is_quant, name_prefix, model, op_params, fp):
         weights_tensor_id = self.op.Inputs(self.attr["weight_index"])
         weights_tensor = self.graph.Tensors(weights_tensor_id)

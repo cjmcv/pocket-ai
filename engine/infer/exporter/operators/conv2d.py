@@ -125,7 +125,7 @@ ConvPerChannelParams conv_params_<op_id> = {
         output_zero_point = output_tensor.Quantization().ZeroPoint(0)
         op_params = op_params.replace('<output_offset>', str(output_zero_point))
             
-        op_params = tfcom.export_multiplier_per_channel(input_tensor, output_tensor, weights_tensor, 
+        op_params = tfcom.export_multiplier_per_channel(True, input_tensor, output_tensor, weights_tensor, 
                                                             name_prefix, self.id, fp, op_params)
             
         op_params = tfcom.export_fused_activation_quant(output_tensor.Type(), op_params)

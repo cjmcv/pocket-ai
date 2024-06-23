@@ -57,7 +57,7 @@ inline std::int16_t SaturatingDoublingHighMul(std::int16_t a, std::int16_t b) {
     return overflow ? std::numeric_limits<std::int16_t>::max() : ab_x2_high16;
 }
 
-// ref: tensorflow\lite\kernels\internal\reference\hard_swish.h: HardSwish
+// ref: tensorflow\lite\kernels\internal\reference\hard_swish.h#61: HardSwish
 inline void HardSwishQuant(const HardSwishQuantParams& params) {
 
     PAI_DCHECK_EQ(params.input_tensor->type, kPaiInferInt8);
@@ -67,7 +67,6 @@ inline void HardSwishQuant(const HardSwishQuantParams& params) {
     PAI_DCHECK_EQ(params.output_tensor->type, kPaiInferInt8);
     int8_t* output_data = (int8_t*)params.output_tensor->data;
     const Shape &output_shape = params.output_tensor->shape;
-    PAI_DCHECK_EQ(output_shape.dims_count, 2);
 
     const int flat_size = MatchingFlatSize(input_shape, output_shape);
 

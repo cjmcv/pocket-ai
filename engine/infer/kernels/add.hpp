@@ -43,14 +43,21 @@ inline void Add(const AddParams& params) {
     float activation_min = params.float_activation_min;
     float activation_max = params.float_activation_max;
 
-    PAI_DCHECK_EQ(params.requires_broadcast, false);
     int flat_size = GetShapeFlatSize(output_shape);
-    PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input1_shape));
-    PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input2_shape));
-
-    for (int i = 0; i < flat_size; ++i) {
-        output_data[i] = ActivationFunctionWithMinMax(
-            input1_data[i] + input2_data[i], activation_min, activation_max);
+    if (params.requires_broadcast == false) {
+        PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input1_shape));
+        PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input2_shape));
+        for (int i = 0; i < flat_size; ++i) {
+            output_data[i] = ActivationFunctionWithMinMax(
+                input1_data[i] + input2_data[i], activation_min, activation_max);
+        }    
+    }
+    else {
+        PAI_DCHECK_EQ(1, GetShapeFlatSize(input2_shape)); // 广播仅支持2号输入维度为1的情况
+        for (int i = 0; i < flat_size; ++i) {
+            output_data[i] = ActivationFunctionWithMinMax(
+                input1_data[i] + input2_data[0], activation_min, activation_max);
+        }  
     }
 }
 

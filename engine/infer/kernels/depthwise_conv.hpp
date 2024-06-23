@@ -23,8 +23,8 @@ typedef struct {
     int32_t* output_multiplier;
     int32_t* output_shift;
     // uint8_t, etc, activation params.
-    int32_t float_activation_min;
-    int32_t float_activation_max;
+    float float_activation_min;
+    float float_activation_max;
     //
     Tensor filter_tensor;
     Tensor bias_tensor;
@@ -35,21 +35,21 @@ typedef struct {
 
 // ref: tensorflow\lite\kernels\internal\reference\depthwiseconv_float.h: DepthwiseConv
 inline void DepthwiseConv(const DepthwiseParams& params) {
-    PAI_DCHECK_EQ(params.input_tensor->type, kPaiInferInt8);
+    PAI_DCHECK_EQ(params.input_tensor->type, kPaiInferFloat32);
     const Shape& input_shape = params.input_tensor->shape;
-    const int8_t* input_data = (int8_t*)params.input_tensor->data;
+    const float* input_data = (float*)params.input_tensor->data;
 
-    PAI_DCHECK_EQ(params.output_tensor->type, kPaiInferInt8);
+    PAI_DCHECK_EQ(params.output_tensor->type, kPaiInferFloat32);
     const Shape& output_shape = params.output_tensor->shape;
-    int8_t* output_data = (int8_t*)params.output_tensor->data;
+    float* output_data = (float*)params.output_tensor->data;
 
-    PAI_DCHECK_EQ(params.filter_tensor.type, kPaiInferInt8);
+    PAI_DCHECK_EQ(params.filter_tensor.type, kPaiInferFloat32);
     const Shape& filter_shape = params.filter_tensor.shape;
-    const int8_t* filter_data = (int8_t*)params.filter_tensor.data;
+    const float* filter_data = (float*)params.filter_tensor.data;
 
-    PAI_DCHECK_EQ(params.bias_tensor.type, kPaiInferInt32);
+    PAI_DCHECK_EQ(params.bias_tensor.type, kPaiInferFloat32);
     const Shape& bias_shape = params.bias_tensor.shape;
-    const int32_t* bias_data = (int32_t*)params.bias_tensor.data;
+    const float* bias_data = (float*)params.bias_tensor.data;
 
     const int stride_width = params.stride_width;
     const int stride_height = params.stride_height;

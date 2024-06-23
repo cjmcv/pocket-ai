@@ -63,7 +63,7 @@ class TfliteInference:
     
     def print_tensor(self, tensor_id):
         print("Tensor id: ", tensor_id, self.interpreter.get_tensor(tensor_id).shape)
-        print("     data: ", self.interpreter.get_tensor(tensor_id).reshape(-1).tolist())
+        print("     data: ", self.interpreter.get_tensor(tensor_id))
 
     def get_tensor(self, tensor_id):
         return self.interpreter.get_tensor(tensor_id)

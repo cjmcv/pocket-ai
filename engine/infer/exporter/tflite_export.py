@@ -21,13 +21,15 @@ from exporter.operators.fully_connected import FullyConnected
 from exporter.operators.hard_swish import HardSwish
 from exporter.operators.max_pooling import MaxPooling
 from exporter.operators.mean import Mean
+from exporter.operators.mul import Mul
 from exporter.operators.pad import Pad
 from exporter.operators.quantize import Quantize
 from exporter.operators.reshape import Reshape
 from exporter.operators.softmax import Softmax
+from exporter.operators.tile import Tile
 #
 
-ending_debug_op = 99
+ending_debug_op = 1000
         
 class Split(Operator):
     def __init__(self, graph, op, op_id):
@@ -38,12 +40,12 @@ class Split(Operator):
         for i in range(op.OutputsLength()):
             self.attr["output_index"].append(i)
 
-class TransposeConv(Operator):
-    def __init__(self, graph, op, op_id):
-        super().__init__(graph, op, op_id)
-        self.attr["code"] = tflite.BuiltinOperator.TRANSPOSE_CONV
+# class TransposeConv(Operator):
+#     def __init__(self, graph, op, op_id):
+#         super().__init__(graph, op, op_id)
+#         self.attr["code"] = tflite.BuiltinOperator.TRANSPOSE_CONV
         
-        self.attr["input_index"] = [2]
+#         self.attr["input_index"] = [2]
          
 BUILDINCODE2OP = {
     tflite.BuiltinOperator.ADD: Add,
@@ -55,13 +57,15 @@ BUILDINCODE2OP = {
     tflite.BuiltinOperator.HARD_SWISH: HardSwish,
     tflite.BuiltinOperator.MAX_POOL_2D: MaxPooling,
     tflite.BuiltinOperator.MEAN: Mean,
+    tflite.BuiltinOperator.MUL: Mul,
     tflite.BuiltinOperator.PAD: Pad,
     tflite.BuiltinOperator.PADV2: Pad,
     tflite.BuiltinOperator.QUANTIZE: Quantize,
     tflite.BuiltinOperator.RESHAPE: Reshape,
     tflite.BuiltinOperator.SOFTMAX: Softmax,
     tflite.BuiltinOperator.SPLIT: Split,
-    tflite.BuiltinOperator.TRANSPOSE_CONV: TransposeConv,
+    tflite.BuiltinOperator.TILE: Tile,
+    # tflite.BuiltinOperator.TRANSPOSE_CONV: TransposeConv,
 }
 
 class TfliteExporter:
@@ -231,14 +235,19 @@ class TfliteExporter:
             
         for id in self.io_tensors:
             tensor_name = self.io_tensors[id][1]
-            tensor_size = self.io_tensors[id][2]
+            tensor_attr = self.io_tensors[id][2]
             
-            # If type(tensor_size) is str, tensor_size will be the src tensor of inplace op
-            if type(tensor_size) is str:
-                # fp["model"].write("    // Reshape inplace: {0} <- {1}\n".format(tensor_name, tensor_size))
-                fp["model"].write("    {0}.data = {1}.data; // Inplace\n".format(tensor_name, tensor_size))
+            # If type(tensor_attr) is str, tensor_attr will be the src tensor of inplace op
+            if type(tensor_attr) is str:
+                if "constant" in tensor_attr:
+                    fp["model"].write("    {0}.data = {1}; // constant \n".format(tensor_name, tensor_attr))
+                else:
+                    # fp["model"].write("    // Reshape inplace: {0} <- {1}\n".format(tensor_name, tensor_attr))
+                    fp["model"].write("    {0}.data = {1}.data; // Inplace\n".format(tensor_name, tensor_attr))
                 continue
-                
+            
+            # Else it will be the size of tensor.
+            tensor_size = tensor_attr   
             if is_malloc is True:
                 tensor_str = "    {0}.data = (void *)malloc({1});".format(tensor_name, str(tensor_size)) + "\n"
                 tensor_str = tensor_str + "    memset({0}.data, 0, {1});".format(tensor_name, str(tensor_size)) + "\n"
@@ -253,9 +262,12 @@ class TfliteExporter:
         fp["model"].write('void Deinit() {\n')
         for id in self.io_tensors:
             tensor_name = self.io_tensors[id][1]
-            tensor_size = self.io_tensors[id][2]
-            if type(tensor_size) is str:
-                fp["model"].write("    // Reshape inplace: {0} <- {1}\n".format(tensor_name, tensor_size))
+            tensor_attr = self.io_tensors[id][2]
+            if type(tensor_attr) is str:
+                if "constant" in tensor_attr:
+                    fp["model"].write("    // {0}.data = {1}; // constant \n".format(tensor_name, tensor_attr))
+                else:
+                    fp["model"].write("    // Reshape inplace: {0} <- {1}\n".format(tensor_name, tensor_attr))
                 continue
             
             tensor_str = ";"

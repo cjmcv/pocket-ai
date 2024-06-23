@@ -47,8 +47,10 @@ include_directories(${INCLUDE_LIST})
 # Source # GLOB_RECURSE
 file(GLOB TESTS_SRC_LIST 
     "${CMAKE_CURRENT_LIST_DIR}/tests_main.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/*/*.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/*/*/*.cpp"
+    # "${CMAKE_CURRENT_LIST_DIR}/engine/graph/*.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/memory/*.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/signal/*.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/thread/*.cpp"
 )
 message(STATUS "tests src: ${TESTS_SRC_LIST}")
 

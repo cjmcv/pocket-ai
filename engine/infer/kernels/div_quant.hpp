@@ -32,6 +32,34 @@ typedef struct {
     Tensor *output_tensor;
 } DivQuantParams;
 
+inline int8_t DivFunc(int8_t x, int8_t y, const DivQuantParams& params) {
+    int32_t input1_val = params.input1_offset + x;
+    int32_t input2_val = params.input2_offset + y;
+    PAI_DCHECK_NE(input2_val, 0);
+    if (input2_val < 0)
+    {
+        // Invert signs to avoid a negative input2_val as input2_inv needs to be
+        // positive to be used as multiplier of MultiplyByQuantizedMultiplier.
+        input1_val = -input1_val;
+        input2_val = -input2_val;
+    }
+    int recip_shift;
+    const int32_t input2_inv = GetReciprocal(input2_val, 31, &recip_shift);
+    const int headroom = CountLeadingSignBits(input1_val);
+    const int32_t unscaled_quotient =
+        MultiplyByQuantizedMultiplierGreaterThanOne(input1_val, input2_inv,
+                                                    headroom);
+    const int total_shift = params.output_shift - recip_shift - headroom;
+    const int32_t unclamped_result =
+        params.output_offset +
+        MultiplyByQuantizedMultiplierSmallerThanOneExp(
+            unscaled_quotient, params.output_multiplier, total_shift);
+    const int32_t clamped_output =
+        std::min(params.quantized_activation_max,
+                std::max(params.quantized_activation_min, unclamped_result));
+    return static_cast<int8_t>(clamped_output);
+}
+
 // ref: tensorflow\lite\kernels\internal\reference\div.h： Div->DivElementwise
 // Element-wise div that can often be used for inner loop of broadcast Div as
 // well as the non-broadcast Div.
@@ -50,36 +78,19 @@ inline void DivQuant(const DivQuantParams& params) {
     int8_t* output_data = (int8_t*)params.output_tensor->data;
     const Shape& output_shape = params.output_tensor->shape;
 
-    PAI_DCHECK_EQ(params.requires_broadcast, false);
     int flat_size = GetShapeFlatSize(output_shape);
-    PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input1_shape));
-    PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input2_shape));
-
-    for (int i = 0; i < flat_size; ++i) {
-        int32_t input1_val = params.input1_offset + input1_data[i];
-        int32_t input2_val = params.input2_offset + input2_data[i];
-        PAI_DCHECK_NE(input2_val, 0);
-        if (input2_val < 0) {
-            // Invert signs to avoid a negative input2_val as input2_inv needs to be
-            // positive to be used as multiplier of MultiplyByQuantizedMultiplier.
-            input1_val = -input1_val;
-            input2_val = -input2_val;
-        }
-        int recip_shift;
-        const int32_t input2_inv = GetReciprocal(input2_val, 31, &recip_shift);
-        const int headroom = CountLeadingSignBits(input1_val);
-        const int32_t unscaled_quotient =
-            MultiplyByQuantizedMultiplierGreaterThanOne(input1_val, input2_inv,
-                                                        headroom);
-        const int total_shift = params.output_shift - recip_shift - headroom;
-        const int32_t unclamped_result =
-            params.output_offset +
-            MultiplyByQuantizedMultiplierSmallerThanOneExp(
-                unscaled_quotient, params.output_multiplier, total_shift);
-        const int32_t clamped_output =
-            std::min(params.quantized_activation_max,
-                    std::max(params.quantized_activation_min, unclamped_result));
-        output_data[i] = static_cast<int8_t>(clamped_output);
+    if (params.requires_broadcast == false) {
+        PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input1_shape));
+        PAI_DCHECK_EQ(flat_size, GetShapeFlatSize(input2_shape));
+        for (int i = 0; i < flat_size; ++i) {
+            output_data[i] = DivFunc(input1_data[i], input2_data[i], params);
+        }        
+    }
+    else {
+        PAI_DCHECK_EQ(1, GetShapeFlatSize(input2_shape)); // 广播仅支持2号输入维度为1的情况
+        for (int i = 0; i < flat_size; ++i) {
+            output_data[i] = DivFunc(input1_data[i], input2_data[0], params);
+        }   
     }
 }
 

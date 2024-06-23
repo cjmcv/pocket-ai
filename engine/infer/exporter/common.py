@@ -227,7 +227,7 @@ def export_multiplier_per_tensor(input_tensor, output_tensor, weights_tensor, op
     op_params = op_params.replace('<output_shift>', str(output_shift))
     return op_params
     
-def export_multiplier_per_channel(input_tensor, output_tensor, weights_tensor, name_prefix, op_id, fp, op_params):
+def export_multiplier_per_channel(is_conv, input_tensor, output_tensor, weights_tensor, name_prefix, op_id, fp, op_params):
     input_scale = input_tensor.Quantization().Scale(0)
     output_scale = output_tensor.Quantization().Scale(0)
     weight_scale = weights_tensor.Quantization().ScaleAsNumpy()
@@ -241,9 +241,17 @@ def export_multiplier_per_channel(input_tensor, output_tensor, weights_tensor, n
         outputs_multiplier.append(output_multiplier)
         outputs_shift.append(output_shift)
     
+    # ref: tensorflow\lite\micro\kernels\depthwise_conv_common.cc#114: CalculateOpDataDepthwiseConv
+    # DepthwiseConv is quantized along dimension 3: 
+    # https://www.tensorflow.org/lite/performance/quantization_spec
     # 卷积核数量与scale的数量不同，且scale的数量为1，则表示该算子是per tensor量化的，需要转为per channel的方式，只是每个channel的值是一样的
-    if (weights_tensor.ShapeAsNumpy()[0] != len(weight_scale)) and (len(weight_scale) == 1):
-        for ch in range(weights_tensor.ShapeAsNumpy()[0] - 1):
+    # Conv is quantized along dimension 0.
+    if is_conv is True:
+        output_channels = weights_tensor.ShapeAsNumpy()[0]
+    else:
+        output_channels = weights_tensor.ShapeAsNumpy()[3]
+    if (output_channels != len(weight_scale)) and (len(weight_scale) == 1):
+        for ch in range(output_channels - 1):
             outputs_multiplier.append(outputs_multiplier[0])
             outputs_shift.append(outputs_shift[0])
             

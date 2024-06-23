@@ -1,23 +1,29 @@
 #include "tflite_cpy_demo.hpp"
 
-#include "resnet_q_model.h"
+#include "mobilenetv3_model.h"
 
 // micro_speech_quantized / tf_micro_conv_test_model.int8 / resnet_q / resnet / mobilenetv3_q / mobilenetv3
 
 using namespace pai::infer;
-namespace model = resnet_q_model;
+namespace model = mobilenetv3_model;
 
 int main() {
     // engine/infer
     model::Init();
-    int8_t *input_data = (int8_t*)model::graph_input_0.data;
-    for (uint32_t i=0; i<model::graph_input_0_size/sizeof(int8_t); i++)
-        input_data[i] = i % 255;
+    float *input_data = (float*)model::graph_input_0.data;
+    for (uint32_t i=0; i<model::graph_input_0_size/sizeof(float); i++) {
+        input_data[i] = i;
+
+        // int min = -100;
+        // int max = 100;
+        // input_data[i] = min + static_cast <float>(rand()) / (static_cast<float>(RAND_MAX/(max-min)));      
+    }
+
     model::Run();
 
     // tflite infer
     void *tflite_out;
-    std::string model_path = "./gen/tinynn/resnet_q.tflite";
+    std::string model_path = "./gen/tinynn/mobilenetv3.tflite";
     TestTfliteCpy(model_path, 
                   input_data, model::graph_input_0_size, 
                   model::graph_output_0.id, &tflite_out);

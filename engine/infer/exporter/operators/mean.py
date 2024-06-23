@@ -13,7 +13,7 @@ class Mean(Operator):
 
     def __init__(self, graph, op, op_id):
         super().__init__(graph, op, op_id)
-        self.attr["code"] = tflite.BuiltinOperator.ADD
+        self.attr["code"] = tflite.BuiltinOperator.MEAN
         
         self.attr["input_index"] = [0]
         self.attr["axis_index"] = [1]
@@ -40,8 +40,9 @@ class Mean(Operator):
         op_params = op_params.replace('<axis>', axis_data_str)
         #
         output_size = tfcom.get_tensor_element_num(output_tensor)
-        if output_size > Operator.g_scratch_bufffer_size:
-            Operator.g_scratch_bufffer_size = output_size * 4 # sizeof(int32_t) / sizeof(float)
+        if output_size * 4 > Operator.g_scratch_bufffer_size:
+            # print("g_scratch_bufffer_size in: ", Operator.g_scratch_bufffer_size, output_size * 4)
+            Operator.g_scratch_bufffer_size = output_size * 4 # sizeof(int32_t)
         op_params = op_params.replace('<temp_buffer>', '(void **)&' + Operator.g_scratch_bufffer_name + ', // ' + str(output_size*4))
 
         return op_params, input_tensor, output_tensor

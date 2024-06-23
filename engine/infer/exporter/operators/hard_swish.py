@@ -23,7 +23,7 @@ HardSwishParams hard_swish_params_<op_id> {
     
     .input_tensor = <input_tensor_ptr>,
     .output_tensor = <output_tensor_ptr>,
-} HardSwishParams;
+};
 '''
         name_prefix = 'hard_swish'
         self.oprun_str = "HardSwish({0}_params_{1});".format(name_prefix, str(self.id))
@@ -34,7 +34,7 @@ HardSwishParams hard_swish_params_<op_id> {
     def export_quant(self, fp, model, io_tensors):
         op_params = \
 '''
-HardSwishParams hard_swish_params_<op_id> {
+HardSwishQuantParams hard_swish_q_params_<op_id> {
     .op_id = <op_id>,
     
     .input_zero_point = <input_zero_point>,
@@ -46,7 +46,7 @@ HardSwishParams hard_swish_params_<op_id> {
     
     .input_tensor = <input_tensor_ptr>,
     .output_tensor = <output_tensor_ptr>,
-} HardSwishParams;
+};
 '''     
         name_prefix = 'hard_swish_q'
         self.oprun_str = "HardSwishQuant({0}_params_{1});".format(name_prefix, str(self.id))
