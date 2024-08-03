@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.2)
 
 # Define project name
-project(ptk_vk)
-set(PROJECT_NAME ptk_vk)
+project(pai_vk)
+set(PROJECT_NAME pai_vk)
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
