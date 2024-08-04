@@ -12,16 +12,20 @@ namespace infer {
 
 #ifdef ENABLE_PAI_INFER_DEBUG
 #define PAI_INFER_ASSERT_FALSE abort()
-#else
-#define PAI_INFER_ASSERT_FALSE (static_cast<void>(0))
-#endif
-
 #define PAI_DCHECK(condition) (condition) ? (void)0 : PAI_INFER_ASSERT_FALSE
 #define PAI_DCHECK_EQ(x, y) ((x) == (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
 #define PAI_DCHECK_NE(x, y) ((x) != (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
 #define PAI_DCHECK_GE(x, y) ((x) >= (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
 #define PAI_DCHECK_GT(x, y) ((x) > (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
 #define PAI_DCHECK_LE(x, y) ((x) <= (y)) ? (void)0 : PAI_INFER_ASSERT_FALSE
+#else
+#define PAI_DCHECK(condition) (static_cast<void>(0))
+#define PAI_DCHECK_EQ(x, y) (static_cast<void>(0))
+#define PAI_DCHECK_NE(x, y) (static_cast<void>(0))
+#define PAI_DCHECK_GE(x, y) (static_cast<void>(0))
+#define PAI_DCHECK_GT(x, y) (static_cast<void>(0))
+#define PAI_DCHECK_LE(x, y) (static_cast<void>(0))
+#endif
 
 inline int Offset(const Shape& shape, int i0, int i1, int i2, int i3) {
     PAI_DCHECK_EQ(shape.dims_count, 4);
@@ -191,7 +195,7 @@ inline int CountLeadingSignBits(T integer_input) {
 
 //////////////
 // Debug
-inline bool CheckTensr(Tensor &tensor, void *ref_data = nullptr) {
+inline bool CheckTensor(Tensor &tensor, void *ref_data = nullptr) {
     bool check_pass = true;
 
 #ifdef ENABLE_PAI_INFER_DEBUG
@@ -212,6 +216,7 @@ inline bool CheckTensr(Tensor &tensor, void *ref_data = nullptr) {
         float *data = (float *)tensor.data;
         float *ref = (float *)ref_data;
         for (uint32_t i=0; i<num; i++) {
+            if (i%10 == 0) printf("\n");
             if (ref_data != nullptr) {
                 for (uint32_t ci=0; ci<10; ci++)
                     if (data[i] > ref[i] + error_float_level[ci] || data[i] < ref[i] - error_float_level[ci])
@@ -232,6 +237,7 @@ inline bool CheckTensr(Tensor &tensor, void *ref_data = nullptr) {
         int8_t *data = (int8_t *)tensor.data;
         int8_t *ref = (int8_t *)ref_data;
         for (uint32_t i=0; i<num; i++) {
+            if (i%10 == 0) printf("\n");
             if (ref_data != nullptr) {
                 for (uint32_t ci=0; ci<10; ci++)
                     if (data[i] > ref[i] + error_int_level[ci] || data[i] < ref[i] - error_int_level[ci])

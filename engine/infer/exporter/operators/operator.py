@@ -16,6 +16,9 @@ class Operator:
     def op_id(self):
         return self.id
     
+    def get_op(self):
+        return self.op
+    
     def is_quant(self):
         input_tensor = self.graph.Tensors(self.op.Inputs(self.attr["input_index"][0]))
         if input_tensor.Type() == tflite.TensorType.FLOAT32:
@@ -70,9 +73,12 @@ class Operator:
             input_tensors.append(input_tensor)
             
         inplace_id = -1
-        if ((is_inplace is True) and (len(self.attr["input_index"]) == 1)):
-            inplace_id = input_tensor_id
-        
+        if (is_inplace is True):
+            if (len(self.attr["input_index"]) == 1):
+                inplace_id = input_tensor_id
+            elif (len(self.attr["input_index"]) == 2):
+                inplace_id = self.op.Inputs(self.attr["input_index"][0])
+            
         for id in self.attr["output_index"]:
             output_tensor_id = self.op.Outputs(id)
             output_tensor = self.graph.Tensors(output_tensor_id)

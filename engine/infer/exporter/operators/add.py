@@ -38,7 +38,7 @@ AddParams add_params_<op_id> {
         op_params = op_params.replace('<op_id>', str(self.id))
 
         # io tensors
-        op_params, input_tensors, output_tensors = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
+        op_params, input_tensors, output_tensors = self.export_io_tensors(name_prefix, op_params, io_tensors, True, fp)
         assert(len(input_tensors) == 2)
         # ref: tensorflow\lite\micro\kernels\add_common.cc: CalculateOpDataAdd
         if ((input_tensors[0].ShapeAsNumpy() == input_tensors[1].ShapeAsNumpy()).all()):
@@ -92,7 +92,7 @@ AddQuantParams add_q_params_<op_id> {
         op_params = op_params.replace('<op_id>', str(self.id))
 
         # io tensors
-        op_params, input_tensors, output_tensors = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
+        op_params, input_tensors, output_tensors = self.export_io_tensors(name_prefix, op_params, io_tensors, True, fp)
         assert(len(input_tensors) == 2)
         # ref: tensorflow\lite\micro\kernels\add_common.cc: CalculateOpDataAdd
         if ((input_tensors[0].ShapeAsNumpy() == input_tensors[1].ShapeAsNumpy()).all()):
