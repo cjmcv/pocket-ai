@@ -26,7 +26,7 @@ namespace cu {
     } while(0);
 
 #define FLOAT4(value)  *(float4*)(&(value))
-
+#define OFFSET(i, j, ld) ((i)*(ld)+(j))
 ////////////////
 // Structure.
 ////////////////

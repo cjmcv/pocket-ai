@@ -12,6 +12,12 @@ using namespace nvcuda;
 namespace pai {
 namespace cu {
 
+#define CP_ASYNC_CA(dst, src, bytes) \
+    asm volatile("cp.async.ca.shared.global [%0], [%1], %2;\n" ::"r"(dst), "l"(src), "n"(bytes))
+
+#define CP_ASYNC_CG(dst, src, bytes) \
+    asm volatile("cp.async.cg.shared.global [%0], [%1], %2;\n" ::"r"(dst), "l"(src), "n"(bytes))
+
 } // namespace cu
 } // namespace pai
 
