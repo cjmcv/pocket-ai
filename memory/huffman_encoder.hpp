@@ -7,7 +7,7 @@
 #include <string.h>
 #include <vector>
 
-#include "util/logger.hpp"
+#include "pocket-ai/util/logger.hpp"
 
 namespace pai {
 namespace memory {

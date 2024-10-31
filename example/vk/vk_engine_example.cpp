@@ -1,7 +1,7 @@
 
 #include <cmath>
-#include "engine/vk/engine.hpp"
-#include "prof/timer.hpp"
+#include "pocket-ai/engine/vk/engine.hpp"
+#include "pocket-ai/prof/timer.hpp"
 
 using namespace pai;
 
@@ -12,6 +12,11 @@ void SetParamsEngineTest(vk::KernelParams *params) {
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
     };
 
+    // SpecConstant: Preseted in the engine_test.comp.
+    // layout(local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in; 
+    // layout(constant_id = 3) const uint M = 1;
+    // layout(constant_id = 4) const uint N = 1;
+    // layout(constant_id = 5) const float K = 1;
     params->spec_constant = {
         {0, 32}, 
         {1, 2}, 

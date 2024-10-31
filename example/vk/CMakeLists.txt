@@ -28,7 +28,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 # Include
 SET(INCLUDE_DIR
     ${VULKAN_WIN_SDK}/Include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../..
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../..
 )
 message(STATUS "include: ${INCLUDE_DIR}")
 include_directories(${INCLUDE_DIR})

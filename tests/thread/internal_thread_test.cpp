@@ -2,7 +2,7 @@
 * \brief . 
 */
 
-#include "thread/internal_thread.hpp"
+#include "pocket-ai/thread/internal_thread.hpp"
 
 #include <thread>
 #include <queue>

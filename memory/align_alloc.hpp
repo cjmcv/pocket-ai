@@ -6,7 +6,7 @@
 #define POCKET_AI_MEMORY_ALIGN_ALLOC_UTIL_HPP_
 
 #include <stdlib.h>
-#include "util/logger.hpp"
+#include "pocket-ai/util/logger.hpp"
 
 namespace pai {
 namespace memory {

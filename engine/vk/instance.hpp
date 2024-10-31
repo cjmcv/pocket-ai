@@ -46,7 +46,6 @@ public:
             layers_ = FilterOutEnabledLayers({ "VK_LAYER_KHRONOS_validation" });
             extensions_ = FilterOutEnabledExtensions({ "VK_EXT_debug_report" });
         }
-
         VkApplicationInfo app_info = {};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         app_info.pNext = nullptr;

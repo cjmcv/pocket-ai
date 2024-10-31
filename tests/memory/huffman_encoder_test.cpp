@@ -2,7 +2,7 @@
 * \brief . 
 */
 
-#include "memory/huffman_encoder.hpp"
+#include "pocket-ai/memory/huffman_encoder.hpp"
 
 #include <cstdlib>
 #include <ctime>

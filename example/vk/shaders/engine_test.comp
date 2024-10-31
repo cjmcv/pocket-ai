@@ -1,10 +1,13 @@
 #version 450 core
 
-// 用于启用 debugPrintfEXT 打印信息. 需要在执行程序处添加文件vk_layer_settings.txt
-// 文件内容如：
+// In order to enable the feature of printing information inside the kernel (debugPrintfEXT), 
+// it is necessary to add the file vk_layers_settings.txt at the program execution site (vulkan/env).
+// 
+// vk_layers_settings.txt look like this:
 // khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
 // khronos_validation.printf_to_stdout = true
 // khronos_validation.printf_buffer_size = 20480
+//
 #extension GL_EXT_debug_printf : enable
 
 layout(binding=0) buffer InputA { vec4 x[]; } inputA;
@@ -22,29 +25,30 @@ layout(local_size_x = 16, local_size_y = 1, local_size_z = 1) in;
 // On cpp side there is associated SpecializationInfo entry in PipelineShaderStageCreateInfo
 layout(local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in; 
 
-// 特化常量，在 vkCreateComputePipelines 中通过 pSpecializationInfo 指定。
-// constant_id 对应偏移量，以0为首地址往后按数据类型内存占用量进行偏移
+// SpecConstant, to be specified in vkCreateComputeExpressions using pSpecializationInfo.
+// constant_id corresponds to the offset, 
+// starting from 0 and then offset based on the memory usage of the data type.
+// Here the above local_size_x_id  uses 0 to 2.
 layout(constant_id = 3) const uint M = 1;
 layout(constant_id = 4) const uint N = 1;
 layout(constant_id = 5) const float K = 1;
 
-// 创建pipeline layout时，需要用VkPushConstantRange指定push constant的数据大小范围。
-// 在kernel运行时，用vkCmdPushConstants来推送实际的数值
+// When creating a pipeline layout, it is necessary to use VkPushConstantRange to specify the data size range for the PushConstant.
+// During kernel runtime, use vkCmdPushConstants to push the actual values
 layout(push_constant) uniform Parameters {
    uint Width;
    uint Height;
 } params;
 
-/*
-    const uvec3 gl_WorkGroupSize: contains the size of the workgroup operated on by a compute shader
-    in uvec3 gl_NumWorkGroups: contains the number of workgroups that have been dispatched to a compute shader
+// const uvec3 gl_WorkGroupSize: contains the size of the workgroup operated on by a compute shader
+// in uvec3 gl_NumWorkGroups: contains the number of workgroups that have been dispatched to a compute shader
 
-    in uvec3 gl_WorkGroupID: contains the index of the workgroup currently being operated on by a compute shader
-    in uvec3 gl_LocalInvocationID: (线程局部下标) contains the index of work item currently being operated on by a compute shader
+// in uvec3 gl_WorkGroupID: contains the index of the workgroup currently being operated on by a compute shader
+// in uvec3 gl_LocalInvocationID: contains the index of work item currently being operated on by a compute shader
 
-    in uvec3 gl_GlobalInvocationID: (线程全局下标) contains the global index of work item currently being operated on by a compute shader
-    in uint gl_LocalInvocationIndex: (线程局部一维线性下标，上面的是三维) contains the local linear index of work item currently being operated on by a compute shader
-*/
+// in uvec3 gl_GlobalInvocationID: contains the global index of work item currently being operated on by a compute shader
+// in uint gl_LocalInvocationIndex: contains the local linear index of work item currently being operated on by a compute shader
+//                                 (Local one-dimensional linear index, with three-dimensional above) 
 
 void main()
 {
@@ -56,7 +60,7 @@ void main()
         outputO.x[0] = vec4(M, N, K, params.Width);
         outputO.x[1] = vec4(gl_WorkGroupSize.x, gSize.y, gSize.z, params.Height);
 
-        if (laneId.x == 0 && laneId.y == 0)
-            debugPrintfEXT("hello engine_test(%d, %d)\n", laneId.x, laneId.y);
+        // if (laneId.x == 12 && laneId.y == 0)
+        //     debugPrintfEXT("hello engine_test(%d, %d)\n", laneId.x, laneId.y);
     }
 }

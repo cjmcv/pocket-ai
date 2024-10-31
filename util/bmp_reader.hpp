@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <iostream>
 
-#include "util/logger.hpp"
+#include "logger.hpp"
 
 namespace pai {
 namespace util {

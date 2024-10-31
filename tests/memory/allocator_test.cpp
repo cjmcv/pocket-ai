@@ -2,7 +2,7 @@
 * \brief . 
 */
 
-#include "memory/allocator.hpp"
+#include "pocket-ai/memory/allocator.hpp"
 
 #include "gtest/gtest.h"
 

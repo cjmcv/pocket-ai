@@ -2,7 +2,7 @@
 * \brief . 
 */
 
-#include "memory/blocking_queue.hpp"
+#include "pocket-ai/memory/blocking_queue.hpp"
 
 #include "gtest/gtest.h"
 

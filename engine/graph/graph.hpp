@@ -7,7 +7,7 @@
 #include <thread>
 
 #include "scheduler.hpp"
-#include "../../util/logger.hpp"
+#include "pocket-ai/util/logger.hpp"
 
 namespace pai {
 namespace engine {

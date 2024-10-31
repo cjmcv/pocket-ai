@@ -98,7 +98,7 @@ scrip -> obfuscator (.a / .hpp)
 如:
 
 ```bash
-#include "pai/engine/graph/graph.hpp"
-#include "pai/engine/cl/engine.hpp"
-#include "pai/engine/vk/engine.hpp"
+#include "pocket-ai/engine/graph/graph.hpp"
+#include "pocket-ai/engine/cl/engine.hpp"
+#include "pocket-ai/engine/vk/engine.hpp"
 ```

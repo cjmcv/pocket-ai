@@ -2,7 +2,7 @@
 * \brief . 
 */
 
-#include "memory/align_alloc.hpp"
+#include "pocket-ai/memory/align_alloc.hpp"
 
 #include "gtest/gtest.h"
 

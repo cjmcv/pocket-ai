@@ -10,7 +10,7 @@
 #include <condition_variable>
 #include <string.h>
 
-#include "util/logger.hpp"
+#include "pocket-ai/util/logger.hpp"
 
 namespace pai {
 namespace memory {

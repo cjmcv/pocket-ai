@@ -2,7 +2,7 @@
 * \brief . 
 */
 
-#include "memory/frame_shift_cache.hpp"
+#include "pocket-ai/memory/frame_shift_cache.hpp"
 
 #include "gtest/gtest.h"
 

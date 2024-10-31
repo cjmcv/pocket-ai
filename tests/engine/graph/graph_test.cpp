@@ -2,10 +2,10 @@
 * \brief . 
 */
 
-#include "engine/graph/graph.hpp"
-#include "prof/timer.hpp"
+#include "pocket-ai/engine/graph/graph.hpp"
+#include "pocket-ai/prof/timer.hpp"
 
-#include "util/basic_marco.hpp"
+#include "pocket-ai/util/basic_marco.hpp"
 #include "gtest/gtest.h"
 
 namespace {

@@ -28,7 +28,7 @@
 #include <mutex>
 
 #include "align_alloc.hpp"
-#include "util/logger.hpp"
+#include "pocket-ai/util/logger.hpp"
 
 namespace pai {
 namespace memory {

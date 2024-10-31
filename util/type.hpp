@@ -7,7 +7,6 @@
 
 #include <iostream>
 #include "logger.hpp"
-// #include "../common.hpp"
 
 namespace pai {
 namespace util {

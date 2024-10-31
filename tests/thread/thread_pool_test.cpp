@@ -1,4 +1,4 @@
-#include "thread/thread_pool.hpp"
+#include "pocket-ai/thread/thread_pool.hpp"
 
 #include "gtest/gtest.h"
 

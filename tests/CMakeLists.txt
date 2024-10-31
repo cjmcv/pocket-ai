@@ -38,7 +38,7 @@ add_subdirectory(${GTEST_ROOT})
 
 # Include
 SET(INCLUDE_LIST 
-    ${PROJECT_SOURCE_DIR}/../
+    ${PROJECT_SOURCE_DIR}/../../
     ${GTEST_INCLUDE_DIR}
 )
 message(STATUS "tests include: ${INCLUDE_LIST}")

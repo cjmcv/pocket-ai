@@ -1,5 +1,17 @@
 /*!
 * \brief Engine is the outermost class of engine/vk
+*    Overview:
+*    Engine -> Init -> Instance => VkPhysicalDevice
+*                   -> Device(VkPhysicalDevice) => VkCommandPool
+*                   -> ShaderModule(VkDevice) => VkShaderModule / VkDescriptorSetLayout
+*                   -> Pipeline(VkDevice,VkShaderModule,VkDescriptorSetLayout) / 
+*                      DescriptorPool(VkDevice,VkDescriptorSetLayout) / 
+*                      CommandBuffer(VkDevice,VkCommandPool)
+*
+*           -> Run  -> DescriptorPool.WriteBuffer
+*                   -> CommandBuffer.BindPipelineAndDescriptorSets and Dispatch
+*                   -> Device.QueueSubmitAndWait
+* 
 */
 
 #ifndef POCKET_AI_ENGINE_VULKAN_ENGINE_HPP_
