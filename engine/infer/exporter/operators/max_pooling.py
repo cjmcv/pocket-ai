@@ -77,7 +77,7 @@ PoolParams pooling_params_<op_id> {
             
         # Actication
         assert(output_tensor.Type() == tflite.TensorType.FLOAT32)
-        op_params = tfcom.export_fused_activation_float(option, op_params)
+        op_params = tfcom.export_activation_range_float(option, op_params)
         
         return op_params
     
@@ -109,13 +109,13 @@ PoolQuantParams pooling_q_params_<op_id> = {
             
         # Actication
         assert(output_tensor.Type() == tflite.TensorType.INT8)
-        op_params = tfcom.export_fused_activation_quant(output_tensor.Type(), op_params)
+        op_params = tfcom.export_activation_range_quant(output_tensor.Type(), op_params)
         
         return op_params
     
-    def export(self, fp, model, io_tensors):
+    def export(self, fp, model, dynamic_buffer):
         if self.is_quant():
-            op_params = self.export_quant(fp, model, io_tensors)
+            op_params = self.export_quant(fp, model, dynamic_buffer.io_tensors)
         else:
-            op_params = self.export_float(fp, model, io_tensors)
+            op_params = self.export_float(fp, model, dynamic_buffer.io_tensors)
         fp["model"].write(op_params+"\n")

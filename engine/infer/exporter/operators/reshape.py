@@ -17,7 +17,7 @@ class Reshape(Operator):
         self.attr["input_index"] = [0]
         self.attr["output_index"] = [0]
 
-    def export(self, fp, model, io_tensors):
+    def export(self, fp, model, dynamic_buffer):
         op_params = \
 '''
 ReshapeParams reshape_params_<op_id> = {
@@ -31,6 +31,6 @@ ReshapeParams reshape_params_<op_id> = {
         op_params = op_params.replace('<op_id>', str(self.id))
         
          # io tensors
-        op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, io_tensors, True, fp)
+        op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, dynamic_buffer.io_tensors, True, fp)
 
         fp["model"].write(op_params+"\n")

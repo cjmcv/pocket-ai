@@ -21,12 +21,25 @@ class Softmax(Operator):
     def export_float(self, fp, model, io_tensors):
         op_params = \
 '''
-SoftmaxQuantParams softmax_params_<op_id> = {
+SoftmaxParams softmax_params_<op_id> = {
     .op_id = <op_id>,
+    .beta = <beta>,
     .input_tensor = <input_tensor_ptr>,
     .output_tensor = <output_tensor_ptr>,
 };
 '''
+        name_prefix = 'softmax'
+        self.oprun_str = "Softmax(softmax_params_{0});".format(str(self.id))
+        op_params = op_params.replace('<op_id>', str(self.id))
+        
+        # io tensors
+        op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, io_tensors, True, fp)
+        
+        op_opt = self.op.BuiltinOptions()
+        option = tflite.SoftmaxOptions()
+        option.Init(op_opt.Bytes, op_opt.Pos)
+        
+        op_params = op_params.replace('<beta>', str(option.Beta()))
         return op_params
 
     def export_quant(self, fp, model, io_tensors):
@@ -74,9 +87,9 @@ SoftmaxQuantParams softmax_params_<op_id> = {
 
         return op_params
         
-    def export(self, fp, model, io_tensors):
+    def export(self, fp, model, dynamic_buffer):
         if self.is_quant():
-            op_params = self.export_quant(fp, model, io_tensors)
+            op_params = self.export_quant(fp, model, dynamic_buffer.io_tensors)
         else:
-            op_params = self.export_float(fp, model, io_tensors)
+            op_params = self.export_float(fp, model, dynamic_buffer.io_tensors)
         fp["model"].write(op_params+"\n")

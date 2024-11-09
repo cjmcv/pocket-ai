@@ -55,7 +55,7 @@ MulParams mul_params_<op_id> {
         option.Init(op_opt.Bytes, op_opt.Pos)
 
         assert(output_tensors[0].Type() == tflite.TensorType.FLOAT32)
-        op_params = tfcom.export_fused_activation_float(option, op_params)
+        op_params = tfcom.export_activation_range_float(option, op_params)
         return op_params
     
     def export_quant(self, fp, model, io_tensors):
@@ -110,12 +110,12 @@ MulQuantParams mul_q_params_<op_id> {
         op_params = op_params.replace('<output_multiplier>', str(multiplier))
         op_params = op_params.replace('<output_shift>', str(shift))
     
-        op_params = tfcom.export_fused_activation_quant(output_tensors[0].Type(), op_params)
+        op_params = tfcom.export_activation_range_quant(output_tensors[0].Type(), op_params)
         return op_params
     
-    def export(self, fp, model, io_tensors):
+    def export(self, fp, model, dynamic_buffer):
         if self.is_quant():
-            op_params = self.export_quant(fp, model, io_tensors)
+            op_params = self.export_quant(fp, model, dynamic_buffer.io_tensors)
         else:
-            op_params = self.export_float(fp, model, io_tensors)
+            op_params = self.export_float(fp, model, dynamic_buffer.io_tensors)
         fp["model"].write(op_params+"\n")

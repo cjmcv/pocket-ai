@@ -16,6 +16,16 @@ BUILTIN_TENSORTYPEINFO = {
     tflite.TensorType.FLOAT32: [4, 'FLOAT32'],
 }
 
+    # g_scratch_buffer_name = 'g_scratch_buffer'
+    # g_scratch_buffer_size = 0  
+class DynamicBuffer:
+    def __init__(self):
+        self.io_tensors = {}
+        self.scratch_buffer_name = 'g_scratch_buffer'
+        self.scratch_buffer_size = 0
+        self.scratch_buffer_allocate_info = ''
+        
+        
 def get_tensor_element_num(tensor):
     return reduce(mul, tensor.ShapeAsNumpy(), 1)
 
@@ -101,7 +111,7 @@ def export_padding_type(option, op_params):
 # algo
 
 # tensorflow/lite/kernels/kernel_util.h#L133  CalculateActivationRange
-def export_fused_activation_float(option, op_params):
+def export_activation_range_float(option, op_params):
     # .float_activation_min = <float_activation_min>,
     # .float_activation_max = <float_activation_max>
     faf = option.FusedActivationFunction()
@@ -121,7 +131,7 @@ def export_fused_activation_float(option, op_params):
     
 # tensorflow/lite/kernels/kernel_util.cc#L244    CalculateActivationRangeQuantized
 # 量化时，如为relu，但其数值范围是int8，则仍为-127，128
-def export_fused_activation_quant(output_type, op_params):
+def export_activation_range_quant(output_type, op_params):
     # .quantized_activation_min = <quantized_activation_min>,
     # .quantized_activation_max = <quantized_activation_max>,
     if output_type is tflite.TensorType.UINT8:
@@ -134,7 +144,7 @@ def export_fused_activation_quant(output_type, op_params):
         op_params = op_params.replace('<quantized_activation_min>', str(-32768))  # std::numeric_limits<int16_t>::min()
         op_params = op_params.replace('<quantized_activation_max>', str(32767))   # std::numeric_limits<int16_t>::max()
     else:
-        print("Error: export_fused_activation_quant -> output type: %d is not supported.\n", output_type)
+        print("Error: export_activation_range_quant -> output type: %d is not supported.\n", output_type)
     return op_params
     
 # The scaling factor from input to output (aka the 'real multiplier') can

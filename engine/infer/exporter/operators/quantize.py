@@ -18,7 +18,7 @@ class Quantize(Operator):
         self.attr["input_index"] = [0]
         self.attr["output_index"] = [0]
 
-    def export(self, fp, model, io_tensors):
+    def export(self, fp, model, dynamic_buffer):
         op_params = \
 '''
 AffineQuantizationParams quantize_params_<op_id> = {
@@ -36,7 +36,7 @@ AffineQuantizationParams quantize_params_<op_id> = {
         op_params = op_params.replace('<op_id>', str(self.id))
         
          # io tensors
-        op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
+        op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, dynamic_buffer.io_tensors, False, fp)
         
         assert(input_tensor.Type() == tflite.TensorType.FLOAT32)
         assert(output_tensor.Type() == tflite.TensorType.INT8)

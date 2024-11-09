@@ -5,8 +5,6 @@ import tflite
 import exporter.common as tfcom
 
 class Operator:
-    g_scratch_bufffer_name = 'g_scratch_buffer'
-    g_scratch_bufffer_size = 0  
     def __init__(self, graph, op, id):
         self.attr = {}
         self.graph = graph

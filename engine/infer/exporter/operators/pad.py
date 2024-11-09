@@ -19,7 +19,7 @@ class Pad(Operator):
         self.attr["constant_values_index"] = [2]
         self.attr["output_index"] = [0]
 
-    def export(self, fp, model, io_tensors):
+    def export(self, fp, model, dynamic_buffer):
         op_params = \
 '''
 PadParams pad_params_<op_id> = {
@@ -40,7 +40,7 @@ PadParams pad_params_<op_id> = {
         op_params = op_params.replace('<op_id>', str(self.id))
         
          # io tensors
-        op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, io_tensors, False, fp)
+        op_params, input_tensor, output_tensor = self.export_io_tensors(name_prefix, op_params, dynamic_buffer.io_tensors, False, fp)
         
         if input_tensor.Type() is tflite.TensorType.FLOAT32:
             self.oprun_str = "Pad<float>(pad_params_{0});".format(str(self.id))

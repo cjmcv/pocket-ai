@@ -2,19 +2,32 @@
 
 A tiny inference engine for microprocessors, with a library size of only 10K+. 
 
+* The implementation of some operators is rewritten from [tflm](https://github.com/tensorflow/tflite-micro)!
+
 # Setup
 
 pip install tensorflow
-pip install tflite  # https://pypi.org/project/tflite/  https://zhenhuaw.me/tflite/docs/ https://github.com/zhenhuaw-me/tflite/ 
+pip install tflite  # https://pypi.org/project/tflite/
 
 pip list:
 numpy                        1.24.3
 tensorflow                   2.13.1
 tflite                       2.10.0
 
-# depend
+# Related Tools
 
-MiniMalloc
+1. [tflm](https://github.com/tensorflow/tflite-micro)
+   When adding a new operator, you can refer to the implementation of this operator in tflm.
+
+2. [tflite_parser](https://github.com/zhenhuaw-me/tflite/), [doc](https://zhenhuaw.me/tflite/docs/)
+   Can be used to parse the parameters in tflite model.
+
+3. [TinyNeuralNetwork](https://github.com/alibaba/TinyNeuralNetwork)
+   Can be used for neural architecture search, pruning, quantization and model conversion.
+
+# Suggestions for further optimization using third-party libraries
+
+1. [minimalloc](https://github.com/google/minimalloc)
 
 输入:
 lower和upper是占用时间，左闭右开，size是占用内存

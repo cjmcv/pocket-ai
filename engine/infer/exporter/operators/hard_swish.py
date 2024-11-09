@@ -78,9 +78,9 @@ HardSwishQuantParams hard_swish_q_params_<op_id> {
         
         return op_params
         
-    def export(self, fp, model, io_tensors):
+    def export(self, fp, model, dynamic_buffer):
         if self.is_quant():
-            op_params = self.export_quant(fp, model, io_tensors)
+            op_params = self.export_quant(fp, model, dynamic_buffer.io_tensors)
         else:
-            op_params = self.export_float(fp, model, io_tensors)
+            op_params = self.export_float(fp, model, dynamic_buffer.io_tensors)
         fp["model"].write(op_params+"\n")

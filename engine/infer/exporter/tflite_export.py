@@ -11,6 +11,7 @@ print(sys.path)
 
 # https://tensorflow.google.cn/lite/guide/op_select_allowlist?hl=zh-cn
 import exporter.common as tfcom
+from exporter.operators.fusion.fusion_manager import FusionManager
 from exporter.operators.operator import Operator
 from exporter.operators.add import Add
 from exporter.operators.conv2d import Conv2D
@@ -19,6 +20,7 @@ from exporter.operators.dequantize import Dequantize
 from exporter.operators.div import Div
 from exporter.operators.fully_connected import FullyConnected
 from exporter.operators.hard_swish import HardSwish
+from exporter.operators.lstm import Lstm
 from exporter.operators.max_pooling import MaxPooling
 from exporter.operators.mean import Mean
 from exporter.operators.mul import Mul
@@ -55,6 +57,7 @@ BUILDINCODE2OP = {
     tflite.BuiltinOperator.DIV: Div,
     tflite.BuiltinOperator.FULLY_CONNECTED: FullyConnected,
     tflite.BuiltinOperator.HARD_SWISH: HardSwish,
+    tflite.BuiltinOperator.UNIDIRECTIONAL_SEQUENCE_LSTM: Lstm,
     tflite.BuiltinOperator.MAX_POOL_2D: MaxPooling,
     tflite.BuiltinOperator.MEAN: Mean,
     tflite.BuiltinOperator.MUL: Mul,
@@ -93,6 +96,7 @@ class TfliteExporter:
     def code2op_exporter(self, graph, code, op, op_id):
         return BUILDINCODE2OP[code](graph, op, op_id)
         
+    # Get io_tensors and op_exporters.
     def load_model(self, model_path):
         with open(model_path, 'rb') as f:
             buf = f.read()
@@ -101,19 +105,20 @@ class TfliteExporter:
             assert(self.model.SubgraphsLength() == 1)
             subgraph = self.model.Subgraphs(0)
             
+            self.dynamic_buffer = tfcom.DynamicBuffer()
             # [tensor, tensor_name, tensor_size, 0/1 is allocate memory, op_id0, op_id1, op_id2...]
-            self.io_tensors = {}
+            self.dynamic_buffer.io_tensors = {}
             for gin_id in range(subgraph.InputsLength()):
                 tensor_id = subgraph.Inputs(gin_id)
                 tensor = subgraph.Tensors(tensor_id)
                 in_var_name = "graph_input_" + str(gin_id)
-                self.io_tensors[tensor_id] = [tensor, in_var_name, tfcom.get_tensor_size(tensor)]
+                self.dynamic_buffer.io_tensors[tensor_id] = [tensor, in_var_name, tfcom.get_tensor_size(tensor)]
                 
             for gout_id in range(subgraph.OutputsLength()):
                 tensor_id = subgraph.Outputs(gout_id)
                 tensor = subgraph.Tensors(tensor_id)
                 in_var_name = "graph_output_" + str(gout_id)
-                self.io_tensors[tensor_id] = [tensor, in_var_name, tfcom.get_tensor_size(tensor)]
+                self.dynamic_buffer.io_tensors[tensor_id] = [tensor, in_var_name, tfcom.get_tensor_size(tensor)]
                 
             self.op_exporters = []    
             for i in range(subgraph.OperatorsLength()):
@@ -128,8 +133,9 @@ class TfliteExporter:
                 
     def print_tensor_info(self, graph, tensor_id):
         tensor = graph.Tensors(tensor_id)
-        print("    ", tensor_id, tensor.Name().decode('utf-8'), " -> ", tfcom.get_tensor_type_name(tensor.Type()), tensor.ShapeAsNumpy())
-        
+        if (tensor_id != -1):
+            print("    ", tensor_id, tensor.Name().decode('utf-8'), " -> ", tfcom.get_tensor_type_name(tensor.Type()), tensor.ShapeAsNumpy())
+            
     def print_model_info(self):
         for graph_id in range(self.model.SubgraphsLength()):
             subgraph = self.model.Subgraphs(graph_id)
@@ -189,7 +195,7 @@ class TfliteExporter:
         fp["model"].write('\nnamespace pai {\n')
         fp["model"].write('namespace infer {\n')
         fp["model"].write('namespace {0} {{\n\n'.format(model_tag))
-        fp["model"].write('void *{0};\n'.format(Operator.g_scratch_bufffer_name))
+        fp["model"].write('char *{0};\n'.format(self.dynamic_buffer.scratch_buffer_name))
         
         fp["params"] = open(model_params_file, "w")
         fp["params"].write('#ifndef POCKET_AI_ENGINE_INFERENCE_{0}_PARAMS_HPP_\n'.format(model_tag.upper()))
@@ -200,11 +206,11 @@ class TfliteExporter:
         fp["params"].write('namespace {0} {{\n\n'.format(model_tag))
         
         # Graph input/output tensors
-        # The inputs and outputs of the graph are taken out in the loadmodel function to self.io_tensors
+        # The inputs and outputs of the graph are taken out in the loadmodel function to self.dynamic_buffer.io_tensors
         fp["model"].write('// graph io tensor\n')
-        for id in self.io_tensors:
-            tensor = self.io_tensors[id][0]
-            tensor_name =  self.io_tensors[id][1]   
+        for id in self.dynamic_buffer.io_tensors:
+            tensor = self.dynamic_buffer.io_tensors[id][0]
+            tensor_name =  self.dynamic_buffer.io_tensors[id][1]   
             tensor_str = tfcom.format_tensor(tensor, id, 'NULL')
             tensor_str = 'Tensor ' + tensor_name + ' = ' + tensor_str + ';\n'
             fp["model"].write(tensor_str)
@@ -213,15 +219,19 @@ class TfliteExporter:
             fp["model"].write(tensor_str)
         fp["model"].write('\n')
         
+        # Detect 
+        fm = FusionManager()
+        fm.detect_fusible_ops(self.model, self.op_exporters)
+        
         # Export params of each op
         for op in self.op_exporters:
-            op.export(fp, self.model, self.io_tensors)
+            op.export(fp, self.model, self.dynamic_buffer)
             if op.op_id() == ending_debug_op:
                 break
         
-        for id in self.io_tensors:
+        for id in self.dynamic_buffer.io_tensors:
             print(id, end=": ")
-            for op_id in self.io_tensors[id]:
+            for op_id in self.dynamic_buffer.io_tensors[id]:
                 print(op_id, end=", ")
             print()
             
@@ -229,13 +239,14 @@ class TfliteExporter:
         is_malloc = True # True / False
         fp["model"].write('void Init() {\n')
         if is_malloc is True:
-            fp["model"].write('    {0} = (void *)malloc({1});\n'.format(Operator.g_scratch_bufffer_name, str(Operator.g_scratch_bufffer_size)))
+            fp["model"].write('    {0} = (char *)malloc({1});\n'.format(self.dynamic_buffer.scratch_buffer_name, str(self.dynamic_buffer.scratch_buffer_size)))
         else:
-            fp["model"].write('    {0} = {Please manually set the memory address};\n'.format(Operator.g_scratch_bufffer_name))
-            
-        for id in self.io_tensors:
-            tensor_name = self.io_tensors[id][1]
-            tensor_attr = self.io_tensors[id][2]
+            fp["model"].write('    {0} = {Please manually set the memory address};\n'.format(self.dynamic_buffer.scratch_buffer_name))
+        
+        fp["model"].write(self.dynamic_buffer.scratch_buffer_allocate_info)
+        for id in self.dynamic_buffer.io_tensors:
+            tensor_name = self.dynamic_buffer.io_tensors[id][1]
+            tensor_attr = self.dynamic_buffer.io_tensors[id][2]
             
             # If type(tensor_attr) is str, tensor_attr will be the src tensor of inplace op
             if type(tensor_attr) is str:
@@ -260,9 +271,9 @@ class TfliteExporter:
 
         # Set DeInit
         fp["model"].write('void Deinit() {\n')
-        for id in self.io_tensors:
-            tensor_name = self.io_tensors[id][1]
-            tensor_attr = self.io_tensors[id][2]
+        for id in self.dynamic_buffer.io_tensors:
+            tensor_name = self.dynamic_buffer.io_tensors[id][1]
+            tensor_attr = self.dynamic_buffer.io_tensors[id][2]
             if type(tensor_attr) is str:
                 if "constant" in tensor_attr:
                     fp["model"].write("    // {0}.data = {1}; // constant \n".format(tensor_name, tensor_attr))
@@ -307,6 +318,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     exporter = TfliteExporter()
-    exporter.load_model(args.model_path)
-    exporter.print_model_info()
-    exporter.export_model(args.output_path, args.model_tag)
+    exporter.load_model(args.model_path) # Get io_tensors and op_exporters.
+    exporter.print_model_info()          # Show model's information
+    exporter.export_model(args.output_path, args.model_tag) # Loop and execute each op_exporter

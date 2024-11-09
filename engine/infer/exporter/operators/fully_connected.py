@@ -55,7 +55,7 @@ FullyConnectedParams fully_connected_params_<op_id> = {
         option.Init(op_opt.Bytes, op_opt.Pos)
         
         assert(output_tensor.Type() == tflite.TensorType.FLOAT32)
-        op_params = tfcom.export_fused_activation_float(option, op_params)
+        op_params = tfcom.export_activation_range_float(option, op_params)
         return op_params
     
     def export_quant(self, fp, model, io_tensors):
@@ -93,13 +93,13 @@ FullyConnectedQuantParams fully_connected_q_params_<op_id> = {
         op_params = op_params.replace('<output_offset>', str(output_zero_point))
         
         op_params = tfcom.export_multiplier_per_tensor(input_tensor, output_tensor, weights_tensor, op_params)
-        op_params = tfcom.export_fused_activation_quant(output_tensor.Type(), op_params)
+        op_params = tfcom.export_activation_range_quant(output_tensor.Type(), op_params)
 
         return op_params
         
-    def export(self, fp, model, io_tensors):
+    def export(self, fp, model, dynamic_buffer):
         if self.is_quant():
-            op_params = self.export_quant(fp, model, io_tensors)
+            op_params = self.export_quant(fp, model, dynamic_buffer.io_tensors)
         else:
-            op_params = self.export_float(fp, model, io_tensors)
+            op_params = self.export_float(fp, model, dynamic_buffer.io_tensors)
         fp["model"].write(op_params+"\n")

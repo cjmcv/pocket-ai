@@ -2,9 +2,9 @@
 
 exporter_path=../../engine/infer/exporter/
 python3 ${exporter_path}/tflite_export.py \
-    --model_path "./gen/tinynn/mobilenetv3.tflite" \
+    --model_path "./models/trained_lstm.tflite" \
     --output_path "./" \
-    --model_tag "mobilenetv3_model"
+    --model_tag "trained_lstm_model"
 
 echo 按任意键继续
 read -n 1
