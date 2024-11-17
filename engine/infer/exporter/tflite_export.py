@@ -201,6 +201,7 @@ class TfliteExporter:
         fp["params"].write('#ifndef POCKET_AI_ENGINE_INFERENCE_{0}_PARAMS_HPP_\n'.format(model_tag.upper()))
         fp["params"].write('#define POCKET_AI_ENGINE_INFERENCE_{0}_PARAMS_HPP_\n\n'.format(model_tag.upper()))
         fp["params"].write('#include <stdint.h>\n\n')
+        fp["params"].write('#include <math.h>\n\n')
         fp["params"].write('namespace pai {\n')
         fp["params"].write('namespace infer {\n\n')
         fp["params"].write('namespace {0} {{\n\n'.format(model_tag))

@@ -22,12 +22,12 @@ INCLUDE  := -I. \
 SRC      :=                      \
 	$(wildcard $(CURDIR)/infer_main.cpp)
 
-# cpy
-include $(POCKET_AI_DIR)engine/infer/tools/tflite_cpy/make.mk
-INCLUDE += $(CPY_INCLUDE)
-LDFLAGS += $(CPY_LDFLAGS)
-MARCOFLAGS += $(CPY_MARCOFLAGS)
-#
+# # cpy
+# include $(POCKET_AI_DIR)engine/infer/tools/tflite_cpy/make.mk
+# INCLUDE += $(CPY_INCLUDE)
+# LDFLAGS += $(CPY_LDFLAGS)
+# MARCOFLAGS += $(CPY_MARCOFLAGS)
+# #
 
 OBJECTS  := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES \
