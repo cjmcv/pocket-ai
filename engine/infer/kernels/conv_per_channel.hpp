@@ -6,6 +6,7 @@
 
 #include "engine/infer/common.hpp"
 #include "engine/infer/types.hpp"
+#include "engine/infer/kernels/common.hpp"
 
 namespace pai {
 namespace infer {
@@ -33,18 +34,12 @@ typedef struct {
     //
     Tensor *input_tensor;
     Tensor *output_tensor;
+    void *temp_buffer;
 } ConvPerChannelParams;
 
 // ref: tflite_micro\tensorflow\lite\kernels\internal\reference\integer_ops: ConvPerChannel
 // Fixed-point per-channel-quantization convolution reference kernel.
 inline void ConvPerChannel(const ConvPerChannelParams& params) {
-
-    // static int fcnt = 0;
-    // fcnt++;
-
-    // if (fcnt == 2)
-    //     std::abort();
-
     // Get parameters.
     const int32_t input_offset = params.input_offset;  // r = s(q - Z)
     const int stride_width = params.stride_width;
@@ -109,6 +104,38 @@ inline void ConvPerChannel(const ConvPerChannelParams& params) {
     PAI_DCHECK_NE(filters_per_group, 0);
     const int output_height = output_shape.dims[1];
     const int output_width = output_shape.dims[2];
+
+#if 1
+    // !!!The output result is not completely consistent with the original version!!!
+    // For groups == 0
+    // output_height * output_width * input_channel * kernel_height * kernel_width
+    // printf("pad: %d, %d.\n", pad_height, pad_width);
+    int M = output_height * output_width;
+    int N = output_depth;
+    int K = input_depth * filter_height * filter_width;
+    int8_t *scratch_buffer_2col = (int8_t *)params.temp_buffer; // M*K*sizeof(int8_t)
+    int32_t *scratch_buffer_gemm = (int32_t *)((int8_t*)params.temp_buffer + M*K* sizeof(int8_t));
+    for (int batch = 0; batch < batches; ++batch) {
+        const int8_t* in = input_data + batch * input_height * input_width * input_depth;
+        int8_t* out = output_data + batch * output_height * output_width * output_depth;
+        Im2Col(scratch_buffer_2col, in, input_depth, output_height, output_width, input_height, input_width, filter_height, filter_width,
+               pad_height, /* pad_top*/ pad_height, /* pad_bottom*/ pad_width, /* pad_left */ pad_width, /*pad_right*/
+               stride_height, stride_width, dilation_height_factor, dilation_width_factor);
+
+        GemmTransBQuant(M, N, K, scratch_buffer_2col, filter_data, scratch_buffer_gemm, bias_data, input_offset);
+
+        for (int i = 0; i < output_height * output_width; i++) {
+            for (int oc = 0; oc < output_depth; ++oc) {
+                int32_t idx = i*output_depth+oc;
+                int32_t acc_scaled = MultiplyByQuantizedMultiplier(scratch_buffer_gemm[idx], params.output_multiplier[oc], params.output_shift[oc]); // Equal to out[i] * bias_scale[oc] / output_scale[oc];
+                acc_scaled += output_offset;
+                acc_scaled = std::max(acc_scaled, output_activation_min);
+                acc_scaled = std::min(acc_scaled, output_activation_max);
+                out[idx] = static_cast<int8_t>(acc_scaled);
+            }
+        }
+    }
+#else
     for (int batch = 0; batch < batches; ++batch) {
         for (int out_y = 0; out_y < output_height; ++out_y) {
             const int in_y_origin = (out_y * stride_height) - pad_height;
@@ -116,6 +143,7 @@ inline void ConvPerChannel(const ConvPerChannelParams& params) {
                 const int in_x_origin = (out_x * stride_width) - pad_width;
                 for (int out_channel = 0; out_channel < output_depth; ++out_channel) {
                     auto group = out_channel / filters_per_group;
+                    // printf("%d, %d.\n", out_channel, filters_per_group);
                     int32_t acc = 0;
                     for (int filter_y = 0; filter_y < filter_height; ++filter_y) {
                         const int in_y = in_y_origin + dilation_height_factor * filter_y;
@@ -172,6 +200,7 @@ inline void ConvPerChannel(const ConvPerChannelParams& params) {
             }
         }
     }
+#endif
 }
 
 } // namespace infer

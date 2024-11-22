@@ -16,16 +16,33 @@ BUILTIN_TENSORTYPEINFO = {
     tflite.TensorType.FLOAT32: [4, 'FLOAT32'],
 }
 
-    # g_scratch_buffer_name = 'g_scratch_buffer'
-    # g_scratch_buffer_size = 0  
 class DynamicBuffer:
     def __init__(self):
+        self.lifetime_cnt = 0
+        self.lifetime = []
         self.io_tensors = {}
         self.scratch_buffer_name = 'g_scratch_buffer'
         self.scratch_buffer_size = 0
         self.scratch_buffer_allocate_info = ''
-        
-        
+
+    def scan_tensor_lifetime(self, tensor_id, size):
+        # 如果已添加，则更新结束时间
+        for tensor in self.lifetime:
+            if tensor["id"] == tensor_id:
+                tensor["end"] = self.lifetime_cnt + 1
+                return
+        # 至此，即从未添加，需要新建并设置起始时间
+        lifetime = {
+            'id':    tensor_id,
+            'start': self.lifetime_cnt,
+            'end':   self.lifetime_cnt + 1,
+            'size':  size
+        }
+        self.lifetime.append(lifetime)
+
+    def step_lifetime_cnt(self):
+        self.lifetime_cnt += 1
+
 def get_tensor_element_num(tensor):
     return reduce(mul, tensor.ShapeAsNumpy(), 1)
 
@@ -146,7 +163,14 @@ def export_activation_range_quant(output_type, op_params):
     else:
         print("Error: export_activation_range_quant -> output type: %d is not supported.\n", output_type)
     return op_params
-    
+
+def export_scratch_buffer(dynamic_buffer, str_prefix, scratch_buffer_size, op_params):
+    if scratch_buffer_size > dynamic_buffer.scratch_buffer_size:
+        dynamic_buffer.scratch_buffer_size = int(scratch_buffer_size) 
+    dynamic_buffer.scratch_buffer_allocate_info += "    {0}.temp_buffer = (void *)({1}); \n".format(str_prefix, dynamic_buffer.scratch_buffer_name)
+    op_params = op_params.replace('<scratch_buffer_size>', str(scratch_buffer_size))
+    return op_params
+
 # The scaling factor from input to output (aka the 'real multiplier') can
 # be represented as a fixed point multiplier plus a left shift.
 # tensorflow\lite\kernels\internal\quantization_util.cc#L53  QuantizeMultiplier

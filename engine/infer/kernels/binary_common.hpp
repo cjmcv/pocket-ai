@@ -30,7 +30,7 @@ typedef struct {
     int32_t num_axis;
     int32_t axis[kMaxNumberOfAxis];
     
-    void **temp_buffer;
+    void *temp_buffer;
     //
     Tensor *input_tensor;
     Tensor *output_tensor;
@@ -47,7 +47,7 @@ typedef struct {
     int32_t num_axis;
     int32_t axis[kMaxNumberOfAxis];
     
-    void **temp_buffer;
+    void *temp_buffer;
     //
     Tensor *input_tensor;
     Tensor *output_tensor;

@@ -29,6 +29,7 @@ from exporter.operators.quantize import Quantize
 from exporter.operators.reshape import Reshape
 from exporter.operators.softmax import Softmax
 from exporter.operators.tile import Tile
+from exporter.operators.transpose_conv import TransposeConv
 #
 
 ending_debug_op = 1000
@@ -68,7 +69,7 @@ BUILDINCODE2OP = {
     tflite.BuiltinOperator.SOFTMAX: Softmax,
     tflite.BuiltinOperator.SPLIT: Split,
     tflite.BuiltinOperator.TILE: Tile,
-    # tflite.BuiltinOperator.TRANSPOSE_CONV: TransposeConv,
+    tflite.BuiltinOperator.TRANSPOSE_CONV: TransposeConv,
 }
 
 class TfliteExporter:
@@ -178,9 +179,10 @@ class TfliteExporter:
             
     def export_model(self, output_path, model_file = "exported_model"):
         model_tag = model_file
+        lifetime_file = output_path + model_file + "_lifetime.csv"
         model_params_file = output_path + model_file + "_params.h"
         model_file = output_path + model_file + ".h"
-        
+
         fp = {}
         # Header head
         fp["model"] = open(model_file, "w")
@@ -195,7 +197,7 @@ class TfliteExporter:
         fp["model"].write('\nnamespace pai {\n')
         fp["model"].write('namespace infer {\n')
         fp["model"].write('namespace {0} {{\n\n'.format(model_tag))
-        fp["model"].write('char *{0};\n'.format(self.dynamic_buffer.scratch_buffer_name))
+        fp["model"].write('char *{0} = nullptr;\n'.format(self.dynamic_buffer.scratch_buffer_name))
         
         fp["params"] = open(model_params_file, "w")
         fp["params"].write('#ifndef POCKET_AI_ENGINE_INFERENCE_{0}_PARAMS_HPP_\n'.format(model_tag.upper()))
@@ -239,12 +241,17 @@ class TfliteExporter:
         # Set Init
         is_malloc = True # True / False
         fp["model"].write('void Init() {\n')
-        if is_malloc is True:
-            fp["model"].write('    {0} = (char *)malloc({1});\n'.format(self.dynamic_buffer.scratch_buffer_name, str(self.dynamic_buffer.scratch_buffer_size)))
-        else:
-            fp["model"].write('    {0} = {Please manually set the memory address};\n'.format(self.dynamic_buffer.scratch_buffer_name))
+        if self.dynamic_buffer.scratch_buffer_size != 0:
+            if is_malloc is True:
+                fp["model"].write('    {0} = (char *)malloc({1});\n'.format(self.dynamic_buffer.scratch_buffer_name, str(self.dynamic_buffer.scratch_buffer_size)))
+            else:
+                fp["model"].write('    {0} = {Please manually set the memory address};\n'.format(self.dynamic_buffer.scratch_buffer_name))
         
         fp["model"].write(self.dynamic_buffer.scratch_buffer_allocate_info)
+
+        # TODO: 先遍历lifetime，过滤不符合要求的inplace，去掉inplace部分，存文件，生成新的lifetime表。按新表划分空间。
+        fp["lifetime"] = open(lifetime_file, "w")
+        fp["lifetime"].write('id, lower, upper, size, alignment, name\n')
         for id in self.dynamic_buffer.io_tensors:
             tensor_name = self.dynamic_buffer.io_tensors[id][1]
             tensor_attr = self.dynamic_buffer.io_tensors[id][2]
@@ -259,6 +266,17 @@ class TfliteExporter:
                 continue
             
             # Else it will be the size of tensor.
+            # fp["lifetime"].write()
+                    # Check and export lifetime.
+            is_found = False
+            for lt in self.dynamic_buffer.lifetime:
+                if lt['id'] == id:
+                    lt_str = "{0},{1},{2},{3},{4},{5}".format(str(lt['id']), str(lt['start']), str(lt['end']), str(lt['size']), '16', tensor_name)
+                    fp["lifetime"].write(lt_str + '\n')
+                    is_found = True
+            if is_found == False:
+                print("Warning: Lifetime calculation error, target tensor not found.\n")
+
             tensor_size = tensor_attr   
             if is_malloc is True:
                 tensor_str = "    {0}.data = (void *)malloc({1});".format(tensor_name, str(tensor_size)) + "\n"
@@ -272,6 +290,8 @@ class TfliteExporter:
 
         # Set DeInit
         fp["model"].write('void Deinit() {\n')
+        if self.dynamic_buffer.scratch_buffer_size != 0 and is_malloc is True:
+            fp["model"].write('    free({0});\n'.format(self.dynamic_buffer.scratch_buffer_name))
         for id in self.dynamic_buffer.io_tensors:
             tensor_name = self.dynamic_buffer.io_tensors[id][1]
             tensor_attr = self.dynamic_buffer.io_tensors[id][2]
@@ -315,10 +335,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='manual to this script')
     parser.add_argument("--model_path", type=str, default="../models/tf_micro_conv_test_model.int8.tflite")
     parser.add_argument("--output_path", type=str, default="./")
-    parser.add_argument("--model_tag", type=str, default="exported_model")
     args = parser.parse_args()
+
+    (filepath, filename) = os.path.split(args.model_path)
+    model_tag = os.path.splitext(filename)[0]+"_model"
+    model_tag = model_tag.replace('.', '_')
 
     exporter = TfliteExporter()
     exporter.load_model(args.model_path) # Get io_tensors and op_exporters.
     exporter.print_model_info()          # Show model's information
-    exporter.export_model(args.output_path, args.model_tag) # Loop and execute each op_exporter
+    exporter.export_model(args.output_path, model_tag) # Loop and execute each op_exporter

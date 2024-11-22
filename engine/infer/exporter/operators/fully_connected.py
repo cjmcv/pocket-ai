@@ -29,7 +29,7 @@ class FullyConnected(Operator):
 
         return op_params, input_tensor, output_tensor, weights_tensor
     
-    def export_float(self, fp, model, io_tensors):
+    def export_float(self, fp, model, dynamic_buffer):
         op_params = \
 '''
 FullyConnectedParams fully_connected_params_<op_id> = {
@@ -43,12 +43,13 @@ FullyConnectedParams fully_connected_params_<op_id> = {
     //
     .input_tensor = <input_tensor_ptr>,
     .output_tensor = <output_tensor_ptr>,
+    .temp_buffer = nullptr,  // <scratch_buffer_size> = batch_num * output_nodes * sizeof(float)
 };
 '''
         name_prefix = 'fully_connected'
         self.oprun_str = "FullyConnected({0}_params_{1});".format(name_prefix, str(self.id))
         op_params, input_tensor, output_tensor, weights_tensor = \
-            self.export_common(fp, model, io_tensors, name_prefix, op_params)
+            self.export_common(fp, model, dynamic_buffer.io_tensors, name_prefix, op_params)
             
         op_opt = self.op.BuiltinOptions()
         option = tflite.FullyConnectedOptions()
@@ -56,12 +57,16 @@ FullyConnectedParams fully_connected_params_<op_id> = {
         
         assert(output_tensor.Type() == tflite.TensorType.FLOAT32)
         op_params = tfcom.export_activation_range_float(option, op_params)
+
+        scratch_buffer_size = tfcom.get_tensor_element_num(output_tensor) / output_tensor.ShapeAsNumpy()[0] * 4 # 4: sizeof(float)
+        str_prefix = "fully_connected_params_" + str(self.id)
+        op_params = tfcom.export_scratch_buffer(dynamic_buffer, str_prefix, scratch_buffer_size, op_params)
         return op_params
     
-    def export_quant(self, fp, model, io_tensors):
+    def export_quant(self, fp, model, dynamic_buffer):
         op_params = \
 '''
-FullyConnectedQuantParams fully_connected_q_params_<op_id> = {
+FullyConnectedQuantParams fully_connected_params_<op_id> = {
     .op_id = <op_id>,
     
     .input_offset = <input_offset>,
@@ -78,15 +83,18 @@ FullyConnectedQuantParams fully_connected_q_params_<op_id> = {
     //
     .input_tensor = <input_tensor_ptr>,
     .output_tensor = <output_tensor_ptr>,
+    .temp_buffer = nullptr,  // <scratch_buffer_size> = batch_num * output_nodes * sizeof(int32_t)
 };
 '''     
-        name_prefix = 'fully_connected_q'
+        name_prefix = 'fully_connected'
         self.oprun_str = "FullyConnectedQuant({0}_params_{1});".format(name_prefix, str(self.id))
         op_params, input_tensor, output_tensor, weights_tensor = \
-            self.export_common(fp, model, io_tensors, name_prefix, op_params)
+            self.export_common(fp, model, dynamic_buffer.io_tensors, name_prefix, op_params)
 
         input_zero_point = input_tensor.Quantization().ZeroPoint(0)
         op_params = op_params.replace('<input_offset>', str(-input_zero_point)) # FullyConnectedParamsQuantized
+        weights_zero_point = weights_tensor.Quantization().ZeroPoint(0)
+        op_params = op_params.replace('<weights_offset>', str(-weights_zero_point))
         
         assert(output_tensor.Type() == tflite.TensorType.INT8)
         output_zero_point = output_tensor.Quantization().ZeroPoint(0)
@@ -95,11 +103,15 @@ FullyConnectedQuantParams fully_connected_q_params_<op_id> = {
         op_params = tfcom.export_multiplier_per_tensor(input_tensor, output_tensor, weights_tensor, op_params)
         op_params = tfcom.export_activation_range_quant(output_tensor.Type(), op_params)
 
+        scratch_buffer_size = tfcom.get_tensor_element_num(output_tensor) / output_tensor.ShapeAsNumpy()[0] * 4 # 4: sizeof(int32_t)
+        str_prefix = "fully_connected_params_" + str(self.id)
+        op_params = tfcom.export_scratch_buffer(dynamic_buffer, str_prefix, scratch_buffer_size, op_params)
         return op_params
         
     def export(self, fp, model, dynamic_buffer):
+        self.scan_iotensor_lifetime(dynamic_buffer)
         if self.is_quant():
-            op_params = self.export_quant(fp, model, dynamic_buffer.io_tensors)
+            op_params = self.export_quant(fp, model, dynamic_buffer)
         else:
-            op_params = self.export_float(fp, model, dynamic_buffer.io_tensors)
+            op_params = self.export_float(fp, model, dynamic_buffer)
         fp["model"].write(op_params+"\n")

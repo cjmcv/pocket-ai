@@ -18,6 +18,7 @@ class Reshape(Operator):
         self.attr["output_index"] = [0]
 
     def export(self, fp, model, dynamic_buffer):
+        self.scan_iotensor_lifetime(dynamic_buffer)
         op_params = \
 '''
 ReshapeParams reshape_params_<op_id> = {

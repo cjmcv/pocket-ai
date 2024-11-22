@@ -39,7 +39,7 @@ inline bool MeanOrSumQuant(const MeanOrSumQuantParams &params) {
 
     const int32_t* axis = params.axis;
     const int num_axis_dimensions = params.num_axis;
-    int32_t* temp_sum = (int32_t*)(*params.temp_buffer);
+    int32_t* temp_sum = (int32_t*)(params.temp_buffer);
 
     int temp_index[kMaxNumberOfAxis];
     int resolved_axis[kMaxNumberOfReducedAxis];

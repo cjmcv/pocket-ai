@@ -113,6 +113,7 @@ DivQuantParams div_q_params_<op_id> {
         return op_params
     
     def export(self, fp, model, dynamic_buffer):
+        self.scan_iotensor_lifetime(dynamic_buffer)
         if self.is_quant():
             op_params = self.export_quant(fp, model, dynamic_buffer.io_tensors)
         else:

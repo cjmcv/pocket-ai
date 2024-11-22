@@ -36,7 +36,7 @@ inline bool MeanOrSum(const MeanOrSumParams &params) {
 
     const int32_t* axis = params.axis;
     const int num_axis_dimensions = params.num_axis;
-    float* temp_sum = (float*)(*params.temp_buffer);
+    float* temp_sum = (float*)(params.temp_buffer);
 
     // Reset output data.
     size_t num_outputs = 1;

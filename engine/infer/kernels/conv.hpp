@@ -6,6 +6,7 @@
 
 #include "engine/infer/common.hpp"
 #include "engine/infer/types.hpp"
+#include "engine/infer/kernels/common.hpp"
 
 namespace pai {
 namespace infer {
@@ -27,6 +28,7 @@ typedef struct {
     //
     Tensor *input_tensor;
     Tensor *output_tensor;
+    void *temp_buffer;
 } ConvParams;
 
 // ref: tflite_micro\tensorflow\lite\kernels\internal\reference\integer_ops: ConvPerChannel
@@ -83,6 +85,30 @@ inline void Conv(const ConvParams& params) {
     const int output_height = output_shape.dims[1];
     const int output_width = output_shape.dims[2];
 
+#if 1
+    // For groups == 0
+    int M = output_height * output_width;
+    int N = output_depth;
+    int K = input_depth * filter_height * filter_width;
+    float *scratch_buffer_2col = (float *)params.temp_buffer; // M*K*sizeof(float)
+    for (int batch = 0; batch < batches; ++batch) {
+        const float* in  = input_data + batch * input_height * input_width * input_depth;
+        float* out = output_data + batch * output_height * output_width * output_depth;
+        Im2Col(scratch_buffer_2col, in, input_depth, output_height, output_width, input_height, input_width, filter_height, filter_width,
+                pad_height, /* pad_top*/ pad_height, /* pad_bottom*/ pad_width, /* pad_left */ pad_width, /*pad_right*/
+                stride_height, stride_width, dilation_height_factor, dilation_width_factor);
+
+        GemmTransB(M, N, K, scratch_buffer_2col, filter_data, out, bias_data);
+
+        for (int i = 0; i < output_height * output_width; i++) {
+            for (int oc = 0; oc < output_depth; ++oc) {
+                out[i*output_depth+oc] = ActivationFunctionWithMinMax(out[i*output_depth+oc],
+                                                                      output_activation_min,
+                                                                      output_activation_max);
+            }
+        }
+    }
+#else
     for (int batch = 0; batch < batches; ++batch) {
         for (int out_y = 0; out_y < output_height; ++out_y) {
             const int in_y_origin = (out_y * stride_height) - pad_height;
@@ -127,6 +153,7 @@ inline void Conv(const ConvParams& params) {
             }
         }
     }
+#endif
 }
 
 } // namespace infer

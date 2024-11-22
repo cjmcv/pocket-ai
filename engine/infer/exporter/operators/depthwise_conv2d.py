@@ -126,6 +126,8 @@ DepthwisePerChannelParams depthwise_conv_q_params_<op_id> = {
         assert(output_tensor.Type() == tflite.TensorType.INT8)
         input_zero_point = input_tensor.Quantization().ZeroPoint(0)
         op_params = op_params.replace('<input_offset>', str(-input_zero_point)) # tensorflow\lite\micro\kernels\conv_common.cc: ConvParamsQuantized
+        weights_zero_point = weights_tensor.Quantization().ZeroPoint(0)
+        op_params = op_params.replace('<weights_offset>', str(-weights_zero_point))
         output_zero_point = output_tensor.Quantization().ZeroPoint(0)
         op_params = op_params.replace('<output_offset>', str(output_zero_point))
             
@@ -135,6 +137,7 @@ DepthwisePerChannelParams depthwise_conv_q_params_<op_id> = {
         return op_params
         
     def export(self, fp, model, dynamic_buffer):
+        self.scan_iotensor_lifetime(dynamic_buffer)
         if self.is_quant():
             op_params = self.export_quant(fp, model, dynamic_buffer.io_tensors)
         else:

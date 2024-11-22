@@ -6,6 +6,7 @@
 
 #include "engine/infer/common.hpp"
 #include "engine/infer/types.hpp"
+#include "engine/infer/kernels/common.hpp"
 
 namespace pai {
 namespace infer {
@@ -27,13 +28,13 @@ typedef struct {
     //
     Tensor *input_tensor;
     Tensor *output_tensor;
-
+    void *temp_buffer;
 } FullyConnectedQuantParams;
 
 // ref: tensorflow\lite\kernels\internal\reference\integer_ops\fully_connected.h: FullyConnected
 void FullyConnectedQuant(const FullyConnectedQuantParams& params) {
     const int32_t input_offset = params.input_offset;
-    const int32_t filter_offset = params.weights_offset;
+    const int32_t filter_offset = params.weights_offset; // fixed to 0
     const int32_t output_offset = params.output_offset;
     const int32_t output_multiplier = params.output_multiplier;
     const int output_shift = params.output_shift;
@@ -70,6 +71,22 @@ void FullyConnectedQuant(const FullyConnectedQuantParams& params) {
     PAI_DCHECK_LE(output_depth, filter_shape.dims[filter_dim_count - 2]); // output_depth also equal to the second to last dims.
     const int accum_depth = filter_shape.dims[filter_dim_count - 1]; // The last dim of filter is accum_depth
 
+#if 1
+    int32_t *out = (int32_t*)params.temp_buffer;
+    int32_t output_num = GetShapeFlatSize(output_shape);
+    int M = batches;
+    int N = output_depth; // Total number of input dimensions except for batches
+    int K = accum_depth;  // Total number of output dimensions except for batches
+    GemmTransBQuant(M, N, K, input_data, filter_data, out, bias_data, input_offset);
+
+    for (int i = 0; i < output_num; ++i) {
+        int32_t acc_scaled = MultiplyByQuantizedMultiplier(out[i], output_multiplier, output_shift); // Equal to out[i] * input_scale * weight_scale / output_scale;
+        acc_scaled += output_offset;
+        acc_scaled = std::max(acc_scaled, output_activation_min);
+        acc_scaled = std::min(acc_scaled, output_activation_max);
+        output_data[i] = static_cast<int8_t>(acc_scaled);
+    }
+#else
     // printf("fully_connected: %d, %d, %d, %d", filter_dim_count, batches, output_depth, accum_depth);
     for (int b = 0; b < batches; ++b) {
         for (int out_c = 0; out_c < output_depth; ++out_c) {
@@ -82,6 +99,7 @@ void FullyConnectedQuant(const FullyConnectedQuantParams& params) {
             if (bias_data) {
                 acc += bias_data[out_c];
             }
+            printf("%d, ", acc);
             int32_t acc_scaled =
                 MultiplyByQuantizedMultiplier(acc, output_multiplier, output_shift);
             acc_scaled += output_offset;
@@ -91,6 +109,7 @@ void FullyConnectedQuant(const FullyConnectedQuantParams& params) {
                 static_cast<int8_t>(acc_scaled);
         }
     }
+#endif
 }
 
 } // namespace infer

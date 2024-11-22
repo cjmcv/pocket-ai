@@ -43,6 +43,7 @@ SoftmaxParams softmax_params_<op_id> = {
         return op_params
 
     def export_quant(self, fp, model, io_tensors):
+        self.scan_iotensor_lifetime(dynamic_buffer)
         op_params = \
 '''
 SoftmaxQuantParams softmax_params_<op_id> = {

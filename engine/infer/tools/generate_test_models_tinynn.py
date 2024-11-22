@@ -13,6 +13,8 @@ import torchvision.models.quantization as tmq
 CURRENT_PATH = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(1, os.path.join('/home/shared_dir/TinyNeuralNetwork'))
 
+import torch.nn as nn
+
 from tinynn.converter import TFLiteConverter
 from tinynn.graph.tracer import model_tracer, trace
 # PTQ
@@ -20,6 +22,20 @@ from tinynn.graph.quantization.quantizer import PostQuantizer
 from tinynn.util.cifar10 import get_dataloader, calibrate
 from tinynn.util.train_util import DLContext, get_device
 
+class SimpleDeconvModel(nn.Module):
+    def __init__(self):
+        super(SimpleDeconvModel, self).__init__()
+        # 定义第一个卷积层，输入通道为3，输出通道为16，卷积核大小为3，填充为1
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)
+        # 定义第一个反卷积层，输入通道为16，输出通道为3，卷积核大小为3，填充为1
+        self.deconv1 = nn.ConvTranspose2d(16, 3, kernel_size=3, padding=1)
+
+    def forward(self, x):
+        # 前向传播过程
+        x = nn.functional.relu(self.conv1(x))
+        x = self.deconv1(x)
+        return x
+    
 def save_model(model, dummy_input, out_dir):
     model_name = type(model).__name__.lower()
     
@@ -85,7 +101,7 @@ def post_quant(model, dummy_input, out_dir):
 
     context = DLContext()
     context.device = device
-    context.train_loader, context.val_loader = get_dataloader(data_path="./datasets/cifar10", img_size=224, batch_size=8, worker=1, download=False)
+    context.train_loader, context.val_loader = get_dataloader(data_path="./datasets/cifar10", img_size=224, batch_size=8, worker=1, download=True)
     context.max_iteration = 100
 
     # Post quantization calibration
@@ -110,13 +126,15 @@ def post_quant(model, dummy_input, out_dir):
         converter.convert()
             
 def main_worker(args):
-    # model = tm.resnet18(weights=None)
-    model = tm.mobilenet_v3_small(weights=None)
+    # model = SimpleDeconvModel()
+    model = tm.resnet18(weights=None)
+    # model = tm.mobilenet_v3_small(weights=None)
     # model = tmq.resnet18(weights=None)
     # model = tmq.resnet18(weights=ResNet18_QuantizedWeights, quantize=True)
     # model = tm.VisionTransformer(image_size=32, patch_size=2, num_layers = 20, num_heads = 1, hidden_dim = 5, mlp_dim = 10)
     # model.load_state_dict(torch.load(DEFAULT_STATE_DICT))
-    dummy_input = torch.rand((1, 3, 32, 32))
+    dummy_input = torch.rand(1, 3, 32, 32)
+    # dummy_input = torch.rand(1, 3, 32, 32)
 
     out_dir = 'gen/tinynn/'
     print(args.quant)

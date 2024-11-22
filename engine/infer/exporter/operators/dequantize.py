@@ -19,6 +19,8 @@ class Dequantize(Operator):
         self.attr["output_index"] = [0]
 
     def export(self, fp, model, dynamic_buffer):
+        self.scan_iotensor_lifetime(dynamic_buffer)
+        
         op_params = \
 '''
 DequantizationParams dequantize_params_<op_id> = {

@@ -67,6 +67,8 @@ class Operator:
         for id in self.attr["input_index"]:
             input_tensor_id = self.op.Inputs(id)
             input_tensor = self.graph.Tensors(input_tensor_id)
+            if (len(self.attr["input_index"]) == 1):  # 如果仅有一个输入，将id强制转为0号。针对反卷积，其输入tensor在2号位，且仅有一个
+                id = 0
             op_params = self.export_io_tensor(name_prefix, 'input', input_tensor, input_tensor_id, io_tensors, op_params, fp['model'], -1, id)
             input_tensors.append(input_tensor)
             
@@ -74,9 +76,16 @@ class Operator:
         if (is_inplace is True):
             if (len(self.attr["input_index"]) == 1):
                 inplace_id = input_tensor_id
-            elif (len(self.attr["input_index"]) == 2):
-                inplace_id = self.op.Inputs(self.attr["input_index"][0])
-            
+            elif (len(self.attr["input_index"]) == 2 and self.attr["output_index"] is not list):
+                # 需要选择维度一致的
+                output_tensor = self.graph.Tensors(self.op.Outputs(self.attr["output_index"][0]))
+                input_tensor0 = self.graph.Tensors(self.op.Inputs(self.attr["input_index"][0]))
+                input_tensor1 = self.graph.Tensors(self.op.Inputs(self.attr["input_index"][1]))
+                if ((input_tensor0.ShapeAsNumpy() == output_tensor.ShapeAsNumpy()).all()):
+                    inplace_id = self.op.Inputs(self.attr["input_index"][0])
+                elif ((input_tensor1.ShapeAsNumpy() == output_tensor.ShapeAsNumpy()).all()):
+                    inplace_id = self.op.Inputs(self.attr["input_index"][1])
+
         for id in self.attr["output_index"]:
             output_tensor_id = self.op.Outputs(id)
             output_tensor = self.graph.Tensors(output_tensor_id)
@@ -112,7 +121,6 @@ class Operator:
             weight_data = np.frombuffer(weights_buffer.DataAsNumpy(), dtype=np.int8)
             # weight_scale = weights_tensor.Quantization().ScaleAsNumpy() # .Scale(0)
             weight_zero_point = weights_tensor.Quantization().ZeroPointAsNumpy() #.ZeroPoint(0)
-            op_params = op_params.replace('<weights_offset>', str(weight_zero_point))
         else:
             assert(weights_tensor.Type() == tflite.TensorType.FLOAT32)
             weight_data = np.frombuffer(weights_buffer.DataAsNumpy(), dtype=np.float32)
@@ -144,3 +152,16 @@ class Operator:
         op_params = op_params.replace('<bias_tensor>', bias_tensor_str)
         
         return op_params, bias_tensor
+
+    def scan_iotensor_lifetime(self, dynamic_buffer):
+        for id in self.attr["input_index"]:
+            tensor_id = self.op.Inputs(id)
+            tensor = self.graph.Tensors(tensor_id)
+            dynamic_buffer.scan_tensor_lifetime(tensor_id, tfcom.get_tensor_size(tensor))
+
+        for id in self.attr["output_index"]:
+            tensor_id = self.op.Outputs(id)
+            tensor = self.graph.Tensors(tensor_id)
+            dynamic_buffer.scan_tensor_lifetime(tensor_id, tfcom.get_tensor_size(tensor))
+        
+        dynamic_buffer.step_lifetime_cnt()
