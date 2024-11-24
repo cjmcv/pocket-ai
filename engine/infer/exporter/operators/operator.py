@@ -39,18 +39,21 @@ class Operator:
                 target_ptr = '<output_tensor_ptr{0}>'.format(write_id)
             
         # 如果已经生成过，则直接写入； 如果之前没生成过，则生成后写入
-        if tfcom.check_value_in_dict(tensor_id, io_tensors):
-            in_var_name = io_tensors[tensor_id][1] # 
-            io_tensors[tensor_id].append(self.id)
+        io_tensor = io_tensors.get(tensor_id)
+        if io_tensor is not None:
+            in_var_name = io_tensor['name'] # 
+            # io_tensors[tensor_id].append(self.id)
             op_params = op_params.replace(target_ptr, '&'+in_var_name)
         else:
             in_var_name = prefix + '_' + str(self.id) + '_' + suffix
             if inplace_id != -1:  # For inplace op, Assign input to output.
-                inplace_var_name = io_tensors[inplace_id][1]
-                io_tensors[tensor_id] = [tensor, in_var_name, inplace_var_name, self.id]
+                inplace_tensor = io_tensors.get(inplace_id)
+                inplace_var_name = inplace_tensor['name']
+                inplace_size = inplace_tensor['size']
+                io_tensors.append(tensor_id, tensor, inplace_size, in_var_name, 'NULL', inplace_var_name, self.id)
                 tensor_str = tfcom.format_tensor(tensor, tensor_id, inplace_var_name+".data")
-            else:    
-                io_tensors[tensor_id] = [tensor, in_var_name, tfcom.get_tensor_size(tensor), self.id]
+            else:
+                io_tensors.append(tensor_id, tensor, tfcom.get_tensor_size(tensor), in_var_name, 'NULL', 'NULL', self.id)
                 tensor_str = tfcom.format_tensor(tensor, tensor_id, 'NULL')
                 
             op_params = op_params.replace(target_ptr, '&'+in_var_name)
@@ -107,8 +110,8 @@ class Operator:
             input_data = np.frombuffer(input_buffer.DataAsNumpy(), dtype=type)
             weight_str, weight_var_name = tfcom.format_weight_bias(input_data, input_tensor.Type(), "constant_" + name_prefix + "_" + str(self.id))
             fp["params"].write(weight_str)
-            
-            io_tensors[input_tensor_id][2] = weight_var_name # 2号位对应size / inplace对象 / constant标记
+
+            io_tensors.set_const_name(tensor_id, weight_var_name)
         #
         
     def export_weight(self, is_quant, name_prefix, model, op_params, fp):

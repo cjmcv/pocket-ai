@@ -108,18 +108,17 @@ class TfliteExporter:
             
             self.dynamic_buffer = tfcom.DynamicBuffer()
             # [tensor, tensor_name, tensor_size, 0/1 is allocate memory, op_id0, op_id1, op_id2...]
-            self.dynamic_buffer.io_tensors = {}
             for gin_id in range(subgraph.InputsLength()):
                 tensor_id = subgraph.Inputs(gin_id)
                 tensor = subgraph.Tensors(tensor_id)
                 in_var_name = "graph_input_" + str(gin_id)
-                self.dynamic_buffer.io_tensors[tensor_id] = [tensor, in_var_name, tfcom.get_tensor_size(tensor)]
+                self.dynamic_buffer.io_tensors.append(tensor_id, tensor, tfcom.get_tensor_size(tensor), in_var_name) 
                 
             for gout_id in range(subgraph.OutputsLength()):
                 tensor_id = subgraph.Outputs(gout_id)
                 tensor = subgraph.Tensors(tensor_id)
                 in_var_name = "graph_output_" + str(gout_id)
-                self.dynamic_buffer.io_tensors[tensor_id] = [tensor, in_var_name, tfcom.get_tensor_size(tensor)]
+                self.dynamic_buffer.io_tensors.append(tensor_id, tensor, tfcom.get_tensor_size(tensor), in_var_name) 
                 
             self.op_exporters = []    
             for i in range(subgraph.OperatorsLength()):
@@ -211,9 +210,10 @@ class TfliteExporter:
         # Graph input/output tensors
         # The inputs and outputs of the graph are taken out in the loadmodel function to self.dynamic_buffer.io_tensors
         fp["model"].write('// graph io tensor\n')
-        for id in self.dynamic_buffer.io_tensors:
-            tensor = self.dynamic_buffer.io_tensors[id][0]
-            tensor_name =  self.dynamic_buffer.io_tensors[id][1]   
+        for io_tensor in self.dynamic_buffer.io_tensors.ins:
+            id = io_tensor['id']
+            tensor = io_tensor['obj']
+            tensor_name = io_tensor['name'] 
             tensor_str = tfcom.format_tensor(tensor, id, 'NULL')
             tensor_str = 'Tensor ' + tensor_name + ' = ' + tensor_str + ';\n'
             fp["model"].write(tensor_str)
@@ -232,12 +232,8 @@ class TfliteExporter:
             if op.op_id() == ending_debug_op:
                 break
         
-        for id in self.dynamic_buffer.io_tensors:
-            print(id, end=": ")
-            for op_id in self.dynamic_buffer.io_tensors[id]:
-                print(op_id, end=", ")
-            print()
-            
+        self.dynamic_buffer.show_all_io_tensors()
+
         # Set Init
         is_malloc = True # True / False
         fp["model"].write('void Init() {\n')
@@ -252,19 +248,19 @@ class TfliteExporter:
         # TODO: 先遍历lifetime，过滤不符合要求的inplace，去掉inplace部分，存文件，生成新的lifetime表。按新表划分空间。
         fp["lifetime"] = open(lifetime_file, "w")
         fp["lifetime"].write('id, lower, upper, size, alignment, name\n')
-        for id in self.dynamic_buffer.io_tensors:
-            tensor_name = self.dynamic_buffer.io_tensors[id][1]
-            tensor_attr = self.dynamic_buffer.io_tensors[id][2]
-            
-            # If type(tensor_attr) is str, tensor_attr will be the src tensor of inplace op
-            if type(tensor_attr) is str:
-                if "constant" in tensor_attr:
-                    fp["model"].write("    {0}.data = {1}; // constant \n".format(tensor_name, tensor_attr))
-                else:
-                    # fp["model"].write("    // Reshape inplace: {0} <- {1}\n".format(tensor_name, tensor_attr))
-                    fp["model"].write("    {0}.data = {1}.data; // Inplace\n".format(tensor_name, tensor_attr))
+
+        for io_tensor in self.dynamic_buffer.io_tensors.ins:
+            tensor_name = io_tensor['name']
+            tensor_size = io_tensor['size'] 
+            tensor_inplace_name = io_tensor['inplace_name']
+            tensor_const_name = io_tensor['const_name']
+            if tensor_inplace_name != 'NULL':
+                fp["model"].write("    {0}.data = {1}.data; // Inplace\n".format(tensor_name, tensor_inplace_name))
                 continue
-            
+            elif tensor_const_name != 'NULL':
+                fp["model"].write("    {0}.data = {1}; // constant \n".format(tensor_name, tensor_const_name))
+                continue
+
             # Else it will be the size of tensor.
             # fp["lifetime"].write()
                     # Check and export lifetime.
@@ -277,7 +273,6 @@ class TfliteExporter:
             if is_found == False:
                 print("Warning: Lifetime calculation error, target tensor not found.\n")
 
-            tensor_size = tensor_attr   
             if is_malloc is True:
                 tensor_str = "    {0}.data = (void *)malloc({1});".format(tensor_name, str(tensor_size)) + "\n"
                 tensor_str = tensor_str + "    memset({0}.data, 0, {1});".format(tensor_name, str(tensor_size)) + "\n"
@@ -292,14 +287,16 @@ class TfliteExporter:
         fp["model"].write('void Deinit() {\n')
         if self.dynamic_buffer.scratch_buffer_size != 0 and is_malloc is True:
             fp["model"].write('    free({0});\n'.format(self.dynamic_buffer.scratch_buffer_name))
-        for id in self.dynamic_buffer.io_tensors:
-            tensor_name = self.dynamic_buffer.io_tensors[id][1]
-            tensor_attr = self.dynamic_buffer.io_tensors[id][2]
-            if type(tensor_attr) is str:
-                if "constant" in tensor_attr:
-                    fp["model"].write("    // {0}.data = {1}; // constant \n".format(tensor_name, tensor_attr))
-                else:
-                    fp["model"].write("    // Reshape inplace: {0} <- {1}\n".format(tensor_name, tensor_attr))
+        for io_tensor in self.dynamic_buffer.io_tensors.ins:
+            tensor_name = io_tensor['name']
+            tensor_size = io_tensor['size'] 
+            tensor_inplace_name = io_tensor['inplace_name']
+            tensor_const_name = io_tensor['const_name']
+            if tensor_inplace_name != 'NULL':
+                fp["model"].write("    // Reshape inplace: {0} <- {1}\n".format(tensor_name, tensor_inplace_name))
+                continue
+            elif tensor_const_name != 'NULL':
+                fp["model"].write("    // {0}.data = {1}; // constant \n".format(tensor_name, tensor_const_name))
                 continue
             
             tensor_str = ";"

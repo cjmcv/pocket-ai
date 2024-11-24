@@ -16,14 +16,45 @@ BUILTIN_TENSORTYPEINFO = {
     tflite.TensorType.FLOAT32: [4, 'FLOAT32'],
 }
 
+class IoTensor:
+    def __init__(self):
+        self.ins = []
+    
+    def append(self, id, tensor, size, name, const_name = 'NULL', inplace_name = 'NULL', op_id = -1):
+        io_tensor_template = {
+            'id':    id,
+            'obj':   tensor, 
+            'size':  size,
+            'name':  name,
+            'const_name':   const_name,
+            'inplace_name': inplace_name,
+            'op_id': op_id
+        }
+        self.ins.append(io_tensor_template)
+    
+    def set_const_name(self, id, const_name):
+        for t in self.ins:
+            if id == t['id']:
+                t['const_name'] = const_name
+
+    def get(self, id):
+        for t in self.ins:
+            if id == t['id']:
+                return t
+        return None
+
 class DynamicBuffer:
     def __init__(self):
         self.lifetime_cnt = 0
         self.lifetime = []
-        self.io_tensors = {}
+        self.io_tensors = IoTensor()
         self.scratch_buffer_name = 'g_scratch_buffer'
         self.scratch_buffer_size = 0
         self.scratch_buffer_allocate_info = ''
+
+    def show_all_io_tensors(self):
+        for t in self.io_tensors.ins:
+            print("{0}: {1}, {2}".format(t['id'], t['size'], t['name']))
 
     def scan_tensor_lifetime(self, tensor_id, size):
         # 如果已添加，则更新结束时间
@@ -59,6 +90,12 @@ def check_value_in_dict(value, dict):
         if value == key:
             return True
     return False
+
+def get_tensor_with_id(io_tensors, id):
+    for t in io_tensors:
+        if id == t['id']:
+            return t
+    return None
 
 # format
 def format_tensor_shape(tensor):
