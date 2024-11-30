@@ -121,10 +121,10 @@ class TfliteInference:
             fp.write("    memcpy(model::graph_input_{0}.data, model::test_graph_in{0}_{1}, sizeof({2}) * GetShapeFlatSize(model::graph_input_{0}.shape));\n".format(str(i), str(self.input_details[i]['index']), type_str))
         fp.write("    model::Run();\n")
         for i in range(len(self.output_details)):
-            fp.write("    CheckTensor(model::graph_output_{0}, (void*)model::test_graph_out{0}_{1});\n".format(str(i), str(self.output_details[i]['index'])))
+            fp.write("    CheckTensor(\"graph_output_{0}\", model::graph_output_{0}, (void*)model::test_graph_out{0}_{1});\n".format(str(i), str(self.output_details[i]['index'])))
 
         for key in test_data_map:
-            fp.write("    CheckTensor(model::{0}, (void*)model::{1});\n".format(key, test_data_map[key]))
+            fp.write("    CheckTensor(\"{0}\", model::{0}, (void*)model::{1});\n".format(key, test_data_map[key]))
 
         fp.write("    model::Deinit();\n")
         fp.write("}\n")

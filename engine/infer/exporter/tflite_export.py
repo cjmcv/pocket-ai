@@ -73,27 +73,6 @@ BUILDINCODE2OP = {
 }
 
 class TfliteExporter:
-    
-    def create_lifetime(self, index, size):
-        # [lower, upper), lifetime of the tensor, marked by operator index
-        tensor_lifetime = {
-                    'index': index,
-                    'lower': -1,
-                    'upper': -1,
-                    'size': size,
-                }
-        return tensor_lifetime
-    
-    def tensor_list_update_start(self, all_tensors, index, i):
-        for tensor in all_tensors:
-            if tensor['index'] == index:
-                tensor['lower'] = i     # for [
-
-    def tensor_list_update_end(self, all_tensors, index, i):
-        for tensor in all_tensors:
-            if tensor['index'] == index:
-                tensor['upper'] = i + 1 # for )
-
     def code2op_exporter(self, graph, code, op, op_id):
         return BUILDINCODE2OP[code](graph, op, op_id)
         
@@ -250,6 +229,7 @@ class TfliteExporter:
         fp["lifetime"].write('id, lower, upper, size, alignment, name\n')
 
         for io_tensor in self.dynamic_buffer.io_tensors.ins:
+            tensor_id = io_tensor['id']
             tensor_name = io_tensor['name']
             tensor_size = io_tensor['size'] 
             tensor_inplace_name = io_tensor['inplace_name']
@@ -261,12 +241,9 @@ class TfliteExporter:
                 fp["model"].write("    {0}.data = {1}; // constant \n".format(tensor_name, tensor_const_name))
                 continue
 
-            # Else it will be the size of tensor.
-            # fp["lifetime"].write()
-                    # Check and export lifetime.
             is_found = False
             for lt in self.dynamic_buffer.lifetime:
-                if lt['id'] == id:
+                if lt['id'] == tensor_id:
                     lt_str = "{0},{1},{2},{3},{4},{5}".format(str(lt['id']), str(lt['start']), str(lt['end']), str(lt['size']), '16', tensor_name)
                     fp["lifetime"].write(lt_str + '\n')
                     is_found = True

@@ -2,6 +2,7 @@
 #define POCKET_AI_ENGINE_INFERENCE_COMMON_HPP_
 
 #include <iostream>
+#include <cmath>
 #include "types.hpp"
 #include "util/logger.hpp"
 
@@ -195,15 +196,27 @@ inline int CountLeadingSignBits(T integer_input) {
 
 //////////////
 // Debug
-inline bool CheckTensor(Tensor &tensor, void *ref_data = nullptr) {
+template <typename DType>
+float CosineSimilarity(DType *a, DType *b, uint32_t len) {
+    float dot = 0, mod_a = 0, mod_b = 0;
+    for (uint32_t i=0; i <len; i++) {
+        float ai = a[i];
+        float bi = b[i];
+        if (std::isinf(ai)) {
+            ai = b[i];
+        }
+        dot   += ai * bi;
+        mod_a += ai * ai;
+        mod_b += bi * bi;
+    }
+    return dot / (sqrtf(mod_a) * sqrtf(mod_b));
+}
+
+inline bool CheckTensor(std::string prefix, Tensor &tensor, void *ref_data = nullptr) {
     bool check_pass = true;
 
 #ifdef ENABLE_PAI_INFER_DEBUG
-    int threshold_level = 0;
-    int level_cnt[10] = {0};
-    static int error_int_level[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    static float error_float_level[10] = {0.000001f, 0.000005f, 0.000010f, 0.000050f, 0.000100f, 0.000500f, 0.001000f, 1.000000f, 10.000000f, 100.000000f};
-    printf("Tensor id: %d", tensor.id);
+    printf("<%s> Tensor id: %d", prefix.c_str(), tensor.id);
     printf("    shape: [");
     uint32_t num = 1;
     for (uint32_t i=0; i<tensor.shape.dims_count; i++) {
@@ -211,20 +224,16 @@ inline bool CheckTensor(Tensor &tensor, void *ref_data = nullptr) {
         printf("%d ", tensor.shape.dims[i]);
     }
     printf("]\n");
-    printf("     data: ");
     if (tensor.type == kPaiInferFloat32) {
         float *data = (float *)tensor.data;
         float *ref = (float *)ref_data;
+        float cos_sim = CosineSimilarity(data, ref, num);
+        printf("Cos Similarity: %f.", cos_sim);
         for (uint32_t i=0; i<num; i++) {
-            if (i%10 == 0) printf("\n");
-            if (ref_data != nullptr) {
-                for (uint32_t ci=0; ci<10; ci++)
-                    if (data[i] > ref[i] + error_float_level[ci] || data[i] < ref[i] - error_float_level[ci])
-                        level_cnt[ci]++;
-                        
-                if (data[i] > ref[i] + error_float_level[threshold_level] || 
-                    data[i] < ref[i] - error_float_level[threshold_level])
-                    printf("%f<%f>, ", data[i], ref[i]);
+            if (i%10 == 0) printf("\n%d: ", (int)i/10);
+            if (ref_data != nullptr) { 
+                if (data[i] > ref[i] + 0.000010f || data[i] < ref[i] - 0.000010f)
+                    printf("%f(%f), ", data[i], ref[i]);
                 else
                     printf("%f, ", data[i]);
             }
@@ -236,15 +245,13 @@ inline bool CheckTensor(Tensor &tensor, void *ref_data = nullptr) {
     else if (tensor.type == kPaiInferInt8 || tensor.type == kPaiInferUInt8) {
         int8_t *data = (int8_t *)tensor.data;
         int8_t *ref = (int8_t *)ref_data;
+        float cos_sim = CosineSimilarity(data, ref, num);
+        printf("cos similarity: %f.\n", cos_sim);
         for (uint32_t i=0; i<num; i++) {
-            if (i%10 == 0) printf("\n");
+            if (i%10 == 0) printf("\n%d: ", (int)i/10);
             if (ref_data != nullptr) {
-                for (uint32_t ci=0; ci<10; ci++)
-                    if (data[i] > ref[i] + error_int_level[ci] || data[i] < ref[i] - error_int_level[ci])
-                        level_cnt[ci]++;
-                if (data[i] > ref[i] + error_int_level[threshold_level] || 
-                    data[i] < ref[i] - error_int_level[threshold_level])
-                    printf("%d<%d>, ", data[i], ref[i]);
+                if (data[i] != ref[i])
+                    printf("%d(%d), ", data[i], ref[i]);
                 else
                     printf("%d, ", data[i]);          
             }
@@ -253,29 +260,7 @@ inline bool CheckTensor(Tensor &tensor, void *ref_data = nullptr) {
             }
         }
     }
-    
-    // Print Result
-    int zero_index = 0;
-    printf("\n\nLength: %d.\n", num);
-    printf("Recorded data error: [");
-    for (uint32_t ci=0; ci<10; ci++) {
-        printf("%d ", level_cnt[ci]);
-        if (level_cnt[ci] != 0)
-            zero_index = ci;
-    }
-    printf("]\n");
-    if (tensor.type == kPaiInferFloat32) {
-        printf("Error range: %f(id %d)\n", error_float_level[zero_index], zero_index);
-        if (zero_index >= 5)
-            check_pass = false;
-    }
-    else {
-        printf("Error range: %d(id %d)\n", error_int_level[zero_index], zero_index);
-        if (zero_index >= 2)
-            check_pass = false;   
-    }
-    printf("\n");
-    
+    printf("\n\n");
 #endif // #ifdef ENABLE_PAI_INFER_DEBUG
 
     return check_pass;

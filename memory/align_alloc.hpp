@@ -19,6 +19,7 @@ static inline size_t AlignSize(size_t sz, int n) {
     return (sz + n - 1) & -n;
 }
 
+// _aligned_malloc
 static inline void *AlignMalloc(size_t size, size_t alignment = 16) {
     void **origin = (void **)malloc(size + sizeof(void *) + alignment);
     if (!origin)
