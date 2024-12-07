@@ -35,6 +35,22 @@ namespace prof {
 // (挖坑: 为什么4条fmla一般只能达到12.7G, 8条却能达到14G ?)
 
 class PeakPerfDetector {
+    #define FMLA04 \
+        "fmla v0.4s, v0.4s, v0.4s \n" \
+        "fmla v1.4s, v1.4s, v1.4s \n" \
+        "fmla v2.4s, v2.4s, v2.4s \n" \
+        "fmla v3.4s, v3.4s, v3.4s \n"
+    #define FMLA14 \
+        "fmla v4.4s, v4.4s, v4.4s \n" \
+        "fmla v5.4s, v5.4s, v5.4s \n" \
+        "fmla v6.4s, v6.4s, v6.4s \n" \
+        "fmla v7.4s, v7.4s, v7.4s \n"
+    #define FMLA24 \
+        "fmla v8.4s, v8.4s, v8.4s \n"    \
+        "fmla v9.4s, v9.4s, v9.4s \n"    \
+        "fmla v10.4s, v10.4s, v10.4s \n" \
+        "fmla v11.4s, v11.4s, v11.4s \n" 
+
 public:
     void RunFmla(int instr_cnt) {
         const int loop = static_cast<int>(1e9); // 1e9 即1G, 乘以op_float，即为 G FLOP
@@ -67,10 +83,7 @@ private:
     int Fmla4(int loop) {
         for (int i=0; i<loop; i++) {
             asm volatile(
-                "fmla v0.4s, v0.4s, v0.4s \n"
-                "fmla v1.4s, v1.4s, v1.4s \n"
-                "fmla v2.4s, v2.4s, v2.4s \n"
-                "fmla v3.4s, v3.4s, v3.4s \n"
+                FMLA04
                 :
                 :
                 : "memory", "v0", "v1", "v2", "v3"  // 使用到的寄存器都需要标记,否则可能会被外面标量用到
@@ -82,15 +95,8 @@ private:
     int Fmla8(int loop) {
         for (int i=0; i<loop; i++) {
             asm volatile(
-                "fmla v0.4s, v0.4s, v0.4s \n"
-                "fmla v1.4s, v1.4s, v1.4s \n"
-                "fmla v2.4s, v2.4s, v2.4s \n"
-                "fmla v3.4s, v3.4s, v3.4s \n"
-
-                "fmla v4.4s, v4.4s, v4.4s \n"
-                "fmla v5.4s, v5.4s, v5.4s \n"
-                "fmla v6.4s, v6.4s, v6.4s \n"
-                "fmla v7.4s, v7.4s, v7.4s \n"
+                FMLA04
+                FMLA14
                 :
                 :
                 : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7"
@@ -102,20 +108,9 @@ private:
     int Fmla12(int loop) {
         for (int i=0; i<loop; i++) {
             asm volatile(
-                "fmla v0.4s, v0.4s, v0.4s \n"
-                "fmla v1.4s, v1.4s, v1.4s \n"
-                "fmla v2.4s, v2.4s, v2.4s \n"
-                "fmla v3.4s, v3.4s, v3.4s \n"
-
-                "fmla v4.4s, v4.4s, v4.4s \n"
-                "fmla v5.4s, v5.4s, v5.4s \n"
-                "fmla v6.4s, v6.4s, v6.4s \n"
-                "fmla v7.4s, v7.4s, v7.4s \n"
-
-                "fmla v8.4s, v8.4s, v8.4s \n"
-                "fmla v9.4s, v9.4s, v9.4s \n"
-                "fmla v10.4s, v10.4s, v10.4s \n"
-                "fmla v11.4s, v11.4s, v11.4s \n"
+                FMLA04
+                FMLA14
+                FMLA24
                 :
                 :
                 : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11"
