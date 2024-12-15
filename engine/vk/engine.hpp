@@ -55,7 +55,7 @@ class Engine {
         }
 
         void Run(uint32_t *num_xyz, std::vector<Buffer*> &input_buffers, const int push_constant_size, 
-                 const void *push_constant, std::vector<Buffer*> &output_buffers) {
+                 const void *push_constant, std::vector<Buffer*> &output_buffers, double *duration_ms) {
             // static int idx = 0;
             // idx++;
             // printf("round idx: %d.\n", idx);
@@ -72,11 +72,29 @@ class Engine {
             if (push_constant_size != 0)
                 command_buffer_->PushConstant(pipeline_->pipeline_layout(), push_constant_size, push_constant);
 
+            command_buffer_->RecordWriteTimestamp(0);
             GetGroupCount(num_xyz[0], num_xyz[1], num_xyz[2]);
             command_buffer_->Dispatch(group_count_xyz_[0], group_count_xyz_[1], group_count_xyz_[2]);
+            command_buffer_->RecordWriteTimestamp(1);
+
             command_buffer_->End();
 
             device_->QueueSubmitAndWait(command_buffer_->command_buffer());
+
+            // Get timestamp_period. 
+            if (duration_ms != nullptr) {
+                std::vector<uint64_t> results(2);
+                int ret = command_buffer_->GetQueryPoolResults(device_->device(), 0, 2, results);
+                if (ret == 0) {
+                    int i=0;
+                    uint64_t start = results[i * 2];
+                    uint64_t end = results[i * 2 + 1];
+                    *duration_ms = (end - start) * device_->timestamp_period() / 1000000;                           
+                }
+                else {
+                    *duration_ms = 0.0f;
+                }
+            }
         }
 
         KernelParams *params_;
@@ -94,7 +112,7 @@ class Engine {
 
 public:
     void Init(std::string shaders_path, std::vector<std::pair<std::string, SetpParamsFuncs>> &shaders_params, 
-              int physical_device_id = 0, bool enable_validation = false) {
+              int physical_device_id = 0, bool enable_validation = false, bool enable_get_timestamp = false) {
         // vk_dispatcher_ = VulkanKernelDispatcher::GetInstance();
         instance_ = new Instance(enable_validation);
         std::vector<VkPhysicalDevice> phys_devices = instance_->EnumeratePhysicalDevices(true);
@@ -127,7 +145,9 @@ public:
             res->descriptor_set_ = res->descriptor_pool_->GetDescriptorSet(set_layouts[0]);
 
             res->command_buffer_ = CommandBuffer::Create(device_->device(), device_->command_pool());
-
+            if (enable_get_timestamp) {
+                res->command_buffer_->CreateQueryPool(device_->device(), 2);
+            }
             it++;
         } 
         printf("Finish Engine::Init.\n");
@@ -160,7 +180,7 @@ public:
 
     void Run(std::string kernel_name, uint32_t *num_xyz, std::vector<Buffer*> &input_buffers, 
              const int push_constant_size, const void *push_constant, 
-             std::vector<Buffer*> &output_buffers) {
+             std::vector<Buffer*> &output_buffers, double *duration_ms = nullptr) {
 
         std::unordered_map<std::string, ExecUnit*>::iterator it = exec_map_.find(kernel_name);
         if (it == exec_map_.end()) {
@@ -169,7 +189,7 @@ public:
             return;
         }
         ExecUnit *res = it->second;
-        res->Run(num_xyz, input_buffers, push_constant_size, push_constant, output_buffers);
+        res->Run(num_xyz, input_buffers, push_constant_size, push_constant, output_buffers, duration_ms);
     }
 
 private:

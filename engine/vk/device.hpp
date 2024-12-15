@@ -69,6 +69,7 @@ public:
     inline VkDevice device() const { return device_; }
     inline VkCommandPool command_pool() const { return command_pool_; }
     inline VkPhysicalDeviceMemoryProperties &memory_properties() { return memory_properties_; }
+    inline float timestamp_period() const { return timestamp_period_; }
 
     void QueueSubmitAndWait(VkCommandBuffer command_buffer) {
         VkFenceCreateInfo fence_create_info = {};
@@ -100,6 +101,10 @@ private:
         vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties_);
         // Get a handle to the only member of the queue family.
         vkGetDeviceQueue(device, queue_family_index, 0, &queue_);
+
+        VkPhysicalDeviceProperties properties;
+        vkGetPhysicalDeviceProperties(physical_device_, &properties);
+        timestamp_period_ = properties.limits.timestampPeriod;
     }
 
     // Retrieve the queue family in the physical device as needed 
@@ -130,6 +135,9 @@ private:
     // Get.
     VkPhysicalDeviceMemoryProperties memory_properties_;
     VkQueue queue_;
+
+    // properties
+    float timestamp_period_;
 };
 
 }  // namespace vk

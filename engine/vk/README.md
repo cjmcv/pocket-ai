@@ -7,7 +7,7 @@ This framework is designed to help you quickly call vulkan's computing API to do
 ## Depends
 
 * Install the graphics card driver；
-* Install the vulkan sdk；
+* Install the [vulkan sdk](https://vulkan.lunarg.com/sdk/home)；
 
 ## How to use
 

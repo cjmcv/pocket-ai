@@ -43,7 +43,7 @@ public:
         extensions_.clear();
         if (enable_validation) {
             // Note: VK_LAYER_LUNARG_standard_validation is deprecated.
-            layers_ = FilterOutEnabledLayers({ "VK_LAYER_KHRONOS_validation" });
+            layers_ = FilterOutEnabledLayers({ "VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_standard_validation", "VK_LAYER_LUNARG_parameter_validation" });
             extensions_ = FilterOutEnabledExtensions({ "VK_EXT_debug_report" });
         }
         VkApplicationInfo app_info = {};

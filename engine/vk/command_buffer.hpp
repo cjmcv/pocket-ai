@@ -93,7 +93,6 @@ public:
         vkCmdPushConstants(command_buffer_, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, params_size, params);
     }
 
-
     // Records a dispatch command.
     // x,y,z: groupCount
     // For example, X is the number of local workgroups to dispatch in the X dimension.
@@ -115,11 +114,55 @@ public:
                             &barrier, 0, nullptr, 0, nullptr);
     }
 
+    // QueryPool for Timestamp.
+    int CreateQueryPool(VkDevice device, uint32_t query_count) {
+        VkQueryPoolCreateInfo queryPoolCreateInfo;
+        queryPoolCreateInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+        queryPoolCreateInfo.pNext = 0;
+        queryPoolCreateInfo.flags = 0;
+        queryPoolCreateInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+        queryPoolCreateInfo.queryCount = query_count;
+        queryPoolCreateInfo.pipelineStatistics = 0;
+
+        VK_CHECK(vkCreateQueryPool(device, &queryPoolCreateInfo, 0, &query_pool_));
+        if (query_pool_) {
+            query_count_ = query_count;
+            // vkCmdResetQueryPool(command_buffer_, query_pool_, 0, query_count_);            
+        }
+        return 0;
+    }
+
+    void RecordWriteTimestamp(uint32_t query) {
+        if (query_pool_) {
+            vkCmdWriteTimestamp(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, query_pool_, query);
+        }
+    }
+
+    int GetQueryPoolResults(VkDevice device, uint32_t first_query, uint32_t query_count, std::vector<uint64_t>& results) {
+        if (query_pool_) {
+            if (results.size() < first_query + query_count) {
+                printf("results not large enough");
+                return -1;
+            }
+            VkResult ret = vkGetQueryPoolResults(device, query_pool_, first_query, query_count, 
+                                                query_count * sizeof(uint64_t), results.data() + first_query, sizeof(uint64_t), VK_QUERY_RESULT_64_BIT);
+            if (ret != VK_SUCCESS && ret != VK_NOT_READY) {
+                printf("vkGetQueryPoolResults failed %d", ret);
+                return -1;
+            }
+            return 0;
+        }
+        return -1;
+    }
+
 private:
     CommandBuffer(VkCommandBuffer command_buffer)
     : command_buffer_(command_buffer) {}
 
     VkCommandBuffer command_buffer_;
+
+    uint32_t query_count_;
+    VkQueryPool query_pool_;
 };
 
 }  // namespace vk
