@@ -1,0 +1,102 @@
+#########################################
+## leaderboard的MMLU, 都采用loglikelihood_acc (original的MMLU都用loglikelihood_acc_single_token)
+# 抽象代数，采用loglikelihood_acc
+leaderboard|mmlu:abstract_algebra|0|0         
+# 解剖学，采用loglikelihood_acc
+leaderboard|mmlu:anatomy|0|0                  
+# 天文学
+leaderboard|mmlu:astronomy|0|0                
+# 商业道德
+leaderboard|mmlu:business_ethics|0|0          
+# 临床知识
+leaderboard|mmlu:clinical_knowledge|0|0       
+# 大学生物
+leaderboard|mmlu:college_biology|0|0      
+# 大学化学
+leaderboard|mmlu:college_chemistry|0|0
+# 大学计算机科学
+leaderboard|mmlu:college_computer_science|0|0
+# 大学数学
+leaderboard|mmlu:college_mathematics|0|0
+# 大学医学
+leaderboard|mmlu:college_medicine|0|0
+# 大学物理
+leaderboard|mmlu:college_physics|0|0
+# 计算机安全
+leaderboard|mmlu:computer_security|0|0
+# 概念物理学
+leaderboard|mmlu:conceptual_physics|0|0
+# 计量经济学
+leaderboard|mmlu:econometrics|0|0
+# 电气工程
+leaderboard|mmlu:electrical_engineering|0|0
+# 初等数学
+leaderboard|mmlu:elementary_mathematics|0|0
+# 形式逻辑
+leaderboard|mmlu:formal_logic|0|0
+# 事实
+leaderboard|mmlu:global_facts|0|0
+leaderboard|mmlu:high_school_biology|0|0
+leaderboard|mmlu:high_school_chemistry|0|0
+leaderboard|mmlu:high_school_computer_science|0|0
+leaderboard|mmlu:high_school_european_history|0|0
+leaderboard|mmlu:high_school_geography|0|0
+leaderboard|mmlu:high_school_government_and_politics|0|0
+leaderboard|mmlu:high_school_macroeconomics|0|0
+leaderboard|mmlu:high_school_mathematics|0|0
+leaderboard|mmlu:high_school_microeconomics|0|0
+leaderboard|mmlu:high_school_physics|0|0
+leaderboard|mmlu:high_school_psychology|0|0
+leaderboard|mmlu:high_school_statistics|0|0
+leaderboard|mmlu:high_school_us_history|0|0
+leaderboard|mmlu:high_school_world_history|0|0
+# 人类衰老
+leaderboard|mmlu:human_aging|0|0
+# 人类性
+leaderboard|mmlu:human_sexuality|0|0
+# 国际法
+leaderboard|mmlu:international_law|0|0
+# 法学
+leaderboard|mmlu:jurisprudence|0|0
+# 逻辑谬误
+leaderboard|mmlu:logical_fallacies|0|0
+# 机器学习
+leaderboard|mmlu:machine_learning|0|0
+# 经营管理
+leaderboard|mmlu:management|0|0
+# 市场
+leaderboard|mmlu:marketing|0|0
+# 医学遗传学
+leaderboard|mmlu:medical_genetics|0|0
+# 混合
+leaderboard|mmlu:miscellaneous|0|0
+# 道德争议
+leaderboard|mmlu:moral_disputes|0|0
+# 道德场景
+leaderboard|mmlu:moral_scenarios|0|0
+# 营养学
+leaderboard|mmlu:nutrition|0|0
+# 哲学
+leaderboard|mmlu:philosophy|0|0
+# 史前史
+leaderboard|mmlu:prehistory|0|0
+# 专业会计
+leaderboard|mmlu:professional_accounting|0|0
+# 专业法律
+leaderboard|mmlu:professional_law|0|0
+# 专业医学
+leaderboard|mmlu:professional_medicine|0|0
+# 专业心理学
+leaderboard|mmlu:professional_psychology|0|0
+# 公共关系
+leaderboard|mmlu:public_relations|0|0
+# 安全教育
+leaderboard|mmlu:security_studies|0|0
+# 社会学
+leaderboard|mmlu:sociology|0|0
+# 美国外交政策
+leaderboard|mmlu:us_foreign_policy|0|0
+# 病毒学
+leaderboard|mmlu:virology|0|0
+# 宗教
+leaderboard|mmlu:world_religions|0|0

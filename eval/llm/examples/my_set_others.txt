@@ -1,0 +1,30 @@
+
+# 选择题，但答案多样，如
+# [' the atom', ' the electron', ' the nucleus', ' the proton'] 
+# [ ' The chicken population would go down.', 
+#   ' Populations of mice and rats would increase.', 
+#   ' Another bird of prey would replace the hawk.', 
+#   ' The chickens would have a lower rate of disease.']
+# fine，4.6k样本。采用loglikelihood_acc / loglikelihood_acc_norm_nospace
+leaderboard|arc:challenge|0|0 
+# 很大, 采用 loglikelihood_acc / loglikelihood_acc_norm
+leaderboard|hellaswag|0|0
+# 问答选择题 ['A', 'B'], 采用 em / qem / pem / pqem
+helm|piqa|0|0
+helm|siqa|0|0
+# 常识推理, 采用loglikelihood_acc
+leaderboard|winogrande|0|0
+
+# QUAC，开放性生成式题目，答案标签给出多个选项，对应一些不同的描述，如['CANNOTANSWER', 'Not enough information', 'Cannot answer', 'Do not know']）都一样的意思，但形式不同，方便与模型生成内容对比。
+# 问题如'Title: Anna Vissi\n\nBackground: Anna Vissi (Greek: Anna Bisse (pronounced [\'ana \'visi], locally [\'an:a \'viS:i]); born 20 December 1957), also known as Anna Vishy, is a Greek Cypriot singer, songwriter, actress, television presenter, radio personality, and businesswoman.\n\nSection: 1983-1989: Collaboration with Nikos Karvelas\nPassage: In May 1983, she married Nikos Karvelas, a composer, with whom she collaborated in 1975 and in November she gave birth to her daughter Sofia. After their marriage, she started a close collaboration with Karvelas. Since 1975, all her releases have become gold or platinum and have included songs by Karvelas. In 1986, she participated at the Cypriot National Final for Eurovision Song Contest with the song Thelo Na Gino Star ("I Want To Be A Star"), taking second place. This song is still unreleased up to date. In 1984, Vissi left her record company EMI Greece and signed with CBS Records Greece, which later became Sony Music Greece, a collaboration that lasted until 2013. In March 1984, she released Na \'Hes Kardia ("If You Had a Heart"). The album was certified gold. The following year her seventh album Kati Simveni ("Something Is Happening") was released which included one of her most famous songs, titled "Dodeka" ["Twelve (O\'Clock)"] and reached gold status selling 80.000 units. In 1986 I Epomeni Kinisi ("The Next Move") was released. The album included the hit Pragmata ("Things") and went platinum, becoming the best selling record of the year. In February 1988 she released her ninth album Tora ("Now") and in December the album Empnefsi! ("Inspiration!") which went gold. In 1988, she made her debut as a radio producer on ANT1 Radio. Her radio program was titled after one of her songs Ta Koritsia Einai Atakta ("Girls Are Naughty") and was aired every weekend. In the same year, she participated with the song Klaio ("I\'m Crying") at the Greek National Final for Eurovision Song Contest, finishing third. In 1989, she released the highly successful studio album Fotia (Fire), being one of the first albums to feature western sounds. The lead single Pseftika ("Fake") became a big hit and the album reached platinum status, selling 180.000 copies and becoming the second best selling record of 1990. She performed at "Diogenis Palace" in that same year, Athens\'s biggest nightclub/music hall at the time.\n\nQuestion: what happened in 1983?\nAnswer: In May 1983, she married Nikos Karvelas, a composer,\n\nQuestion: did she have any other children?\nAnswer:'
+# 模型输出会是一个句子，包含有很多token。
+# 采用 em / qem / f1, greedy_util
+helm|quac|0|0
+# GSM8K, 小学数学多步推理能力, 有标准解答过程。采用 quasi_exact_match 准精确匹配来判断对错, 会偏差很大. 如qwen2.5-1.5b-awq测出value为 0
+leaderboard|gsm8k|0|0
+# 采用em和f1
+helm|synthetic_reasoning:natural_hard|0|0
+# 填空题，给出了多个答案都需要匹配上
+lighteval|drop|0|0
+# 多选题
+leaderboard|truthfulqa:mc|0|0

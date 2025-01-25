@@ -1,9 +1,9 @@
 # Pocket AI
 
-A Portable Toolkit for deploying Edge AI and HPC 
+A Portable Toolkit for deploying AI and HPC 
 
 <details>
-<summary>pai::engine</summary>
+<summary>engine</summary>
 
 * [cl](https://github.com/cjmcv/pai/tree/master/engine/cl): A small computing framework based on opencl. 
 This framework is designed to help you quickly call Opencl API to do the calculations you need.
@@ -18,7 +18,14 @@ This framework is designed to help you quickly call vulkan's computing API to do
 </details>
 
 <details>
-<summary>pai::memory</summary>
+<summary>eval</summary>
+
+* [llm](https://github.com/cjmcv/pai/tree/master/eval/llm): A small tool is used to quickly verify whether the end-to-end calculation results are correct when accelerating and optimizing the large language model (LLM) inference engine.
+
+</details>
+
+<details>
+<summary>memory</summary>
 
 * align_alloc
 * allocator
@@ -30,21 +37,21 @@ This framework is designed to help you quickly call vulkan's computing API to do
 </details>
 
 <details>
-<summary>pai::prof</summary>
+<summary>prof</summary>
 
 * timer
 
 </details>
 
 <details>
-<summary>pai::signal</summary>
+<summary>signal</summary>
 
 * rfft / irfft
 
 </details>
 
 <details>
-<summary>pai::thread</summary>
+<summary>thread</summary>
 
 * internal_thread
 * thread_pool
@@ -52,7 +59,7 @@ This framework is designed to help you quickly call vulkan's computing API to do
 </details>
 
 <details>
-<summary>pai::util</summary>
+<summary>util</summary>
 
 * bmp_reader
 * logger

@@ -1,9 +1,6 @@
 # Folder
 .vscode/
-engine/infer/*/*/__pycache__
-engine/infer/*/__pycache__
-engine/infer/*/*/__pycache__
-engine/infer/*/*/*/__pycache__
+*__pycache__
 tests/bin
 tests/build-win-x86
 tests/build-x86/

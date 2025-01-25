@@ -1,0 +1,22 @@
+
+## 中文题目
+# mgsm是数学推理能力题，要求逐步解答，zh是中文题的意思
+# 对于qwen2.5-1.5b-awq，结果为0
+# lighteval|mgsm:zh|0|0
+# 英译中
+lighteval|iwslt17:en-zh|0|0
+lighteval|wmt17:en-zh|0|0
+lighteval|wmt18:en-zh|0|0
+lighteval|wmt19:en-zh|0|0
+lighteval|wmt20:en-zh|0|0
+# 中译英
+lighteval|iwslt17:zh-en|0|0
+lighteval|wmt17:zh-en|0|0
+lighteval|wmt18:zh-en|0|0
+lighteval|wmt19:zh-en|0|0
+lighteval|wmt20:zh-en|0|0
+# 选择：因果推断
+lighteval|xcopa:zh|0|0
+# 选择：简单逻辑推理
+lighteval|xstory_cloze:zh|0|0
+lighteval|xwinograd:zh|0|0

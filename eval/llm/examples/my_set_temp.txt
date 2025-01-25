@@ -1,0 +1,6 @@
+#########################################
+## leaderboard的MMLU, 都采用loglikelihood_acc (original的MMLU都用loglikelihood_acc_single_token)
+# 抽象代数，采用loglikelihood_acc
+leaderboard|mmlu:abstract_algebra|0|0         
+# 解剖学，采用loglikelihood_acc
+leaderboard|mmlu:anatomy|0|0                  
