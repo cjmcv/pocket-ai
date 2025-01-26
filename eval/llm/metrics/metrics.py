@@ -24,8 +24,6 @@
 import numpy as np
 from aenum import Enum
 
-from metrics.harness_compatibility.drop import drop_metrics
-from metrics.harness_compatibility.truthful_qa import truthfulqa_mc_metrics
 from metrics.metrics_corpus import (
     CorpusLevelF1Score,
     CorpusLevelPerplexityMetric,
@@ -37,7 +35,6 @@ from metrics.metrics_sample import (
     BLEURT,
     MRR,
     ROUGE,
-    BertScore,
     ExactMatches,
     Extractiveness,
     F1_score,
@@ -80,14 +77,6 @@ class Metrics(Enum):
         use_case=MetricUseCase.ACCURACY,
         corpus_level_fn=np.mean,
         higher_is_better=True,
-    )
-    bert_score = SampleLevelMetricGrouping(
-        metric_name=["BERTScore-P", "BERTScore-R", "BERTScore-F"],
-        sample_level_fn=BertScore(normalize_gold=remove_braces, normalize_pred=remove_braces_and_strip).compute,
-        category=MetricCategory.GENERATIVE,
-        use_case=MetricUseCase.SUMMARIZATION,
-        corpus_level_fn={"BERTScore-P": np.mean, "BERTScore-R": np.mean, "BERTScore-F": np.mean},
-        higher_is_better={"BERTScore-P": True, "BERTScore-R": True, "BERTScore-F": True},
     )
     bits_per_byte = CorpusLevelMetric(
         metric_name="bits_per_byte",
@@ -155,14 +144,6 @@ class Metrics(Enum):
         use_case=MetricUseCase.SOCIAL_IMPACTS,
         corpus_level_fn={"longest_common_prefix_length": max, "edit_distance": min, "edit_similarity": max},
         higher_is_better={"longest_common_prefix_length": True, "edit_distance": False, "edit_similarity": True},
-    )
-    drop = SampleLevelMetricGrouping(
-        metric_name=["qem", "f1"],
-        sample_level_fn=drop_metrics,
-        category=MetricCategory.GENERATIVE,
-        use_case=MetricUseCase.ACCURACY,
-        corpus_level_fn={"qem": max, "f1": max},
-        higher_is_better={"qem": True, "f1": True},
     )
     exact_match = SampleLevelMetric(
         metric_name="em",
@@ -532,14 +513,6 @@ class Metrics(Enum):
         use_case=MetricUseCase.TRANSLATION,
         corpus_level_fn=CorpusLevelTranslationMetric("ter").compute,
         higher_is_better=False,
-    )
-    truthfulqa_mc_metrics = SampleLevelMetricGrouping(
-        metric_name=["truthfulqa_mc1", "truthfulqa_mc2"],
-        sample_level_fn=truthfulqa_mc_metrics,
-        category=MetricCategory.MULTICHOICE,
-        use_case=MetricUseCase.ACCURACY,
-        corpus_level_fn={"truthfulqa_mc1": np.mean, "truthfulqa_mc2": np.mean},
-        higher_is_better={"truthfulqa_mc1": True, "truthfulqa_mc2": True},
     )
     word_perplexity = CorpusLevelMetric(
         metric_name="word_perplexity",

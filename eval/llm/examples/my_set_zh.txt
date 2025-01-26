@@ -15,8 +15,8 @@ lighteval|wmt17:zh-en|0|0
 lighteval|wmt18:zh-en|0|0
 lighteval|wmt19:zh-en|0|0
 lighteval|wmt20:zh-en|0|0
-# 选择：因果推断
-lighteval|xcopa:zh|0|0
-# 选择：简单逻辑推理
-lighteval|xstory_cloze:zh|0|0
-lighteval|xwinograd:zh|0|0
+# 选择：因果推断  Only single token continuations are supported when using openai API.
+# lighteval|xcopa:zh|0|0
+# 选择：简单逻辑推理 Only single token continuations are supported when using openai API.
+# lighteval|xstory_cloze:zh|0|0
+# lighteval|xwinograd:zh|0|0

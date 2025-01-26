@@ -212,31 +212,3 @@ def apply_multichoice_metric_one_token(
         outputs.append(output)
 
     return outputs
-
-
-def apply_llm_as_judge_metric(
-    sample_ids: list[str], responses: list[list[ModelResponse]], formatted_docs: list[Doc], metrics: list[Metric]
-):
-    """
-    Apply the LLM as judge metric to the responses. The batching is managed at the judge level.
-    """
-    # outputs per metric is a list containing a list of dict for each metric
-    # example: [[{metric1_sample1}, {metric1_sample2}], [{metric2_sample1}, {metric2_sample2}]]
-    outputs_per_metrics: list[list[dict]] = []
-
-    for metric in metrics:
-        if metric.category in [MetricCategory.LLM_AS_JUDGE_MULTI_TURN, MetricCategory.LLM_AS_JUDGE]:
-            outputs_per_metrics.append(
-                metric.compute(sample_ids=sample_ids, responses=responses, formatted_docs=formatted_docs)
-            )
-
-    # We merge the outputs per metric in a list of dict for each sample
-    # example: [{metric1_sample1, metric2_sample1}, {metric1_sample2, metric2_sample2}]
-    outputs = []
-    for i in range(len(sample_ids)):
-        output = {}
-        for metric_outputs in outputs_per_metrics:
-            output.update(metric_outputs[i])
-        outputs.append(output)
-
-    return outputs

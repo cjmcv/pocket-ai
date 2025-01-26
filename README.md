@@ -34,10 +34,18 @@ This framework is designed to help you quickly call vulkan's computing API to do
 * [infer](https://github.com/cjmcv/pai/tree/master/engine/infer): A tiny inference engine for microprocessors, with a library size of only 10K+.
 
 ```cpp
-// Usage: 1. Export your tflite model to a header file, as shown in file example/infer/export_model.sh. You will get a model structure file named x_model.h and a model weight file named x_model_params.h. 
-//        2. Directly #include "x_model.h" and call Init, Run, and Deinit for utilization.
-// More:  1. Use generate_test_models_tinynn.py to generate a custom model based on TinyNN for experiments. As shown in file example/infer/generate_model.sh.
-//        2. Generate test data based on TFLite to verify whether the inference is correct. As shown in file example/infer/export_model.sh and example/infer/infer_main.cpp
+// Usage:1. Export your tflite model to a header file, 
+//          as shown in file example/infer/export_model.sh. 
+//          You will get a model structure file named x_model.h 
+//          and a model weight file named x_model_params.h. 
+//       2. Directly #include "x_model.h" and call Init, Run, and Deinit for utilization.
+//
+// More: 1. Use generate_test_models_tinynn.py to generate 
+//          a custom model based on TinyNN for experiments. 
+//          As shown in file example/infer/generate_model.sh.
+//       2. Generate test data based on TFLite to verify whether 
+//          the inference is correct. As shown in file 
+//          example/infer/export_model.sh and example/infer/infer_main.cpp
 ```
 
 </details>

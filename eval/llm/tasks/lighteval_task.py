@@ -35,7 +35,6 @@ from pytablewriter import MarkdownTableWriter
 
 from metrics import (
     apply_generative_metric,
-    apply_llm_as_judge_metric,
     apply_multichoice_metric,
     apply_multichoice_metric_one_token,
     apply_perplexity_metric,
@@ -600,9 +599,7 @@ class LightevalTask:
             MetricCategory.GENERATIVE_LOGPROB,
         ]:
             return apply_generative_metric
-        if metric_category in [MetricCategory.LLM_AS_JUDGE_MULTI_TURN, MetricCategory.LLM_AS_JUDGE]:
-            return apply_llm_as_judge_metric
-
+        
     def aggregation(self):
         """
         Return a dict with metric name and its aggregation function for all

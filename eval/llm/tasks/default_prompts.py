@@ -583,55 +583,6 @@ def dyck_language(line, task_name: str = None):
         instruction="Please complete the rest of the following Dyck sequences, making sure that the parentheses are closed properly.\n ",
     )
 
-
-def drop(line, task_name: str = None):
-    # For the Harness new format, v0.0.1
-    def _flatten_validated_answers(validated_answers):
-        """Flattens a dict of lists of validated answers.
-        {"number": ['1', '8'], ...}
-        -> [{"number": ['1'], ...}, {"number": ['8'], ...}]
-        """
-        valid_answers = []
-        for i in range(len(validated_answers["number"])):
-            valid_answers.append(
-                {
-                    "number": validated_answers["number"][i],
-                    "date": validated_answers["date"][i],
-                    "spans": validated_answers["spans"][i],
-                }
-            )
-        return valid_answers
-
-    def parse_answer(answer):
-        # remove this tuple system, legacy from the harness, only here to allow to use answers as key in the below set
-        if answer["number"] != "":
-            return (str(answer["number"]),)
-        if answer["spans"] != []:
-            return tuple(answer["spans"])
-        return (" ".join([answer["date"]["day"], answer["date"]["month"], answer["date"]["year"]]).strip(),)
-
-    answers = []
-    answers_set = set()
-    candidates = [line["answer"]] + _flatten_validated_answers(line["validated_answers"])
-    for candidate in candidates:
-        answer = parse_answer(candidate)
-        if answer in answers_set:
-            continue
-        answers.append(answer)
-        # answers.extend(as_list(answer))
-        answers_set.add(answer)
-
-    is_few_shots = line.get("__few_shots", False)  # We are adding few shots
-
-    return Doc(
-        task_name=task_name,
-        query=f"Passage: {line['passage']}\nQuestion: {line['question']}\nAnswer:",
-        choices=[f"{' ' if is_few_shots else ''}{', '.join(a)}" for a in answers],
-        gold_index=list(range(len(answers))),
-        specific={"golds_no_preprocessing": [as_list(a) for a in answers]},
-    )
-
-
 def empathetic_dialogue(line, task_name: str = None):
     return Doc(
         task_name=task_name, query=f"{line['input']}\nBEGIN DIALOGUE\n", choices=[line["references"]], gold_index=0

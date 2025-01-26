@@ -3,4 +3,4 @@
 # 抽象代数，采用loglikelihood_acc
 leaderboard|mmlu:abstract_algebra|0|0         
 # 解剖学，采用loglikelihood_acc
-leaderboard|mmlu:anatomy|0|0                  
+leaderboard|mmlu:anatomy|0|0                 

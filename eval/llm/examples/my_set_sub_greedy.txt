@@ -1,0 +1,4 @@
+helm|piqa|0|0
+helm|siqa|0|0
+helm|quac|0|0
+helm|synthetic_reasoning:natural_hard|0|0

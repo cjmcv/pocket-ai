@@ -24,7 +24,3 @@ helm|quac|0|0
 leaderboard|gsm8k|0|0
 # 采用em和f1
 helm|synthetic_reasoning:natural_hard|0|0
-# 填空题，给出了多个答案都需要匹配上
-lighteval|drop|0|0
-# 多选题
-leaderboard|truthfulqa:mc|0|0

@@ -659,7 +659,7 @@ class LightevalModel():
                     messages=[{"role": "user", "content": prompt}],
                     stream=False,
                     response_format={"type": "text"},
-                    max_tokens=max_new_tokens if max_new_tokens > 0 else None,
+                    max_tokens=max_new_tokens if max_new_tokens is not None and max_new_tokens > 0 else None,
                     logprobs=return_logits,
                     logit_bias=logit_bias,
                     n=num_samples,

@@ -8,8 +8,8 @@
 
 MODEL_PATH="/home/cjmcv/project/llm_models/Qwen/Qwen2___5-1___5B-Instruct-AWQ"
 DATASETS_PATH="/home/cjmcv/project/llm_datasets/"
-# EVAL_TASK="my_set_others.txt" # my_set_mmlu / my_set_zh / my_set_others / my_set_temp
-EVAL_TASK="leaderboard|truthfulqa:mc|0|0"
+# EVAL_TASK="examples/my_set_zh.txt" # my_set_mmlu / my_set_zh / my_set_others / my_set_sub_greedy / my_set_temp
+EVAL_TASK="lighteval|xwinograd:zh|0|0"
 EVAL_MAX_SAMPLES="100"
 NSYS_PROFILER=
 # NSYS_PROFILER="nsys profile --trace-fork-before-exec=true --cuda-graph-trace=node -o sglang.out --delay 60 --duration 70"
@@ -35,7 +35,7 @@ elif [ "$1" = "bm" ]; then
     DATASET="sharegpt"
     NUM_PROMPTS=10
     REQUEST_RATE=4
-    python3 main_benchmark --backend $2 --dataset-name $DATASET --dataset-path $DATASETS_PATH --num-prompts $NUM_PROMPTS --request-rate $REQUEST_RATE 
+    python3 main_benchmark.py --backend $2 --dataset-name $DATASET --dataset-path $DATASETS_PATH --num-prompts $NUM_PROMPTS --request-rate $REQUEST_RATE 
 elif [ "$1" = "eval" ]; then
     # python3 src/lighteval/__main__.py vllm "pretrained=$MODEL_PATH,dtype=float16" "helm|quac|0|0"
     # model_args: ModelConfig
@@ -103,7 +103,7 @@ fi
 # pip install vllm=0.6.6
 
 ## lmdeploy
-# conda create -n lmdeploy python=3.8 -y
+# conda create -n lmdeploy python=3.10 -y
 # conda activate lmdeploy
 # pip install lmdeploy
 

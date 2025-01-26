@@ -1,4 +1,5 @@
 # Folder
+build/
 .vscode/
 *__pycache__
 tests/bin
@@ -21,6 +22,9 @@ example/infer/*_model_test_data.h
 example/infer/*.csv
 example/infer/gen
 example/infer/datasets
+
+# Temp
+eval/llm/results/
 
 # Prerequisites
 *.d
