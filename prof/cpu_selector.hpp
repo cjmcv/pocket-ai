@@ -1,3 +1,7 @@
+/*!
+* \brief Choose which CPU core you want to run your code on.
+*/
+
 #ifndef POCKET_AI_PROFILER_CPU_SELECTOR_HPP_
 #define POCKET_AI_PROFILER_CPU_SELECTOR_HPP_
 
