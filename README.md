@@ -1,11 +1,11 @@
 # Pocket AI
 
-A Portable Toolkit for deploying AI and HPC 
+A Portable Toolkit for AI Infra
 
 <details>
 <summary>engine</summary>
 
-* [cl](https://github.com/cjmcv/pai/tree/master/engine/cl): A small computing framework based on opencl. 
+* [cl](https://github.com/cjmcv/pocket-ai/tree/master/engine/cl): A small computing framework based on opencl. 
 This framework is designed to help you quickly call Opencl API to do the calculations you need.
 
 ```cpp
@@ -14,7 +14,7 @@ This framework is designed to help you quickly call Opencl API to do the calcula
 #include "pocket-ai/engine/cl/engine.hpp"
 ```
 
-* [vk](https://github.com/cjmcv/pai/tree/master/engine/vk): A small computing framework based on vulkan. 
+* [vk](https://github.com/cjmcv/pocket-ai/tree/master/engine/vk): A small computing framework based on vulkan. 
 This framework is designed to help you quickly call vulkan's computing API to do the calculations you need.
 
 ```cpp
@@ -23,7 +23,7 @@ This framework is designed to help you quickly call vulkan's computing API to do
 #include "pocket-ai/engine/vk/engine.hpp"
 ```
 
-* [graph](https://github.com/cjmcv/pai/tree/master/engine/graph): A small multitasking scheduler that can quickly build efficient pipelines for your multiple tasks.
+* [graph](https://github.com/cjmcv/pocket-ai/tree/master/engine/graph): A small multitasking scheduler that can quickly build efficient pipelines for your multiple tasks.
 
 ```cpp
 // Usage: Only need to include this header file.
@@ -31,7 +31,7 @@ This framework is designed to help you quickly call vulkan's computing API to do
 #include "pocket-ai/engine/graph/graph.hpp"
 ```
 
-* [infer](https://github.com/cjmcv/pai/tree/master/engine/infer): A tiny inference engine for microprocessors, with a library size of only 10K+.
+* [infer](https://github.com/cjmcv/pocket-ai/tree/master/engine/infer): A tiny inference engine for microprocessors, with a library size of only 10K+.
 
 ```cpp
 // Usage:1. Export your tflite model to a header file, 
@@ -53,7 +53,7 @@ This framework is designed to help you quickly call vulkan's computing API to do
 <details>
 <summary>eval</summary>
 
-* [llm](https://github.com/cjmcv/pai/tree/master/eval/llm): A small tool is used to quickly verify whether the end-to-end calculation results are correct when accelerating and optimizing the large language model (LLM) inference engine.
+* [llm](https://github.com/cjmcv/pocket-ai/tree/master/eval/llm): A small tool is used to quickly verify whether the end-to-end calculation results are correct when accelerating and optimizing the large language model (LLM) inference engine.
 
 ```bash
 # Usage: Refer to eval/llm/run.sh.
@@ -125,7 +125,7 @@ cd tests && ./build.sh          # linux
 
 
 # 后加？
-pai::type -> Vector (相同使用方式，添加约束进行加速) / Mat
-pai::memory -> MemPool
-pai::prof -> MemRecorder (直接替换malloc/calloc?) 
-pai::util -> BmpReader
+pocket-ai::type -> Vector (相同使用方式，添加约束进行加速) / Mat
+pocket-ai::memory -> MemPool
+pocket-ai::prof -> MemRecorder (直接替换malloc/calloc?) 
+pocket-ai::util -> BmpReader

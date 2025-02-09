@@ -19,7 +19,7 @@
 ## 如启用sglang的api-server，确保sglang已正常安装，并对启动的api-server进行问答评估。更多例子,请看pocket-ai/eval/llm/example/run.sh
 
 ```bash
-cd pocket-ai/eval/llm/example
+cd pocket-ai/eval/llm/
 sh run.sh launch sglang
 sh run.sh eval sglang
 ```

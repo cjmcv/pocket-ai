@@ -6,7 +6,7 @@
 # sh run.sh task|list|nsys  task(特定数据集的具体情况) / list(列出所支持的所有数据集) / nsys(GPU运行情况分析)
 
 
-MODEL_PATH="/home/cjmcv/project/llm_models/Qwen/Qwen2___5-1___5B-Instruct-AWQ"
+MODEL_PATH="/home/cjmcv/project/llm_models/Qwen/Qwen2___5-1___5B-Instruct-AWQ" # deepseek-ai/DeepSeek-R1-Distill-Qwen-1___5B
 DATASETS_PATH="/home/cjmcv/project/llm_datasets/"
 # EVAL_TASK="examples/my_set_zh.txt" # my_set_mmlu / my_set_zh / my_set_others / my_set_sub_greedy / my_set_temp
 EVAL_TASK="lighteval|xwinograd:zh|0|0"
