@@ -1,16 +1,22 @@
+#ifndef POCKET_AI_EVAL_CUDA_DEVICE_QUERY_HPP_
+#define POCKET_AI_EVAL_CUDA_DEVICE_QUERY_HPP_
+
 #include <cuda_runtime.h>
 
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "pocket-ai/engine/cu/common.hpp"
 
-// Reference: https://github.com/NVIDIA/cuda-samples/blob/master/Samples/1_Utilities/deviceQuery/deviceQuery.cpp
-//            https://github.com/NVIDIA/cuda-samples/blob/master/Samples/1_Utilities/bandwidthTest/bandwidthTest.cu
-//            https://github.com/NVIDIA/cuda-samples/blob/master/Samples/1_Utilities/topologyQuery/topologyQuery.cu
-
 // CUDART_VERSION >= 5000
+
+struct KeyProperties {
+    int sm_count;
+    int gpu_max_clock_rate; // KHz
+};
+
 class DeviceQuery {
 public:
     int GetDeviceCount() {
@@ -39,10 +45,13 @@ public:
                 runtime_version / 1000, (runtime_version % 100) / 10,
                 device_count);
 
+        key_props_.resize(device_count);
         return device_count;
     }
 
-    void GetProperties(int device_id) {
+    KeyProperties *GetProperties(int device_id, bool is_need_full_print = false) {
+        if (device_id >= key_props_.size())
+            return nullptr;
 
         cudaSetDevice(device_id);
         cudaDeviceProp device_prop;
@@ -60,29 +69,36 @@ public:
         printf("  (%03d) Multiprocessors, (%03d) CUDA Cores/MP:    %d CUDA Cores\n", device_prop.multiProcessorCount,
             ConvertSMVer2Cores(device_prop.major, device_prop.minor),
             ConvertSMVer2Cores(device_prop.major, device_prop.minor) * device_prop.multiProcessorCount);
+        key_props_[device_id].sm_count = device_prop.multiProcessorCount;
+
         printf("  GPU Max Clock rate:                            %.0f MHz (%0.2f ""GHz)\n",
             device_prop.clockRate * 1e-3f, device_prop.clockRate * 1e-6f);
+        key_props_[device_id].gpu_max_clock_rate = device_prop.clockRate;
 
         // This is supported in CUDA 5.0 (runtime API device properties)
         printf("  Memory Clock rate:                             %.0f Mhz\n", device_prop.memoryClockRate * 1e-3f);
         printf("  Memory Bus Width:                              %d-bit\n", device_prop.memoryBusWidth);
 
         if (device_prop.l2CacheSize) {
-            printf("  L2 Cache Size:                                 %d bytes\n", device_prop.l2CacheSize);
+            printf("  L2 Cache Size:                                 %d KB\n", device_prop.l2CacheSize / 1024);
         }
 
-        printf("  Maximum Texture Dimension Size (x,y,z)         1D=(%d), 2D=(%d, %d), 3D=(%d, %d, %d)\n",
-        device_prop.maxTexture1D, device_prop.maxTexture2D[0],
-        device_prop.maxTexture2D[1], device_prop.maxTexture3D[0],
-        device_prop.maxTexture3D[1], device_prop.maxTexture3D[2]);
-        printf("  Maximum Layered 1D Texture Size, (num) layers  1D=(%d), %d layers\n", device_prop.maxTexture1DLayered[0], device_prop.maxTexture1DLayered[1]);
-        printf("  Maximum Layered 2D Texture Size, (num) layers  2D=(%d, %d), %d layers\n",
-            device_prop.maxTexture2DLayered[0], device_prop.maxTexture2DLayered[1], device_prop.maxTexture2DLayered[2]);
-        printf("  Total amount of constant memory:               %zu bytes\n", device_prop.totalConstMem);
-        printf("  Total amount of shared memory per block:       %zu bytes\n", device_prop.sharedMemPerBlock);
-        printf("  Total shared memory per multiprocessor:        %zu bytes\n", device_prop.sharedMemPerMultiprocessor);
+        printf("  Total amount of constant memory:               %zu KB\n", device_prop.totalConstMem / 1024);
+        printf("  Total amount of shared memory per block:       %zu KB\n", device_prop.sharedMemPerBlock / 1024);
+        printf("  Total shared memory per multiprocessor:        %zu KB\n", device_prop.sharedMemPerMultiprocessor / 1024);
         printf("  Total number of registers available per block: %d\n", device_prop.regsPerBlock);
+
+        if (!is_need_full_print)
+            return &key_props_[device_id];
+
         printf("  Warp size:                                     %d\n", device_prop.warpSize);
+        printf("  Maximum Texture Dimension Size (x,y,z)         1D=(%d), 2D=(%d, %d), 3D=(%d, %d, %d)\n",
+            device_prop.maxTexture1D, device_prop.maxTexture2D[0],
+            device_prop.maxTexture2D[1], device_prop.maxTexture3D[0],
+            device_prop.maxTexture3D[1], device_prop.maxTexture3D[2]);
+            printf("  Maximum Layered 1D Texture Size, (num) layers  1D=(%d), %d layers\n", device_prop.maxTexture1DLayered[0], device_prop.maxTexture1DLayered[1]);
+            printf("  Maximum Layered 2D Texture Size, (num) layers  2D=(%d, %d), %d layers\n",
+                device_prop.maxTexture2DLayered[0], device_prop.maxTexture2DLayered[1], device_prop.maxTexture2DLayered[2]);
         printf("  Maximum number of threads per multiprocessor:  %d\n", device_prop.maxThreadsPerMultiProcessor);
         printf("  Maximum number of threads per block:           %d\n", device_prop.maxThreadsPerBlock);
         printf("  Max dimension size of a thread block (x,y,z): (%d, %d, %d)\n",  device_prop.maxThreadsDim[0], device_prop.maxThreadsDim[1], device_prop.maxThreadsDim[2]);
@@ -112,6 +128,7 @@ public:
         printf("  Compute Mode:\n");
         printf("     < %s >\n", sComputeMode[device_prop.computeMode]);
     
+        return &key_props_[device_id];
     }
     
     void CheckRDMA(int device_count) {
@@ -234,4 +251,9 @@ private:
             major, minor, nGpuArchCoresPerSM[index - 1].Cores);
         return nGpuArchCoresPerSM[index - 1].Cores;
     }
+
+private:
+    std::vector<KeyProperties> key_props_;
 };
+
+#endif // POCKET_AI_EVAL_CUDA_DEVICE_QUERY_HPP_

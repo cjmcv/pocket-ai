@@ -14,16 +14,18 @@ namespace cu {
 ////////////////
 
 // #define CUDA_CHECK(condition) \
-//     do {} while(0);    
-#define CUDA_CHECK(condition) \
-    do { \
-        cudaError_t error = condition; \
-        if (error != cudaSuccess) { \
-            fprintf(stderr, "CUDA_CHECK error in line %d of file %s : %s \n", \
-                    __LINE__, __FILE__, cudaGetErrorString(cudaGetLastError()) ); \
-            exit(EXIT_FAILURE); \
-        } \
-    } while(0);
+//     do {} while(0); 
+
+template <typename T>
+void cuda_check(T result, char const *const func, const char *const file, int const line) {
+    if (result) {
+        fprintf(stderr, "CUDA_CHECK error at %s:%d code=%d(%s) \"%s\" \n", file, line,
+            static_cast<unsigned int>(result), cudaGetErrorName(result), func);
+        exit(EXIT_FAILURE);
+    }
+}
+
+#define CUDA_CHECK(val) pai::cu::cuda_check((val), #val, __FILE__, __LINE__)
 
 #define FLOAT4(value)  *(float4*)(&(value))
 #define OFFSET(i, j, ld) ((i)*(ld)+(j))

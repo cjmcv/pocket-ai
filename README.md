@@ -122,10 +122,3 @@ cd tests && ./build.sh          # linux
 .\bin\unit_tests
 ```
 </details>
-
-
-# 后加？
-pocket-ai::type -> Vector (相同使用方式，添加约束进行加速) / Mat
-pocket-ai::memory -> MemPool
-pocket-ai::prof -> MemRecorder (直接替换malloc/calloc?) 
-pocket-ai::util -> BmpReader

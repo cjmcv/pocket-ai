@@ -1,3 +1,5 @@
+#ifndef POCKET_AI_EVAL_CUDA_BANDWIDTH_EVAL_HPP_
+#define POCKET_AI_EVAL_CUDA_BANDWIDTH_EVAL_HPP_
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -25,10 +27,11 @@ public:
         memory_iterations_ = 100;
     }
 
-    void Run(int device_id) {
+    void Run(int device_id, bool is_need_full_print = false) {
         printf("  BandwidthEval: \n");
         flush_buf_ = (char *)malloc(flush_size_);
-    
+        is_need_full_print_ = is_need_full_print;
+        
         CheckDevice(device_id);
         // HOST_TO_DEVICE
         Dispatch(device_id, HOST_TO_DEVICE, PINNED, false);
@@ -322,16 +325,25 @@ private:
                     config += "              ";
             }
         }
-    
-        for (int i = 0; i < count; i++) {
-            double secs = (double)mem_sizes[i] / (bandwidths[i] * (double)(1e9));
-            printf("    %s, BandwidthEval = %.1f GB/s, Time = %.5f s, Size = %u bytes\n",
-                    config.c_str(), bandwidths[i], secs, mem_sizes[i]);
+
+        if (is_need_full_print_) {
+            for (int i = 0; i < count; i++) {
+                double secs = (double)mem_sizes[i] / (bandwidths[i] * (double)(1e9));
+                printf("    %s, BandwidthEval = %.1f GB/s, Time = %.5f s, Size = %u bytes\n",
+                        config.c_str(), bandwidths[i], secs, mem_sizes[i]);
+            }            
+        }
+        else {
+            for (int i = 0; i < count; i++) {
+                if (config.find("-WriteCombined") != std::string::npos || config.find("D2D") != std::string::npos)
+                    printf("    %s, BandwidthEval = %.1f GB/s\n", config.c_str(), bandwidths[i]);
+            }
         }
     }
 
 private:
     pai::cu::GpuTimer timer_;
+    bool is_need_full_print_;
     char *flush_buf_;
     size_t flush_size_;
 
@@ -340,3 +352,5 @@ private:
     size_t default_increment_;    
     size_t cache_clear_size_;
 };
+
+#endif // POCKET_AI_EVAL_CUDA_BANDWIDTH_EVAL_HPP_
