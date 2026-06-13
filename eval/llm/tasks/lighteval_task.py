@@ -103,7 +103,7 @@ def download_dataset_worker(
             print("len(dataset)", len(dataset))
             if len(dataset) == 0:
                 is_local_dataset = False
-                raise Warning(f" Unable to load data from the local location. Try to obtain it from the network..")
+            raise Warning(f" Unable to load data from the local location. Try to obtain it from the network..")
         else:
             is_local_dataset = False
             print(f"dataset_cache_dir {dataset_cache_dir} does not exist. Try to obtain it from the network..")

@@ -2,7 +2,7 @@
 
 A Portable Toolkit for AI Infra
 
-<details>
+<!-- <details> -->
 <summary>engine</summary>
 
 * [cl](https://github.com/cjmcv/pocket-ai/tree/master/engine/cl): A small computing framework based on opencl. 
@@ -48,7 +48,7 @@ This framework is designed to help you quickly call vulkan's computing API to do
 //          example/infer/export_model.sh and example/infer/infer_main.cpp
 ```
 
-</details>
+<!-- </details> -->
 
 <details>
 <summary>eval</summary>

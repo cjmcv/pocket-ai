@@ -20,7 +20,7 @@ echo "run example: sh run.sh {launch/bm/eval/list/task} {sglang/lmdeploy/vllm/lo
 if [ "$1" = "launch" ]; then
     if [ "$2" = "sglang" ]; then
         # --grammar-backend xgrammar --disable-overlap-schedule --disable-radix-cache
-        $NSYS_PROFILER python3 -m sglang.launch_server --model-path $MODEL_PATH --enable-torch-compile --enable-mixed-chunk 
+        $NSYS_PROFILER python3 -m sglang.launch_server --model-path $MODEL_PATH --enable-torch-compile --enable-mixed-chunk # --disable-radix --tp-size 2
     elif [ "$2" = "vllm" ]; then
         # vllm=0.6.6, AssertionError: Logits Processors are not supported in multi-step decoding, 需要去掉 --num-scheduler-steps
         $NSYS_PROFILER python3 -m vllm.entrypoints.openai.api_server --model $MODEL_PATH --disable-log-requests --max_model_len 4096 # --num-scheduler-steps 10 
@@ -59,11 +59,14 @@ fi
 ## Setup command.
 ## sgLang
 # pip install --upgrade pip
-# pip install "sglang[all]" --find-links https://flashinfer.ai/whl/cu124/torch2.4/flashinfer/
+# pip install uv
+# uv pip install sgl-kernel --force-reinstall --no-deps
+# uv pip install "sglang[all]>=0.4.3.post2" --find-links https://flashinfer.ai/whl/cu124/torch2.5/flashinfer-python
 #
 # cd sglang
 # pip install --upgrade pip
-# pip install -e "python[all]" --find-links https://flashinfer.ai/whl/cu124/torch2.4/flashinfer/
+# pip install sgl-kernel --force-reinstall --no-deps
+# pip install -e "python[all]" --find-links https://flashinfer.ai/whl/cu124/torch2.5/flashinfer-python
 
 ## sglang
 # curl http://localhost:30000/generate \
